@@ -1,0 +1,113 @@
+import express from "express";
+import multer from "multer";
+import { uploadToS3, deleteFromS3 } from "../services/s3Service.js";
+import Photo from "../models/Photo.js";
+import Contest from "../models/Contest.js";
+import { requireAuth } from "../middleware/auth.js";
+
+const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
+
+// Photo upload endpoint
+router.post(
+  "/upload",
+  requireAuth,
+  upload.single("photo"),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      const s3Url = await uploadToS3(req.file, req.auth.userId);
+
+      const photo = await Photo.create({
+        userId: req.auth.userId,
+        title: req.body.title || "Untitled",
+        description: req.body.description,
+        s3Url,
+        ContestId: req.body.contestId || null,
+      });
+
+      const createdPhoto = await Photo.findByPk(photo.id, {
+        include: [Contest],
+      });
+
+      res.json({ message: "Photo uploaded successfully", photo: createdPhoto });
+    } catch (error) {
+      console.error("Upload error:", error);
+      res.status(500).json({
+        error: error.message || "Failed to upload photo",
+        details: error.stack,
+      });
+    }
+  }
+);
+
+// Get user's photos
+router.get("/photos", requireAuth, async (req, res) => {
+  try {
+    const photos = await Photo.findAll({
+      where: { userId: req.auth.userId },
+      order: [["createdAt", "DESC"]],
+    });
+    res.json(photos || []);
+  } catch (error) {
+    console.error("Error fetching photos:", error);
+    res.status(500).json({ error: "Failed to fetch photos" });
+  }
+});
+
+// Update photo
+router.put("/photos/:id", requireAuth, async (req, res) => {
+  try {
+    const photo = await Photo.findByPk(req.params.id);
+
+    if (!photo) {
+      return res.status(404).json({ error: "Photo not found" });
+    }
+
+    if (photo.userId !== req.auth.userId) {
+      return res
+        .status(403)
+        .json({ error: "Not authorized to edit this photo" });
+    }
+
+    await photo.update({
+      title: req.body.title,
+      description: req.body.description,
+    });
+
+    res.json(photo);
+  } catch (error) {
+    console.error("Error updating photo:", error);
+    res.status(500).json({ error: "Failed to update photo" });
+  }
+});
+
+// Delete photo
+router.delete("/photos/:id", requireAuth, async (req, res) => {
+  try {
+    const photo = await Photo.findByPk(req.params.id);
+
+    if (!photo) {
+      return res.status(404).json({ error: "Photo not found" });
+    }
+
+    if (photo.userId !== req.auth.userId) {
+      return res
+        .status(403)
+        .json({ error: "Not authorized to delete this photo" });
+    }
+
+    await deleteFromS3(photo.s3Url);
+    await photo.destroy();
+
+    res.json({ message: "Photo deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting photo:", error);
+    res.status(500).json({ error: "Failed to delete photo" });
+  }
+});
+
+export default router;

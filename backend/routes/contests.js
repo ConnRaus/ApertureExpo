@@ -1,0 +1,65 @@
+import express from "express";
+import Contest from "../models/Contest.js";
+import Photo from "../models/Photo.js";
+import { requireAuth } from "../middleware/auth.js";
+
+const router = express.Router();
+
+// Create contest
+router.post("/contests", requireAuth, async (req, res) => {
+  try {
+    const contest = await Contest.create({
+      title: req.body.title,
+      description: req.body.description,
+      startDate: req.body.startDate,
+      endDate: req.body.endDate,
+      status: "active",
+    });
+    res.json(contest);
+  } catch (error) {
+    console.error("Error creating contest:", error);
+    res.status(500).json({ error: "Failed to create contest" });
+  }
+});
+
+// Get all contests
+router.get("/contests", async (req, res) => {
+  try {
+    const contests = await Contest.findAll({
+      include: [
+        {
+          model: Photo,
+          attributes: ["id", "title", "s3Url", "userId"],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+    res.json(contests || []);
+  } catch (error) {
+    console.error("Error fetching contests:", error);
+    res.status(500).json({ error: "Failed to fetch contests" });
+  }
+});
+
+// Get contest by ID
+router.get("/contests/:id", async (req, res) => {
+  try {
+    const contest = await Contest.findByPk(req.params.id, {
+      include: [
+        {
+          model: Photo,
+          attributes: ["id", "title", "s3Url", "userId", "createdAt"],
+        },
+      ],
+    });
+    if (!contest) {
+      return res.status(404).json({ error: "Contest not found" });
+    }
+    res.json(contest);
+  } catch (error) {
+    console.error("Error fetching contest:", error);
+    res.status(500).json({ error: "Failed to fetch contest" });
+  }
+});
+
+export default router;

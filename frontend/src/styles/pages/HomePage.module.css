@@ -1,0 +1,19 @@
+.homePage {
+  @apply w-full;
+}
+
+.welcomeSection {
+  @apply max-w-4xl mx-auto mb-12 text-center;
+}
+
+.welcomeSection h1 {
+  @apply text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 mb-6;
+}
+
+.welcomeSection h2 {
+  @apply text-2xl font-semibold text-gray-100 mb-4;
+}
+
+.welcomeSection p {
+  @apply text-gray-400 text-lg leading-relaxed;
+}

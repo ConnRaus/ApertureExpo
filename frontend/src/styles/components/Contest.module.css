@@ -1,0 +1,73 @@
+.contestCard {
+  @apply bg-gray-800/50 backdrop-blur-sm rounded-xl overflow-hidden transition-all duration-300
+         border border-gray-700/50 hover:border-indigo-500/50 hover:shadow-xl hover:-translate-y-1;
+}
+
+.bannerImage {
+  @apply w-full h-48 object-cover transition-transform duration-500;
+}
+
+.contestCard:hover .bannerImage {
+  @apply scale-105;
+}
+
+.contestInfo {
+  @apply p-6;
+}
+
+.contestInfo h3 {
+  @apply text-xl font-semibold text-gray-100 mb-3;
+}
+
+.contestInfo p {
+  @apply text-gray-400 text-sm leading-relaxed;
+}
+
+.submissionCount {
+  @apply mt-4 text-indigo-400 font-medium text-sm;
+}
+
+/* Contest Detail Styles */
+.contestDetail {
+  @apply max-w-4xl mx-auto;
+}
+
+.bannerSection {
+  @apply relative mb-8 rounded-xl overflow-hidden;
+}
+
+.bannerSection img {
+  @apply w-full h-64 object-cover;
+}
+
+.bannerOverlay {
+  @apply absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent;
+}
+
+.contestHeader {
+  @apply absolute bottom-0 left-0 right-0 p-8 text-white;
+}
+
+.contestHeader h1 {
+  @apply text-4xl font-bold mb-4;
+}
+
+.contestHeader p {
+  @apply text-lg text-gray-200 max-w-2xl;
+}
+
+.contestMeta {
+  @apply flex items-center gap-4 mt-4 text-sm text-gray-300;
+}
+
+.statusBadge {
+  @apply px-3 py-1 rounded-full bg-green-500/20 text-green-400 font-medium border border-green-500/20;
+}
+
+.dateRange {
+  @apply flex items-center gap-2;
+}
+
+.submissionsGrid {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
+}

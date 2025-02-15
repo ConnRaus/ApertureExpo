@@ -1,0 +1,67 @@
+.input,
+.textarea {
+  @apply w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-100
+         focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200
+         placeholder-gray-500 backdrop-blur-sm;
+}
+
+.input:hover,
+.textarea:hover {
+  @apply border-gray-500;
+}
+
+.input:focus,
+.textarea:focus {
+  @apply border-indigo-500 bg-gray-700/70;
+}
+
+.textarea {
+  @apply resize-none min-h-[120px];
+}
+
+.label {
+  @apply block text-sm font-medium text-gray-300 mb-2;
+}
+
+.formGroup {
+  @apply mb-6 relative;
+}
+
+.editButtons {
+  @apply flex gap-3 mt-4;
+}
+
+.button {
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-200
+         focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800;
+}
+
+.primaryButton {
+  @apply bg-indigo-500 text-white hover:bg-indigo-600 focus:ring-indigo-500;
+}
+
+.secondaryButton {
+  @apply bg-gray-600 text-gray-200 hover:bg-gray-700 focus:ring-gray-500;
+}
+
+/* Light mode overrides */
+@media (prefers-color-scheme: light) {
+  .input,
+  .textarea {
+    @apply bg-white/80 border-gray-300 text-gray-900;
+  }
+
+  .input:hover,
+  .textarea:hover {
+    @apply border-gray-400;
+  }
+
+  .input:focus,
+  .textarea:focus {
+    @apply border-indigo-500 bg-white;
+  }
+
+  .label {
+    @apply text-gray-700;
+  }
+}
