@@ -3,8 +3,9 @@ FROM node:18.17-alpine as builder
 
 WORKDIR /app
 
-# Add build argument for Vite environment variable
+# Add build arguments for Vite environment variables
 ARG VITE_CLERK_PUBLISHABLE_KEY
+ARG VITE_API_URL
 
 # Copy package files and install dependencies
 COPY package*.json ./
@@ -13,8 +14,9 @@ RUN npm install --legacy-peer-deps
 # Copy source code
 COPY . .
 
-# Set the environment variable for the build
+# Set the environment variables for the build
 ENV VITE_CLERK_PUBLISHABLE_KEY=${VITE_CLERK_PUBLISHABLE_KEY}
+ENV VITE_API_URL=${VITE_API_URL}
 
 # Build the Vite app
 RUN npm run build

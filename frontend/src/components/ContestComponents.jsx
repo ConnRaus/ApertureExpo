@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@clerk/clerk-react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth, useUser } from "@clerk/clerk-react";
 import { PhotoCard } from "./PhotoComponents";
 import styles from "../styles/components/Contest.module.css";
 import formStyles from "../styles/components/Form.module.css";
 
-const API_URL = "http://localhost:3000";
+const API_URL = import.meta.env.VITE_API_URL;
 
 const formatDate = (date) => {
   return new Date(date).toLocaleDateString("en-US", {
