@@ -1,4 +1,5 @@
 # backend/Dockerfile
+# Stage 1: Build the app
 FROM node:18-alpine
 
 WORKDIR /app
@@ -9,9 +10,6 @@ RUN npm install
 
 # Copy source code
 COPY . .
-
-# Copy the .env file
-COPY ../.env .env
 
 # Expose port 3000
 EXPOSE 3000
