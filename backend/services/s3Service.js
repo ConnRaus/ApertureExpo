@@ -1,12 +1,15 @@
-import AWS from "aws-sdk";
+import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { Upload } from "@aws-sdk/lib-storage";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+const s3Client = new S3Client({
   region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
 });
 
 export const uploadToS3 = async (file, userId) => {
@@ -14,15 +17,18 @@ export const uploadToS3 = async (file, userId) => {
   const fileExtension = file.originalname.split(".").pop();
   const key = `photos/${userId}/${Date.now()}.${fileExtension}`;
 
-  const uploadParams = {
-    Bucket: process.env.AWS_BUCKET_NAME,
-    Key: key,
-    Body: fileStream,
-    ContentType: file.mimetype,
-  };
+  const upload = new Upload({
+    client: s3Client,
+    params: {
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: key,
+      Body: fileStream,
+      ContentType: file.mimetype,
+    },
+  });
 
   try {
-    const result = await s3.upload(uploadParams).promise();
+    const result = await upload.done();
     console.log("S3 upload result:", result);
     return result.Location;
   } catch (error) {
@@ -41,13 +47,13 @@ export const deleteFromS3 = async (photoUrl) => {
     key: key,
   });
 
-  const deleteParams = {
-    Bucket: process.env.AWS_BUCKET_NAME,
-    Key: key,
-  };
-
   try {
-    const result = await s3.deleteObject(deleteParams).promise();
+    const command = new DeleteObjectCommand({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: key,
+    });
+
+    const result = await s3Client.send(command);
     console.log("Successfully deleted from S3:", result);
   } catch (error) {
     console.error("Error deleting from S3:", error);
