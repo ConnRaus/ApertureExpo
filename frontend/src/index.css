@@ -70,19 +70,23 @@
   }
 
   .photo-info {
-    @apply p-6 space-y-3;
+    @apply p-4 space-y-1.5;
   }
 
   .photo-info h3 {
-    @apply text-xl font-semibold text-gray-100;
+    @apply text-lg font-semibold text-gray-100 leading-tight;
   }
 
   .photo-info p {
-    @apply text-gray-400 text-sm leading-relaxed;
+    @apply text-gray-400 text-sm leading-snug;
   }
 
   .upload-date {
-    @apply text-gray-500 text-xs mt-2;
+    @apply text-gray-500 text-xs mt-1.5;
+  }
+
+  .user-link {
+    @apply text-indigo-400 text-sm hover:text-indigo-300 transition-colors duration-200 inline-block mt-1;
   }
 
   /* Upload Form */
@@ -152,18 +156,42 @@
   }
 
   /* Profile Section */
-  .profile-header {
-    @apply bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 mb-8 border border-gray-700/50
-           flex flex-wrap justify-between items-center gap-4;
+  .profile-header-container {
+    @apply mb-8 overflow-hidden;
   }
 
-  .edit-toggle {
-    @apply px-4 py-2 bg-indigo-500/20 text-indigo-300 rounded-lg transition-all duration-200
-           hover:bg-indigo-500/30 hover:text-indigo-200 border border-indigo-500/30;
+  .profile-banner {
+    @apply h-64 w-full bg-cover bg-center relative rounded-xl overflow-hidden;
   }
 
-  .edit-toggle.active {
-    @apply bg-indigo-500 text-white;
+  .profile-banner-overlay {
+    @apply absolute inset-0 bg-gradient-to-b from-transparent via-gray-900/50 to-gray-900;
+  }
+
+  .profile-content {
+    @apply relative -mt-32 px-8 pb-6;
+  }
+
+  .profile-info {
+    @apply relative z-10 max-w-4xl mx-auto;
+  }
+
+  .profile-name {
+    @apply text-4xl font-bold text-white mb-2 drop-shadow-lg;
+  }
+
+  .profile-bio {
+    @apply text-gray-200 text-lg leading-relaxed mb-4 max-w-2xl;
+  }
+
+  .profile-stats {
+    @apply flex items-center gap-6 text-gray-300 text-sm font-medium;
+  }
+
+  .edit-profile-button {
+    @apply absolute top-4 right-8 px-4 py-2 bg-white/10 hover:bg-white/20 
+           backdrop-blur-sm text-white rounded-lg transition-all duration-200
+           border border-white/20 hover:border-white/30;
   }
 
   /* Error Messages */

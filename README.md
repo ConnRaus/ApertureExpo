@@ -4,21 +4,35 @@ A web application for hosting and participating in photo contests. Users can cre
 
 ## Prerequisites
 
-- Docker and Docker Compose
-- Node.js 18+ (for local development)
-- AWS Account (for photo storage)
-- Clerk Account (for authentication)
+Before you begin, you'll need:
 
-## Quick Start
+1. **Docker and Docker Compose**
 
-1. Clone the repository:
+   - [Install Docker Desktop](https://www.docker.com/products/docker-desktop/)
+   - This handles all database and service setup
+
+2. **Clerk Account (Authentication)**
+
+   - Sign up at [clerk.com](https://clerk.com)
+   - Create a new application
+   - Get your API keys from the Clerk Dashboard
+
+3. **AWS Account (Photo Storage)**
+   - Sign up for [AWS](https://aws.amazon.com)
+   - Create an S3 bucket for photo storage
+   - Create an IAM user with S3 access
+   - Get your AWS credentials
+
+## Setup Instructions
+
+1. **Clone the repository:**
 
    ```bash
    git clone git@github.com:ConnRaus/photo-contests.git
    cd photo-contests
    ```
 
-2. Set up environment variables:
+2. **Set up environment variables:**
 
    ```bash
    cp .env.example .env
@@ -26,60 +40,135 @@ A web application for hosting and participating in photo contests. Users can cre
 
    Then edit `.env` with your:
 
-   - Clerk authentication keys (from Clerk Dashboard)
-   - AWS credentials and S3 bucket info
-   - Database credentials (or leave default for local development)
+   - Clerk API keys
+   - AWS credentials
+   - The database settings can be left as default for local development
 
-3. Start the application:
+3. **Configure AWS S3:**
+
+   - Create a new S3 bucket
+   - Enable public access (for photo URLs)
+   - Add a CORS configuration in your S3 bucket:
+     ```json
+     [
+       {
+         "AllowedHeaders": ["*"],
+         "AllowedMethods": ["GET", "PUT", "POST", "DELETE"],
+         "AllowedOrigins": ["*"],
+         "ExposeHeaders": []
+       }
+     ]
+     ```
+
+4. **Configure Clerk:**
+
+   - In your Clerk Dashboard:
+     - Add `http://localhost` to your allowed origins
+     - Add `http://localhost:3000` to your allowed origins
+     - Configure sign-in/sign-up methods as desired
+
+5. **Start the application:**
 
    ```bash
    docker-compose up --build
    ```
 
-4. Access the application:
-   - On your computer: http://localhost
-   - On other devices on your network: http://YOUR_COMPUTER_IP
-     (Find your IP with `ipconfig getifaddr en0` on Mac or `ipconfig` on Windows)
+   This will:
 
-## Development
+   - Create a PostgreSQL database
+   - Set up all necessary tables
+   - Start the backend server
+   - Start the frontend application
 
-The application consists of three main components:
+6. **Access the application:**
+   - Frontend: [http://localhost](http://localhost)
+   - Backend API: [http://localhost:3000](http://localhost:3000)
 
-- Frontend (React + Vite)
-- Backend (Node.js + Express)
-- Database (PostgreSQL)
+## Development Notes
 
-All services are containerized and managed through Docker Compose.
+### Database Management
 
-## Services
+- The database is automatically created and managed by Docker
+- Tables are created/updated using Sequelize migrations
+- Data persists between container restarts in the `pgdata` volume
+- To reset the database:
+  ```bash
+  docker-compose down -v  # Removes volumes
+  docker-compose up --build
+  ```
 
-- **Frontend**: Serves the React application on port 80
-- **Backend**: Handles API requests on port 3000
-- **Database**: PostgreSQL instance (internal to Docker network)
+### Environment Variables
 
-## Local Network Access
+The `.env` file contains sensitive information and should never be committed. Instead:
 
-To access the app from other devices on your local network:
+- Use `.env.example` as a template
+- Each developer creates their own `.env` file
+- Get your own API keys for services (Clerk, AWS)
 
-1. Find your computer's IP address:
+### Local Network Access
 
-   - Mac: `ipconfig getifaddr en0`
-   - Windows: `ipconfig` (look for IPv4 Address)
+To access the app from other devices on your network:
 
-2. Access the app using your computer's IP:
-   - Frontend: http://YOUR_COMPUTER_IP
-   - Backend API: http://YOUR_COMPUTER_IP:3000
+1. Find your computer's IP:
 
-Note: Make sure your computer's firewall allows incoming connections on ports 80 and 3000.
+   ```bash
+   # On Mac
+   ipconfig getifaddr en0
+
+   # On Windows
+   ipconfig  # Look for IPv4 Address
+   ```
+
+2. Update your `.env`:
+
+   ```
+   VITE_API_URL=http://YOUR_IP:3000
+   CORS_ORIGINS=http://localhost,http://localhost:80,http://YOUR_IP,http://YOUR_IP:80
+   ```
+
+3. Restart the containers:
+   ```bash
+   docker-compose down && docker-compose up --build
+   ```
 
 ## Troubleshooting
 
-If you encounter issues:
+### Common Issues
 
-1. Ensure all environment variables are set correctly in `.env`
-2. Try rebuilding the containers: `docker-compose down && docker-compose up --build`
-3. Check Docker logs: `docker-compose logs -f [service_name]`
-4. For network access issues:
-   - Check your firewall settings
-   - Ensure you're using the correct IP address
-   - Verify both devices are on the same network
+1. **Database Connection Issues:**
+
+   - Ensure Docker is running
+   - Check if the database container is up: `docker-compose ps`
+   - View database logs: `docker-compose logs db`
+
+2. **Photo Upload Issues:**
+
+   - Verify AWS credentials
+   - Check S3 bucket permissions
+   - Ensure CORS is configured in S3
+
+3. **Authentication Issues:**
+
+   - Verify Clerk API keys
+   - Check Clerk dashboard for allowed origins
+   - Clear browser cache/cookies
+
+4. **Network Access Issues:**
+   - Check firewall settings
+   - Verify IP address in `.env`
+   - Ensure devices are on the same network
+
+### Resetting Everything
+
+If you need a fresh start:
+
+```bash
+# Stop all containers and remove volumes
+docker-compose down -v
+
+# Remove all containers and images
+docker system prune -a
+
+# Rebuild and start
+docker-compose up --build
+```

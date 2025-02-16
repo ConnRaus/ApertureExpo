@@ -16,6 +16,7 @@ router.get("/:userId/profile", requireAuth, async (req, res) => {
         id: req.params.userId,
         nickname: null,
         bio: null,
+        bannerImage: null,
       });
     }
 
@@ -51,15 +52,19 @@ router.put("/:userId/profile", requireAuth, async (req, res) => {
         id: req.params.userId,
         nickname: req.body.nickname,
         bio: req.body.bio,
+        bannerImage: req.body.bannerImage,
       });
     } else {
       await user.update({
         nickname: req.body.nickname,
         bio: req.body.bio,
+        bannerImage: req.body.bannerImage,
       });
     }
 
-    res.json(user);
+    // Fetch the updated user to ensure we have the latest data
+    const updatedUser = await User.findByPk(req.params.userId);
+    res.json(updatedUser);
   } catch (error) {
     console.error("Error updating user profile:", error);
     res.status(500).json({ error: "Failed to update user profile" });

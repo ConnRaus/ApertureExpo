@@ -28,7 +28,22 @@ async function setupDatabase() {
         status: "active",
       });
 
-      console.log("Sample contest created:", sampleContest.toJSON());
+      const sampleContest2 = await Contest.create({
+        title: "Things That Are Blue",
+        description:
+          "Submit your best photos of blue objects, scenes, or moments. Be creative!",
+        bannerImageUrl:
+          "https://www.hdwallpapers.net/previews/cloudy-blue-sky-1048.jpg",
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days from now
+        status: "active",
+      });
+
+      console.log(
+        "Sample contests created:",
+        sampleContest.toJSON(),
+        sampleContest2.toJSON()
+      );
     } else {
       console.log("Existing contests found, skipping sample contest creation");
     }

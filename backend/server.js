@@ -16,8 +16,17 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // Configure CORS
+const defaultOrigins = [
+  "http://localhost",
+  "http://localhost:80",
+  "http://127.0.0.1",
+  "http://127.0.0.1:80",
+];
+
 const corsOptions = {
-  // origin: process.env.CORS_ORIGINS.split(","),
+  origin: process.env.CORS_ORIGINS
+    ? [...defaultOrigins, ...process.env.CORS_ORIGINS.split(",")]
+    : defaultOrigins,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,

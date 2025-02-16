@@ -252,7 +252,9 @@ export function PublicUserGallery({ userId, isOwner }) {
   const [isEditing, setIsEditing] = useState(false);
   const [nickname, setNickname] = useState("");
   const [bio, setBio] = useState("");
+  const [bannerImage, setBannerImage] = useState("");
   const { getToken } = useAuth();
+  const defaultBanner = "https://i.redd.it/jlpv3gf20c291.png";
 
   useEffect(() => {
     fetchUserProfile();
@@ -273,6 +275,7 @@ export function PublicUserGallery({ userId, isOwner }) {
       setProfile(data.profile);
       setNickname(data.profile.nickname || "");
       setBio(data.profile.bio || "");
+      setBannerImage(data.profile.bannerImage || "");
     } catch (error) {
       console.error("Error fetching user profile:", error);
       setError("Failed to load user profile");
@@ -306,7 +309,7 @@ export function PublicUserGallery({ userId, isOwner }) {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ nickname, bio }),
+        body: JSON.stringify({ nickname, bio, bannerImage }),
       });
 
       if (!response.ok) throw new Error("Failed to update profile");
@@ -336,56 +339,80 @@ export function PublicUserGallery({ userId, isOwner }) {
 
   return (
     <div className="public-user-gallery">
-      <div className="profile-header">
-        <div className="profile-info">
-          {isEditing ? (
-            <div className={formStyles.formGroup}>
-              <label className={formStyles.label}>Nickname</label>
-              <input
-                type="text"
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
-                placeholder="Enter nickname"
-                className={formStyles.input}
-              />
-              <label className={formStyles.label}>Bio</label>
-              <textarea
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                placeholder="Enter bio"
-                className={formStyles.textarea}
-              />
-              <div className={formStyles.editButtons}>
-                <button
-                  onClick={handleProfileUpdate}
-                  className={`${formStyles.button} ${formStyles.primaryButton}`}
-                >
-                  Save
-                </button>
-                <button
-                  onClick={() => setIsEditing(false)}
-                  className={`${formStyles.button} ${formStyles.secondaryButton}`}
-                >
-                  Cancel
-                </button>
+      <div className="profile-header-container">
+        <div
+          className="profile-banner"
+          style={{
+            backgroundImage: `url(${bannerImage || defaultBanner})`,
+          }}
+        >
+          <div className="profile-banner-overlay" />
+        </div>
+        <div className="profile-content">
+          <div className="profile-info">
+            {isEditing ? (
+              <div className={formStyles.formGroup}>
+                <label className={formStyles.label}>Nickname</label>
+                <input
+                  type="text"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  placeholder="Enter nickname"
+                  className={formStyles.input}
+                />
+                <label className={formStyles.label}>Bio</label>
+                <textarea
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="Tell us about yourself"
+                  className={formStyles.textarea}
+                />
+                <label className={formStyles.label}>Banner Image URL</label>
+                <input
+                  type="text"
+                  value={bannerImage}
+                  onChange={(e) => setBannerImage(e.target.value)}
+                  placeholder="Enter banner image URL"
+                  className={formStyles.input}
+                />
+                <div className={formStyles.editButtons}>
+                  <button
+                    onClick={handleProfileUpdate}
+                    className={`${formStyles.button} ${formStyles.primaryButton}`}
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setIsEditing(false)}
+                    className={`${formStyles.button} ${formStyles.secondaryButton}`}
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
-            </div>
-          ) : (
-            <>
-              <h2>{profile?.nickname || `User ${userId}`}'s Photos</h2>
-              {profile?.bio && <p className="profile-bio">{profile.bio}</p>}
-            </>
+            ) : (
+              <>
+                <h1 className="profile-name">
+                  {profile?.nickname || `User ${userId}`}
+                </h1>
+                {profile?.bio && <p className="profile-bio">{profile.bio}</p>}
+                <div className="profile-stats">
+                  <span>{photos.length} Photos</span>
+                </div>
+              </>
+            )}
+          </div>
+          {isOwner && !isEditing && (
+            <button
+              className="edit-profile-button"
+              onClick={() => setIsEditing(true)}
+            >
+              Edit Profile
+            </button>
           )}
         </div>
-        {isOwner && !isEditing && (
-          <button
-            className={`${formStyles.button} ${formStyles.primaryButton}`}
-            onClick={() => setIsEditing(true)}
-          >
-            Edit Profile
-          </button>
-        )}
       </div>
+
       <div className="photo-grid">
         {photos.length === 0 ? (
           <p>No photos uploaded yet.</p>
@@ -417,10 +444,6 @@ export function PublicUserGallery({ userId, isOwner }) {
         }}
         animation={{ fade: 300 }}
         controller={{ closeOnBackdropClick: true }}
-        render={{
-          buttonPrev: photos.length <= 1 ? () => null : undefined,
-          buttonNext: photos.length <= 1 ? () => null : undefined,
-        }}
       />
     </div>
   );

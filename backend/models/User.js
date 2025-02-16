@@ -14,6 +14,10 @@ const User = sequelize.define("User", {
     type: DataTypes.TEXT,
     allowNull: true,
   },
+  bannerImage: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
 });
 
 export default User;
