@@ -3,6 +3,11 @@ import { useNavigate, Link } from "react-router-dom";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
+import "yet-another-react-lightbox/plugins/thumbnails.css";
+import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
+import Zoom from "yet-another-react-lightbox/plugins/zoom";
+import Counter from "yet-another-react-lightbox/plugins/counter";
+import "yet-another-react-lightbox/plugins/counter.css";
 import formStyles from "../styles/components/Form.module.css";
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -14,6 +19,7 @@ export function PhotoCard({
   onClick,
   isEditing,
   onEdit,
+  hideProfileLink = false,
 }) {
   const [isEditingDetails, setIsEditingDetails] = useState(false);
   const [title, setTitle] = useState(photo.title);
@@ -106,13 +112,15 @@ export function PhotoCard({
           <>
             <h3>{photo.title}</h3>
             {photo.description && <p>{photo.description}</p>}
-            <Link
-              to={`/users/${photo.userId}`}
-              onClick={(e) => e.stopPropagation()}
-              className="user-link"
-            >
-              View Profile
-            </Link>
+            {!hideProfileLink && (
+              <Link
+                to={`/users/${photo.userId}`}
+                onClick={(e) => e.stopPropagation()}
+                className="user-link"
+              >
+                View Profile
+              </Link>
+            )}
             {photo.createdAt && (
               <p className="upload-date">
                 Uploaded {new Date(photo.createdAt).toLocaleDateString()}
@@ -136,7 +144,7 @@ export function PhotoCard({
 export function UserPhotoGallery({ isEditing }) {
   const [photos, setPhotos] = useState([]);
   const [error, setError] = useState(null);
-  const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(-1);
   const { getToken } = useAuth();
   const { user } = useUser();
   const navigate = useNavigate();
@@ -189,19 +197,25 @@ export function UserPhotoGallery({ isEditing }) {
     return <div className="error-message">{error}</div>;
   }
 
+  const lightboxSlides = photos.map((photo) => ({
+    src: photo.s3Url,
+    title: photo.title,
+    description: photo.description,
+  }));
+
   return (
     <div className="photo-gallery">
       <div className="photo-grid">
         {photos.length === 0 ? (
           <p>No photos uploaded yet.</p>
         ) : (
-          photos.map((photo) => (
+          photos.map((photo, index) => (
             <PhotoCard
               key={photo.id}
               photo={photo}
               onDelete={handleDelete}
               isOwner={photo.userId === user?.id}
-              onClick={setSelectedPhoto}
+              onClick={() => setSelectedPhotoIndex(index)}
               isEditing={isEditing}
               onEdit={handleEdit}
             />
@@ -209,9 +223,22 @@ export function UserPhotoGallery({ isEditing }) {
         )}
       </div>
       <Lightbox
-        open={selectedPhoto !== null}
-        close={() => setSelectedPhoto(null)}
-        slides={[{ src: selectedPhoto?.s3Url }]}
+        open={selectedPhotoIndex >= 0}
+        close={() => setSelectedPhotoIndex(-1)}
+        index={selectedPhotoIndex}
+        slides={lightboxSlides}
+        plugins={[Thumbnails, Zoom, Counter]}
+        carousel={{
+          finite: false,
+          preload: 3,
+          padding: "16px",
+        }}
+        animation={{ fade: 300 }}
+        controller={{ closeOnBackdropClick: true }}
+        render={{
+          buttonPrev: photos.length <= 1 ? () => null : undefined,
+          buttonNext: photos.length <= 1 ? () => null : undefined,
+        }}
       />
     </div>
   );
@@ -220,7 +247,7 @@ export function UserPhotoGallery({ isEditing }) {
 export function PublicUserGallery({ userId, isOwner }) {
   const [photos, setPhotos] = useState([]);
   const [error, setError] = useState(null);
-  const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(-1);
   const [profile, setProfile] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [nickname, setNickname] = useState("");
@@ -301,6 +328,12 @@ export function PublicUserGallery({ userId, isOwner }) {
     return <div className="error-message">{error}</div>;
   }
 
+  const lightboxSlides = photos.map((photo) => ({
+    src: photo.s3Url,
+    title: photo.title,
+    description: photo.description,
+  }));
+
   return (
     <div className="public-user-gallery">
       <div className="profile-header">
@@ -357,23 +390,37 @@ export function PublicUserGallery({ userId, isOwner }) {
         {photos.length === 0 ? (
           <p>No photos uploaded yet.</p>
         ) : (
-          photos.map((photo) => (
+          photos.map((photo, index) => (
             <PhotoCard
               key={photo.id}
               photo={photo}
               isOwner={isOwner}
-              onClick={setSelectedPhoto}
-              isEditing={isOwner}
+              onClick={() => setSelectedPhotoIndex(index)}
+              isEditing={isOwner && isEditing}
               onDelete={handleDelete}
               onEdit={handleEdit}
+              hideProfileLink={true}
             />
           ))
         )}
       </div>
       <Lightbox
-        open={selectedPhoto !== null}
-        close={() => setSelectedPhoto(null)}
-        slides={[{ src: selectedPhoto?.s3Url }]}
+        open={selectedPhotoIndex >= 0}
+        close={() => setSelectedPhotoIndex(-1)}
+        index={selectedPhotoIndex}
+        slides={lightboxSlides}
+        plugins={[Thumbnails, Zoom, Counter]}
+        carousel={{
+          finite: false,
+          preload: 3,
+          padding: "16px",
+        }}
+        animation={{ fade: 300 }}
+        controller={{ closeOnBackdropClick: true }}
+        render={{
+          buttonPrev: photos.length <= 1 ? () => null : undefined,
+          buttonNext: photos.length <= 1 ? () => null : undefined,
+        }}
       />
     </div>
   );

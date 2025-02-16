@@ -29,7 +29,7 @@
 
 /* Contest Detail Styles */
 .contestDetail {
-  @apply max-w-4xl mx-auto;
+  @apply max-w-6xl mx-auto;
 }
 
 .bannerSection {
@@ -68,6 +68,21 @@
   @apply flex items-center gap-2;
 }
 
+/* Contest Submissions Grid */
 .submissionsGrid {
-  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
+  @apply grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4;
+}
+
+/* Contest Photo Card */
+.contestPhotoCard {
+  @apply relative aspect-square rounded-lg overflow-hidden cursor-pointer 
+         transition-all duration-300 hover:scale-[1.02] hover:shadow-xl;
+}
+
+.contestSubmissionImage {
+  @apply w-full h-full object-cover transition-transform duration-500;
+}
+
+.contestPhotoCard:hover .contestSubmissionImage {
+  @apply scale-105;
 }

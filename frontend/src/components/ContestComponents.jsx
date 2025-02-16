@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { PhotoCard } from "./PhotoComponents";
+import Lightbox from "yet-another-react-lightbox";
+import "yet-another-react-lightbox/styles.css";
+import "yet-another-react-lightbox/plugins/thumbnails.css";
+import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
+import Zoom from "yet-another-react-lightbox/plugins/zoom";
+import Counter from "yet-another-react-lightbox/plugins/counter";
+import "yet-another-react-lightbox/plugins/counter.css";
 import styles from "../styles/components/Contest.module.css";
 import formStyles from "../styles/components/Form.module.css";
 
@@ -86,6 +92,23 @@ export function EventList() {
   );
 }
 
+function ContestPhotoCard({ photo, onClick }) {
+  const handleImageError = (e) => {
+    e.target.src = "https://via.placeholder.com/300x200?text=Image+Not+Found";
+  };
+
+  return (
+    <div className={styles.contestPhotoCard} onClick={() => onClick(photo)}>
+      <img
+        src={photo.s3Url}
+        alt="Contest submission"
+        onError={handleImageError}
+        className={styles.contestSubmissionImage}
+      />
+    </div>
+  );
+}
+
 export function ContestDetail({
   contestId,
   showUploadForm,
@@ -93,7 +116,7 @@ export function ContestDetail({
 }) {
   const [contest, setContest] = useState(null);
   const [error, setError] = useState(null);
-  const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(-1);
   const { getToken } = useAuth();
   const navigate = useNavigate();
   const defaultBanner =
@@ -128,6 +151,10 @@ export function ContestDetail({
   if (!contest) {
     return <div>Loading contest details...</div>;
   }
+
+  const lightboxSlides = contest.Photos?.map((photo) => ({
+    src: photo.s3Url,
+  }));
 
   return (
     <div className={styles.contestDetail}>
@@ -173,16 +200,30 @@ export function ContestDetail({
         <p>No submissions yet. Be the first to submit!</p>
       ) : (
         <div className={styles.submissionsGrid}>
-          {contest.Photos?.map((photo) => (
-            <PhotoCard
+          {contest.Photos?.map((photo, index) => (
+            <ContestPhotoCard
               key={photo.id}
               photo={photo}
-              onClick={setSelectedPhoto}
-              isEditing={false}
+              onClick={() => setSelectedPhotoIndex(index)}
             />
           ))}
         </div>
       )}
+
+      <Lightbox
+        open={selectedPhotoIndex >= 0}
+        close={() => setSelectedPhotoIndex(-1)}
+        index={selectedPhotoIndex}
+        slides={lightboxSlides}
+        plugins={[Thumbnails, Zoom, Counter]}
+        carousel={{
+          finite: false,
+          preload: 3,
+          padding: "16px",
+        }}
+        animation={{ fade: 300 }}
+        controller={{ closeOnBackdropClick: true }}
+      />
     </div>
   );
 }
