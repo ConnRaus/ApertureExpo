@@ -9,6 +9,7 @@ import Zoom from "yet-another-react-lightbox/plugins/zoom";
 import Counter from "yet-another-react-lightbox/plugins/counter";
 import "yet-another-react-lightbox/plugins/counter.css";
 import formStyles from "../styles/components/Form.module.css";
+import { PhotoSelector } from "./PhotoSelector";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -253,6 +254,7 @@ export function PublicUserGallery({ userId, isOwner }) {
   const [nickname, setNickname] = useState("");
   const [bio, setBio] = useState("");
   const [bannerImage, setBannerImage] = useState("");
+  const [showPhotoSelector, setShowPhotoSelector] = useState(false);
   const { getToken } = useAuth();
   const defaultBanner = "https://i.redd.it/jlpv3gf20c291.png";
 
@@ -327,6 +329,11 @@ export function PublicUserGallery({ userId, isOwner }) {
     setPhotos(photos.map((p) => (p.id === updatedPhoto.id ? updatedPhoto : p)));
   };
 
+  const handlePhotoSelect = (photo) => {
+    setBannerImage(photo.s3Url);
+    setShowPhotoSelector(false);
+  };
+
   if (error) {
     return <div className="error-message">{error}</div>;
   }
@@ -367,14 +374,22 @@ export function PublicUserGallery({ userId, isOwner }) {
                   placeholder="Tell us about yourself"
                   className={formStyles.textarea}
                 />
-                <label className={formStyles.label}>Banner Image URL</label>
-                <input
-                  type="text"
-                  value={bannerImage}
-                  onChange={(e) => setBannerImage(e.target.value)}
-                  placeholder="Enter banner image URL"
-                  className={formStyles.input}
-                />
+                <label className={formStyles.label}>Banner Image</label>
+                <div className="flex gap-3 mb-4">
+                  <input
+                    type="text"
+                    value={bannerImage}
+                    onChange={(e) => setBannerImage(e.target.value)}
+                    placeholder="Enter banner image URL"
+                    className={`${formStyles.input} flex-1`}
+                  />
+                  <button
+                    onClick={() => setShowPhotoSelector(true)}
+                    className={`${formStyles.button} ${formStyles.secondaryButton} whitespace-nowrap`}
+                  >
+                    Choose Photo
+                  </button>
+                </div>
                 <div className={formStyles.editButtons}>
                   <button
                     onClick={handleProfileUpdate}
@@ -444,6 +459,12 @@ export function PublicUserGallery({ userId, isOwner }) {
         }}
         animation={{ fade: 300 }}
         controller={{ closeOnBackdropClick: true }}
+      />
+
+      <PhotoSelector
+        isOpen={showPhotoSelector}
+        onClose={() => setShowPhotoSelector(false)}
+        onSelect={handlePhotoSelect}
       />
     </div>
   );

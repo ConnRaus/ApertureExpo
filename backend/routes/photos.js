@@ -110,4 +110,44 @@ router.delete("/photos/:id", requireAuth, async (req, res) => {
   }
 });
 
+// Submit existing photo to contest
+router.post("/photos/:id/submit", requireAuth, async (req, res) => {
+  try {
+    const photo = await Photo.findByPk(req.params.id);
+
+    if (!photo) {
+      return res.status(404).json({ error: "Photo not found" });
+    }
+
+    if (photo.userId !== req.auth.userId) {
+      return res
+        .status(403)
+        .json({ error: "Not authorized to submit this photo" });
+    }
+
+    // Check if photo is already in the contest
+    if (photo.ContestId === req.body.contestId) {
+      return res
+        .status(400)
+        .json({ error: "Photo is already submitted to this contest" });
+    }
+
+    // Update the photo with the new contest ID
+    await photo.update({ ContestId: req.body.contestId });
+
+    // Fetch the updated photo with contest information
+    const updatedPhoto = await Photo.findByPk(photo.id, {
+      include: [Contest],
+    });
+
+    res.json({
+      message: "Photo submitted to contest successfully",
+      photo: updatedPhoto,
+    });
+  } catch (error) {
+    console.error("Error submitting photo to contest:", error);
+    res.status(500).json({ error: "Failed to submit photo to contest" });
+  }
+});
+
 export default router;

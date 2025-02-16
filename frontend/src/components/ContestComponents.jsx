@@ -10,6 +10,7 @@ import Counter from "yet-another-react-lightbox/plugins/counter";
 import "yet-another-react-lightbox/plugins/counter.css";
 import styles from "../styles/components/Contest.module.css";
 import formStyles from "../styles/components/Form.module.css";
+import { PhotoSelector } from "./PhotoSelector";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -232,17 +233,57 @@ export function UploadForm({ onUploadSuccess, contestId }) {
   const [file, setFile] = useState(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const { getToken } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
+  const [showPhotoSelector, setShowPhotoSelector] = useState(false);
+  const [showUploadForm, setShowUploadForm] = useState(false);
+  const { getToken } = useAuth();
 
   const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setShowUploadForm(true);
+      // Reset any previous error
+      setError(null);
+    }
+  };
+
+  const handleExistingPhotoSelect = async (photo) => {
+    try {
+      setUploading(true);
+      setError(null);
+      const token = await getToken();
+
+      const response = await fetch(`${API_URL}/photos/${photo.id}/submit`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ contestId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to submit photo to contest");
+      }
+
+      const data = await response.json();
+      setShowPhotoSelector(false);
+      if (onUploadSuccess) onUploadSuccess();
+    } catch (error) {
+      console.error("Submission error:", error);
+      // Show error in a more prominent way
+      alert(error.message || "Failed to submit photo. Please try again.");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleUpload = async (e) => {
     e.preventDefault();
-    if (!file) return alert("Please select a file.");
+    if (!file) return;
 
     setUploading(true);
     setError(null);
@@ -271,54 +312,109 @@ export function UploadForm({ onUploadSuccess, contestId }) {
       setFile(null);
       setTitle("");
       setDescription("");
+      setShowUploadForm(false);
       if (onUploadSuccess) onUploadSuccess();
     } catch (error) {
       console.error("Upload error:", error);
-      setError(error.message || "Failed to upload photo. Please try again.");
+      alert(error.message || "Failed to upload photo. Please try again.");
     } finally {
       setUploading(false);
     }
   };
 
+  const handleCancel = () => {
+    setFile(null);
+    setTitle("");
+    setDescription("");
+    setShowUploadForm(false);
+    setError(null);
+  };
+
   return (
-    <form onSubmit={handleUpload} className="upload-form">
-      <h2>Submit Your Photo</h2>
-      {error && <div className="error-message">{error}</div>}
-      <div className={formStyles.formGroup}>
-        <label className={formStyles.label}>Title</label>
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className={formStyles.input}
-          required
-        />
-      </div>
-      <div className={formStyles.formGroup}>
-        <label className={formStyles.label}>Description</label>
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          className={formStyles.textarea}
-        />
-      </div>
-      <div className={formStyles.formGroup}>
-        <label className={formStyles.label}>Photo</label>
-        <input
-          type="file"
-          onChange={handleFileChange}
-          accept="image/*"
-          className={formStyles.input}
-          required
-        />
-      </div>
-      <button
-        type="submit"
-        disabled={uploading}
-        className={`${formStyles.button} ${formStyles.primaryButton} w-full`}
-      >
-        {uploading ? "Uploading..." : "Submit Photo"}
-      </button>
-    </form>
+    <div className="space-y-6">
+      {!showUploadForm && (
+        <div className="flex gap-4">
+          <button
+            onClick={() => setShowPhotoSelector(true)}
+            className={`${formStyles.button} ${formStyles.secondaryButton} flex-1`}
+            disabled={uploading}
+          >
+            Choose Existing Photo
+          </button>
+          <span className="text-gray-400 flex items-center">or</span>
+          <button
+            type="button"
+            onClick={() => document.getElementById("photoUploadInput").click()}
+            className={`${formStyles.button} ${formStyles.primaryButton} flex-1`}
+            disabled={uploading}
+          >
+            Upload New Photo
+          </button>
+        </div>
+      )}
+
+      <input
+        id="photoUploadInput"
+        type="file"
+        onChange={handleFileChange}
+        accept="image/*"
+        className="hidden"
+      />
+
+      {showUploadForm && (
+        <form onSubmit={handleUpload} className="upload-form">
+          {error && <div className="error-message mb-4">{error}</div>}
+
+          <div className={formStyles.formGroup}>
+            {file && (
+              <div className="mb-6">
+                <img
+                  src={URL.createObjectURL(file)}
+                  alt="Preview"
+                  className="w-full h-64 object-cover rounded-lg"
+                />
+              </div>
+            )}
+            <label className={formStyles.label}>Title</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className={formStyles.input}
+              required
+            />
+            <label className={formStyles.label}>Description</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className={formStyles.textarea}
+            />
+            <div className="flex gap-3 mt-4">
+              <button
+                type="submit"
+                disabled={uploading}
+                className={`${formStyles.button} ${formStyles.primaryButton} flex-1`}
+              >
+                {uploading ? "Uploading..." : "Submit Photo"}
+              </button>
+              <button
+                type="button"
+                onClick={handleCancel}
+                className={`${formStyles.button} ${formStyles.secondaryButton}`}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </form>
+      )}
+
+      <PhotoSelector
+        isOpen={showPhotoSelector}
+        onClose={() => setShowPhotoSelector(false)}
+        onSelect={handleExistingPhotoSelect}
+        contestId={contestId}
+      />
+    </div>
   );
 }
