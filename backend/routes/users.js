@@ -1,10 +1,13 @@
 import express from "express";
+import multer from "multer";
 import User from "../models/User.js";
 import Photo from "../models/Photo.js";
 import Contest from "../models/Contest.js";
 import { requireAuth } from "../middleware/auth.js";
+import { uploadToS3, deleteFromS3 } from "../services/s3Service.js";
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Get user profile
 router.get("/:userId/profile", requireAuth, async (req, res) => {
@@ -70,5 +73,67 @@ router.put("/:userId/profile", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Failed to update user profile" });
   }
 });
+
+// Upload banner image
+router.post(
+  "/:userId/banner",
+  requireAuth,
+  upload.single("banner"),
+  async (req, res) => {
+    try {
+      if (req.params.userId !== req.auth.userId) {
+        return res
+          .status(403)
+          .json({ error: "Not authorized to update this profile" });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      // Get the user and check if they have an existing banner
+      let user = await User.findByPk(req.params.userId);
+
+      // If there's an existing banner image, only delete it if it's in the banners directory
+      if (user && user.bannerImage) {
+        // Check if the current banner is from the banners directory
+        const isBannerImage = user.bannerImage.includes(
+          `/photos/${req.params.userId}/banners/`
+        );
+        if (isBannerImage) {
+          try {
+            await deleteFromS3(user.bannerImage);
+          } catch (deleteError) {
+            console.error("Error deleting old banner:", deleteError);
+            // Continue with upload even if delete fails
+          }
+        }
+      }
+
+      // Upload new banner to S3
+      const s3Url = await uploadToS3(
+        req.file,
+        `photos/${req.auth.userId}/banners`
+      );
+
+      // Create or update user with new banner image
+      if (!user) {
+        user = await User.create({
+          id: req.params.userId,
+          nickname: null,
+          bio: null,
+          bannerImage: s3Url,
+        });
+      } else {
+        await user.update({ bannerImage: s3Url });
+      }
+
+      res.json({ bannerImage: s3Url });
+    } catch (error) {
+      console.error("Error uploading banner:", error);
+      res.status(500).json({ error: "Failed to upload banner image" });
+    }
+  }
+);
 
 export default router;

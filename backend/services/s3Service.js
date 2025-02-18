@@ -12,10 +12,12 @@ const s3Client = new S3Client({
   },
 });
 
-export const uploadToS3 = async (file, userId) => {
+export const uploadToS3 = async (file, customPath) => {
   const fileStream = file.buffer;
   const fileExtension = file.originalname.split(".").pop();
-  const key = `photos/${userId}/${Date.now()}.${fileExtension}`;
+  const key = customPath
+    ? `${customPath}/${Date.now()}.${fileExtension}`
+    : `photos/${file.userId}/${Date.now()}.${fileExtension}`;
 
   const upload = new Upload({
     client: s3Client,

@@ -8,8 +8,12 @@
     color-scheme: light dark;
   }
 
+  html {
+    @apply h-full bg-gradient-to-b from-gray-900 to-gray-800 bg-fixed;
+  }
+
   body {
-    @apply min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-gray-100;
+    @apply min-h-full text-gray-100;
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -161,15 +165,15 @@
   }
 
   .profile-banner {
-    @apply h-64 w-full bg-cover bg-center relative rounded-xl overflow-hidden;
+    @apply h-80 w-full bg-cover bg-center relative rounded-xl overflow-hidden;
   }
 
   .profile-banner-overlay {
-    @apply absolute inset-0 bg-gradient-to-b from-transparent via-gray-900/50 to-gray-900;
+    @apply absolute inset-0 bg-gradient-to-b from-transparent via-gray-900/50 to-gray-900/90;
   }
 
   .profile-content {
-    @apply relative -mt-32 px-8 pb-6;
+    @apply relative -mt-48 px-8 pb-6;
   }
 
   .profile-info {
@@ -177,11 +181,11 @@
   }
 
   .profile-name {
-    @apply text-4xl font-bold text-white mb-2 drop-shadow-lg;
+    @apply text-4xl font-bold text-white mb-4 drop-shadow-lg line-clamp-2;
   }
 
   .profile-bio {
-    @apply text-gray-200 text-lg leading-relaxed mb-4 max-w-2xl;
+    @apply text-gray-200 text-lg leading-relaxed mb-4 max-w-2xl line-clamp-4;
   }
 
   .profile-stats {
@@ -189,9 +193,9 @@
   }
 
   .edit-profile-button {
-    @apply absolute top-4 right-8 px-4 py-2 bg-white/10 hover:bg-white/20 
+    @apply absolute top-6 right-6 px-4 py-2 bg-white/10 hover:bg-white/20 
            backdrop-blur-sm text-white rounded-lg transition-all duration-200
-           border border-white/20 hover:border-white/30;
+           border border-white/20 hover:border-white/30 z-20;
   }
 
   /* Error Messages */
@@ -206,6 +210,39 @@
 
   .sign-in-container p {
     @apply text-gray-400 mb-8;
+  }
+
+  /* Modal Styles */
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4;
+  }
+
+  .modal-content {
+    @apply bg-gray-800/90 backdrop-blur-md rounded-xl p-8 max-w-2xl w-full mx-auto 
+           shadow-2xl border border-gray-700/50 relative overflow-hidden
+           transform transition-all duration-300;
+  }
+
+  .modal-header {
+    @apply flex justify-between items-center mb-6 pb-4 border-b border-gray-700/50;
+  }
+
+  .modal-header h2 {
+    @apply text-2xl font-semibold text-white m-0;
+  }
+
+  .modal-close-button {
+    @apply text-gray-400 hover:text-white transition-colors text-xl 
+           w-8 h-8 flex items-center justify-center rounded-lg
+           hover:bg-white/10;
+  }
+
+  .modal-body {
+    @apply space-y-6 max-h-[calc(100vh-16rem)] overflow-y-auto pr-2 -mr-2;
+  }
+
+  .modal-footer {
+    @apply flex justify-end gap-3 mt-8 pt-4 border-t border-gray-700/50;
   }
 }
 

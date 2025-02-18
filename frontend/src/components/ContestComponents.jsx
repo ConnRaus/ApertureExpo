@@ -376,19 +376,32 @@ export function UploadForm({ onUploadSuccess, contestId }) {
               </div>
             )}
             <label className={formStyles.label}>Title</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className={formStyles.input}
-              required
-            />
+            <div className="relative">
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value.slice(0, 100))}
+                className={formStyles.input}
+                maxLength={100}
+                required
+              />
+              <span className="absolute right-2 bottom-2 text-xs text-gray-500">
+                {title.length}/100
+              </span>
+            </div>
+
             <label className={formStyles.label}>Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className={formStyles.textarea}
-            />
+            <div className="relative">
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value.slice(0, 500))}
+                className={formStyles.textarea}
+                maxLength={500}
+              />
+              <span className="absolute right-2 bottom-2 text-xs text-gray-500">
+                {description.length}/500
+              </span>
+            </div>
             <div className="flex gap-3 mt-4">
               <button
                 type="submit"

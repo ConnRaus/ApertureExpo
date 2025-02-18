@@ -245,6 +245,129 @@ export function UserPhotoGallery({ isEditing }) {
   );
 }
 
+const EditProfileModal = ({
+  isEditing,
+  setIsEditing,
+  nickname,
+  setNickname,
+  bio,
+  setBio,
+  bannerImage,
+  setBannerImage,
+  uploadingBanner,
+  handleBannerUpload,
+  setShowPhotoSelector,
+  handleProfileUpdate,
+}) => {
+  if (!isEditing) return null;
+
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      setIsEditing(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={handleOverlayClick}>
+      <div className="modal-content">
+        <div className="modal-header">
+          <h2>Edit Profile</h2>
+          <button
+            className="modal-close-button"
+            onClick={() => setIsEditing(false)}
+          >
+            ×
+          </button>
+        </div>
+        <div className="modal-body">
+          <div className={formStyles.formGroup}>
+            <label className={formStyles.label}>Nickname</label>
+            <div className="relative">
+              <input
+                type="text"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value.slice(0, 50))}
+                placeholder="Enter nickname"
+                className={formStyles.input}
+                maxLength={50}
+              />
+              <span className="absolute right-2 bottom-2 text-xs text-gray-500">
+                {nickname.length}/50
+              </span>
+            </div>
+
+            <label className={formStyles.label}>Bio</label>
+            <div className="relative">
+              <textarea
+                value={bio}
+                onChange={(e) => setBio(e.target.value.slice(0, 250))}
+                placeholder="Tell us about yourself"
+                className={formStyles.textarea}
+                maxLength={250}
+              />
+              <span className="absolute right-2 bottom-2 text-xs text-gray-500">
+                {bio.length}/250
+              </span>
+            </div>
+
+            <label className={formStyles.label}>Banner Image</label>
+            <div className="flex flex-col gap-3">
+              {bannerImage && (
+                <div className="relative rounded-lg overflow-hidden h-32">
+                  <img
+                    src={bannerImage}
+                    alt="Banner preview"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleBannerUpload}
+                    className="hidden"
+                    id="banner-upload"
+                    disabled={uploadingBanner}
+                  />
+                  <label
+                    htmlFor="banner-upload"
+                    className={`${formStyles.button} ${formStyles.secondaryButton} w-full flex items-center justify-center cursor-pointer`}
+                  >
+                    {uploadingBanner ? "Uploading..." : "Upload Photo"}
+                  </label>
+                </div>
+                <button
+                  onClick={() => setShowPhotoSelector(true)}
+                  className={`${formStyles.button} ${formStyles.secondaryButton} flex-1`}
+                  disabled={uploadingBanner}
+                >
+                  Choose Photo
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button
+            onClick={() => setIsEditing(false)}
+            className={`${formStyles.button} ${formStyles.secondaryButton}`}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleProfileUpdate}
+            className={`${formStyles.button} ${formStyles.primaryButton}`}
+          >
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export function PublicUserGallery({ userId, isOwner }) {
   const [photos, setPhotos] = useState([]);
   const [error, setError] = useState(null);
@@ -255,6 +378,7 @@ export function PublicUserGallery({ userId, isOwner }) {
   const [bio, setBio] = useState("");
   const [bannerImage, setBannerImage] = useState("");
   const [showPhotoSelector, setShowPhotoSelector] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
   const { getToken } = useAuth();
   const defaultBanner = "https://i.redd.it/jlpv3gf20c291.png";
 
@@ -329,9 +453,62 @@ export function PublicUserGallery({ userId, isOwner }) {
     setPhotos(photos.map((p) => (p.id === updatedPhoto.id ? updatedPhoto : p)));
   };
 
-  const handlePhotoSelect = (photo) => {
-    setBannerImage(photo.s3Url);
-    setShowPhotoSelector(false);
+  const handlePhotoSelect = async (photo) => {
+    try {
+      const token = await getToken();
+      // Update the profile with the new banner image
+      const response = await fetch(`${API_URL}/users/${userId}/profile`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          nickname,
+          bio,
+          bannerImage: photo.s3Url,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to update banner image");
+
+      const updatedProfile = await response.json();
+      setBannerImage(updatedProfile.bannerImage);
+      setShowPhotoSelector(false);
+    } catch (error) {
+      console.error("Error handling photo selection:", error);
+      alert("Failed to update banner image. Please try again.");
+    }
+  };
+
+  const handleBannerUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      setUploadingBanner(true);
+      const formData = new FormData();
+      formData.append("banner", file);
+
+      const token = await getToken();
+      const response = await fetch(`${API_URL}/users/${userId}/banner`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error("Failed to upload banner image");
+
+      const data = await response.json();
+      setBannerImage(data.bannerImage);
+    } catch (error) {
+      console.error("Error uploading banner:", error);
+      alert("Failed to upload banner image. Please try again.");
+    } finally {
+      setUploadingBanner(false);
+    }
   };
 
   if (error) {
@@ -353,71 +530,7 @@ export function PublicUserGallery({ userId, isOwner }) {
             backgroundImage: `url(${bannerImage || defaultBanner})`,
           }}
         >
-          <div className="profile-banner-overlay" />
-        </div>
-        <div className="profile-content">
-          <div className="profile-info">
-            {isEditing ? (
-              <div className={formStyles.formGroup}>
-                <label className={formStyles.label}>Nickname</label>
-                <input
-                  type="text"
-                  value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
-                  placeholder="Enter nickname"
-                  className={formStyles.input}
-                />
-                <label className={formStyles.label}>Bio</label>
-                <textarea
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  placeholder="Tell us about yourself"
-                  className={formStyles.textarea}
-                />
-                <label className={formStyles.label}>Banner Image</label>
-                <div className="flex gap-3 mb-4">
-                  <input
-                    type="text"
-                    value={bannerImage}
-                    onChange={(e) => setBannerImage(e.target.value)}
-                    placeholder="Enter banner image URL"
-                    className={`${formStyles.input} flex-1`}
-                  />
-                  <button
-                    onClick={() => setShowPhotoSelector(true)}
-                    className={`${formStyles.button} ${formStyles.secondaryButton} whitespace-nowrap`}
-                  >
-                    Choose Photo
-                  </button>
-                </div>
-                <div className={formStyles.editButtons}>
-                  <button
-                    onClick={handleProfileUpdate}
-                    className={`${formStyles.button} ${formStyles.primaryButton}`}
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={() => setIsEditing(false)}
-                    className={`${formStyles.button} ${formStyles.secondaryButton}`}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <h1 className="profile-name">
-                  {profile?.nickname || `User ${userId}`}
-                </h1>
-                {profile?.bio && <p className="profile-bio">{profile.bio}</p>}
-                <div className="profile-stats">
-                  <span>{photos.length} Photos</span>
-                </div>
-              </>
-            )}
-          </div>
-          {isOwner && !isEditing && (
+          {isOwner && (
             <button
               className="edit-profile-button"
               onClick={() => setIsEditing(true)}
@@ -425,6 +538,18 @@ export function PublicUserGallery({ userId, isOwner }) {
               Edit Profile
             </button>
           )}
+          <div className="profile-banner-overlay" />
+        </div>
+        <div className="profile-content">
+          <div className="profile-info">
+            <h1 className="profile-name">
+              {profile?.nickname || `User ${userId}`}
+            </h1>
+            {profile?.bio && <p className="profile-bio">{profile.bio}</p>}
+            <div className="profile-stats">
+              <span>{photos.length} Photos</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -446,6 +571,22 @@ export function PublicUserGallery({ userId, isOwner }) {
           ))
         )}
       </div>
+
+      <EditProfileModal
+        isEditing={isEditing}
+        setIsEditing={setIsEditing}
+        nickname={nickname}
+        setNickname={setNickname}
+        bio={bio}
+        setBio={setBio}
+        bannerImage={bannerImage}
+        setBannerImage={setBannerImage}
+        uploadingBanner={uploadingBanner}
+        handleBannerUpload={handleBannerUpload}
+        setShowPhotoSelector={setShowPhotoSelector}
+        handleProfileUpdate={handleProfileUpdate}
+      />
+
       <Lightbox
         open={selectedPhotoIndex >= 0}
         close={() => setSelectedPhotoIndex(-1)}

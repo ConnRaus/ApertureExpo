@@ -3,6 +3,7 @@ import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SignedIn, SignedOut, SignInButton, useUser } from "@clerk/clerk-react";
 import Navigation from "./components/Navigation";
+import Footer from "./components/Footer";
 import HomePage from "./pages/HomePage";
 import EventsPage from "./pages/EventsPage";
 import EventDetailPage from "./pages/EventDetailPage";
@@ -12,9 +13,9 @@ import UserProfilePage from "./pages/UserProfilePage";
 function App() {
   return (
     <BrowserRouter>
-      <div className="app">
+      <div className="min-h-screen flex flex-col">
         <Navigation />
-        <main className="main-content">
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
           <SignedIn>
             <Routes>
               <Route path="/" element={<HomePage />} />
@@ -28,15 +29,19 @@ function App() {
             </Routes>
           </SignedIn>
           <SignedOut>
-            <div className="sign-in-container">
-              <h1>Photo Contest App</h1>
-              <p>Please sign in to continue</p>
+            <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
+              <h1 className="text-4xl font-bold mb-4">Photo Contest App</h1>
+              <p className="text-gray-400 mb-8 max-w-md">
+                Join our community of photographers, share your work, and
+                participate in exciting photo contests.
+              </p>
               <SignInButton mode="modal">
                 <button className="sign-in-button">Sign In</button>
               </SignInButton>
             </div>
           </SignedOut>
         </main>
+        <Footer />
       </div>
     </BrowserRouter>
   );

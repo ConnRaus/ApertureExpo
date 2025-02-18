@@ -19,7 +19,7 @@ router.post(
         return res.status(400).json({ error: "No file uploaded" });
       }
 
-      const s3Url = await uploadToS3(req.file, req.auth.userId);
+      const s3Url = await uploadToS3(req.file, `photos/${req.auth.userId}`);
 
       const photo = await Photo.create({
         userId: req.auth.userId,
