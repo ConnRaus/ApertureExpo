@@ -28,8 +28,8 @@ Before you begin, you'll need:
 1. **Clone the repository:**
 
    ```bash
-   git clone git@github.com:ConnRaus/photo-contests.git
-   cd photo-contests
+   git clone git@github.com:ConnRaus/PhotoContests.git
+   cd PhotoContests
    ```
 
 2. **Set up environment variables:**
