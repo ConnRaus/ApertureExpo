@@ -1,13 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
-import Lightbox from "yet-another-react-lightbox";
-import "yet-another-react-lightbox/styles.css";
-import "yet-another-react-lightbox/plugins/thumbnails.css";
-import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
-import Zoom from "yet-another-react-lightbox/plugins/zoom";
-import Counter from "yet-another-react-lightbox/plugins/counter";
-import "yet-another-react-lightbox/plugins/counter.css";
-import { PhotoCard } from "./PhotoCard";
+import { PhotoGrid } from "./PhotoGrid";
+import { PhotoLightbox } from "./PhotoLightbox";
 import { PhotoService } from "../services/api";
 
 export function UserPhotoGallery({ isEditing }) {
@@ -52,48 +46,21 @@ export function UserPhotoGallery({ isEditing }) {
     return <div className="error-message">{error}</div>;
   }
 
-  const lightboxSlides = photos.map((photo) => ({
-    src: photo.s3Url,
-    title: photo.title,
-    description: photo.description,
-  }));
-
   return (
     <div className="photo-gallery">
-      <div className="photo-grid">
-        {photos.length === 0 ? (
-          <p>No photos uploaded yet.</p>
-        ) : (
-          photos.map((photo, index) => (
-            <PhotoCard
-              key={photo.id}
-              photo={photo}
-              onDelete={handleDelete}
-              isOwner={photo.userId === user?.id}
-              onClick={() => setSelectedPhotoIndex(index)}
-              isEditing={isEditing}
-              onEdit={handleEdit}
-            />
-          ))
-        )}
-      </div>
-      <Lightbox
-        open={selectedPhotoIndex >= 0}
-        close={() => setSelectedPhotoIndex(-1)}
-        index={selectedPhotoIndex}
-        slides={lightboxSlides}
-        plugins={[Thumbnails, Zoom, Counter]}
-        carousel={{
-          finite: false,
-          preload: 3,
-          padding: "16px",
-        }}
-        animation={{ fade: 300 }}
-        controller={{ closeOnBackdropClick: true }}
-        render={{
-          buttonPrev: photos.length <= 1 ? () => null : undefined,
-          buttonNext: photos.length <= 1 ? () => null : undefined,
-        }}
+      <PhotoGrid
+        photos={photos}
+        isOwner={true}
+        isEditing={isEditing}
+        onPhotoClick={setSelectedPhotoIndex}
+        onDelete={handleDelete}
+        onEdit={handleEdit}
+      />
+
+      <PhotoLightbox
+        photos={photos}
+        selectedIndex={selectedPhotoIndex}
+        onClose={() => setSelectedPhotoIndex(-1)}
       />
     </div>
   );

@@ -109,6 +109,18 @@ export class ContestService {
     this.getToken = getToken;
   }
 
+  async fetchContests() {
+    const token = await this.getToken();
+    const response = await fetch(`${API_URL}/contests`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+      },
+    });
+    if (!response.ok) throw new Error("Failed to fetch contests");
+    return response.json();
+  }
+
   async fetchContestDetails(contestId) {
     const token = await this.getToken();
     const response = await fetch(`${API_URL}/contests/${contestId}`, {
@@ -119,5 +131,38 @@ export class ContestService {
     });
     if (!response.ok) throw new Error("Failed to fetch contest details");
     return response.json();
+  }
+
+  async submitPhoto(contestId, photoId) {
+    const token = await this.getToken();
+    const response = await fetch(`${API_URL}/photos/${photoId}/submit`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ contestId }),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to submit photo to contest");
+    }
+    return response.json();
+  }
+
+  async uploadNewPhoto(contestId, formData) {
+    const token = await this.getToken();
+    formData.append("contestId", contestId);
+    const response = await fetch(`${API_URL}/upload`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+    if (!response.ok) throw new Error("Failed to upload photo");
+
+    const { photo } = await response.json();
+    return photo;
   }
 }

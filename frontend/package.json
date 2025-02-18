@@ -14,6 +14,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.0",
+    "react-toastify": "^11.0.3",
     "yet-another-react-lightbox": "^3.16.0"
   },
   "devDependencies": {
