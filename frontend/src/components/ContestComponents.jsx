@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import styles from "../styles/components/Contest.module.css";
 import formStyles from "../styles/components/Form.module.css";
 import { PhotoSelector } from "./PhotoSelector";
@@ -138,18 +140,25 @@ export function ContestDetail({
 
 export function UploadForm({ onUploadSuccess, contestId }) {
   const [showPhotoSelector, setShowPhotoSelector] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const contestService = useContestService();
   const form = usePhotoUploadForm();
 
   const handleExistingPhotoSelect = async (photo) => {
     try {
       form.setUploading(true);
+      const toastId = toast.loading("Submitting photo to contest...");
       await contestService.submitPhoto(contestId, photo.id);
+      toast.update(toastId, {
+        render: "Photo submitted successfully!",
+        type: "success",
+        isLoading: false,
+        autoClose: 3000,
+      });
       setShowPhotoSelector(false);
       if (onUploadSuccess) onUploadSuccess();
     } catch (error) {
-      console.error("Submission error:", error);
-      alert(error.message || "Failed to submit photo. Please try again.");
+      toast.error(error.message || "Failed to submit photo. Please try again.");
     } finally {
       form.setUploading(false);
     }
@@ -161,18 +170,41 @@ export function UploadForm({ onUploadSuccess, contestId }) {
 
     try {
       form.setUploading(true);
-      await contestService.uploadNewPhoto(contestId, form.getFormData());
+      setUploadProgress(0);
+      const toastId = toast.loading("Preparing to upload...");
+
+      await contestService.uploadNewPhoto(
+        contestId,
+        form.getFormData(),
+        (progress) => {
+          setUploadProgress(progress);
+          toast.update(toastId, {
+            render: `Uploading: ${Math.round(progress)}%`,
+          });
+        }
+      );
+
+      toast.update(toastId, {
+        render: "Photo uploaded successfully!",
+        type: "success",
+        isLoading: false,
+        autoClose: 3000,
+      });
+
       if (onUploadSuccess) onUploadSuccess();
     } catch (error) {
-      console.error("Upload error:", error);
+      toast.error(error.message || "Failed to upload photo. Please try again.");
       form.setError("Failed to upload photo. Please try again.");
     } finally {
       form.setUploading(false);
+      setUploadProgress(0);
     }
   };
 
   return (
     <div className="space-y-6">
+      <ToastContainer position="bottom-right" />
+
       {!form.showUploadForm && (
         <div className="flex gap-4">
           <button
@@ -237,6 +269,16 @@ export function UploadForm({ onUploadSuccess, contestId }) {
                 {form.description.length}/{form.description.maxLength}
               </span>
             </div>
+
+            {uploadProgress > 0 && uploadProgress < 100 && (
+              <div className="w-full bg-gray-200 rounded-full h-2.5 my-4">
+                <div
+                  className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                ></div>
+              </div>
+            )}
+
             <div className="flex gap-3 mt-4">
               <button
                 type="submit"
@@ -249,6 +291,7 @@ export function UploadForm({ onUploadSuccess, contestId }) {
                 type="button"
                 onClick={form.handleCancel}
                 className={`${formStyles.button} ${formStyles.secondaryButton}`}
+                disabled={form.uploading}
               >
                 Cancel
               </button>

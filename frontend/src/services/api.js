@@ -150,19 +150,36 @@ export class ContestService {
     return response.json();
   }
 
-  async uploadNewPhoto(contestId, formData) {
+  async uploadNewPhoto(contestId, formData, onProgress) {
     const token = await this.getToken();
     formData.append("contestId", contestId);
-    const response = await fetch(`${API_URL}/upload`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData,
-    });
-    if (!response.ok) throw new Error("Failed to upload photo");
 
-    const { photo } = await response.json();
-    return photo;
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.addEventListener("progress", (event) => {
+        if (event.lengthComputable && onProgress) {
+          const progress = (event.loaded / event.total) * 100;
+          onProgress(progress);
+        }
+      });
+
+      xhr.addEventListener("load", () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          const { photo } = JSON.parse(xhr.responseText);
+          resolve(photo);
+        } else {
+          reject(new Error("Failed to upload photo"));
+        }
+      });
+
+      xhr.addEventListener("error", () => {
+        reject(new Error("Failed to upload photo"));
+      });
+
+      xhr.open("POST", `${API_URL}/upload`);
+      xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+      xhr.send(formData);
+    });
   }
 }
