@@ -9,7 +9,6 @@ export function PhotoCard({
   onDelete,
   isOwner,
   onClick,
-  isEditing,
   onEdit,
   hideProfileLink = false,
 }) {
@@ -41,18 +40,43 @@ export function PhotoCard({
   };
 
   return (
-    <div className="photo-card">
-      {isOwner && isEditing && (
-        <button
-          className="delete-button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(photo.id);
-          }}
-          title="Delete photo"
-        >
-          ×
-        </button>
+    <div className="photo-card relative group">
+      {isOwner && (
+        <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+          <button
+            className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg hover:bg-blue-600"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsEditingDetails(true);
+            }}
+            title="Edit photo details"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              className="w-4 h-4"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+              />
+            </svg>
+          </button>
+          <button
+            className="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg hover:bg-red-600"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(photo.id);
+            }}
+            title="Delete photo"
+          >
+            ×
+          </button>
+        </div>
       )}
       <div
         className="photo-image"
@@ -61,7 +85,7 @@ export function PhotoCard({
         <img src={photo.s3Url} alt={photo.title} onError={handleImageError} />
       </div>
       <div className="photo-info">
-        {isEditingDetails && isEditing ? (
+        {isEditingDetails ? (
           <div className={formStyles.formGroup}>
             <label className={formStyles.label}>Title</label>
             <input
@@ -108,14 +132,6 @@ export function PhotoCard({
               <p className="upload-date">
                 Uploaded {new Date(photo.createdAt).toLocaleDateString()}
               </p>
-            )}
-            {isOwner && isEditing && (
-              <button
-                className={`${formStyles.button} ${formStyles.primaryButton} mt-4`}
-                onClick={() => setIsEditingDetails(true)}
-              >
-                Edit Details
-              </button>
             )}
           </>
         )}
