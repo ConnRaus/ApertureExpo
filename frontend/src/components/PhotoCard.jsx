@@ -82,7 +82,13 @@ export function PhotoCard({
         className="photo-image"
         onClick={() => !isEditingDetails && onClick(photo)}
       >
-        <img src={photo.s3Url} alt={photo.title} onError={handleImageError} />
+        <img
+          src={photo.thumbnailUrl}
+          alt={photo.title}
+          onError={handleImageError}
+          loading="lazy"
+          data-full-image={photo.s3Url}
+        />
       </div>
       <div className="photo-info">
         {isEditingDetails ? (

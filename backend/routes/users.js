@@ -113,7 +113,8 @@ router.post(
       // Upload new banner to S3
       const s3Url = await uploadToS3(
         req.file,
-        `photos/${req.auth.userId}/banners`
+        `photos/${req.auth.userId}/banners`,
+        { generateThumbnail: false }
       );
 
       // Create or update user with new banner image

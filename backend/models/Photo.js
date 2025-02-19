@@ -22,6 +22,10 @@ const Photo = sequelize.define("Photo", {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  thumbnailUrl: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
   ContestId: {
     type: DataTypes.UUID,
     allowNull: true,

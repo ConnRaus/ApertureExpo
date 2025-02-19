@@ -29,7 +29,7 @@ router.get("/contests", async (req, res) => {
       include: [
         {
           model: Photo,
-          attributes: ["id", "title", "s3Url", "userId"],
+          attributes: ["id", "title", "s3Url", "thumbnailUrl", "userId"],
         },
       ],
       order: [["createdAt", "DESC"]],
@@ -48,7 +48,15 @@ router.get("/contests/:id", async (req, res) => {
       include: [
         {
           model: Photo,
-          attributes: ["id", "title", "s3Url", "userId", "createdAt"],
+          attributes: [
+            "id",
+            "title",
+            "s3Url",
+            "thumbnailUrl",
+            "userId",
+            "createdAt",
+            "description",
+          ],
         },
       ],
     });

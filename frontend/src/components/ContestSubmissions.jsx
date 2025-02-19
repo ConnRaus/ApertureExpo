@@ -10,10 +10,11 @@ function ContestPhotoCard({ photo, onClick }) {
   return (
     <div className={styles.contestPhotoCard} onClick={() => onClick(photo)}>
       <img
-        src={photo.s3Url}
+        src={photo.thumbnailUrl}
         alt="Contest submission"
         onError={handleImageError}
         className={styles.contestSubmissionImage}
+        loading="lazy"
       />
     </div>
   );

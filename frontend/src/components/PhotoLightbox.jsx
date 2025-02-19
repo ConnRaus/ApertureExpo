@@ -10,6 +10,7 @@ import "yet-another-react-lightbox/plugins/counter.css";
 export function PhotoLightbox({ photos, selectedIndex, onClose }) {
   const slides = photos.map((photo) => ({
     src: photo.s3Url,
+    thumbnail: photo.thumbnailUrl,
     title: photo.title,
     description: photo.description,
   }));
@@ -25,6 +26,14 @@ export function PhotoLightbox({ photos, selectedIndex, onClose }) {
         finite: false,
         preload: 3,
         padding: "16px",
+      }}
+      thumbnails={{
+        position: "bottom",
+        width: 120,
+        height: 80,
+        border: 1,
+        borderRadius: 4,
+        padding: 4,
       }}
       animation={{ fade: 300 }}
       controller={{ closeOnBackdropClick: true }}
