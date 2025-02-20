@@ -19,12 +19,30 @@ export function PhotoUploadModal({
   const descriptionRef = useRef(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [photoSelected, setPhotoSelected] = useState(false);
+  const [showError, setShowError] = useState(false);
   const contestService = useContestService();
 
-  const handleUpload = async (e) => {
+  const handleUpload = (e) => {
     e.preventDefault();
-    if (!fileRef.current?.files[0]) return;
 
+    // Check if a file is selected
+    if (!photoSelected || !fileRef.current?.files[0]) {
+      setShowError(true);
+      toast.error("Please select a photo to upload");
+      return;
+    }
+
+    // Check if title is filled out
+    if (!titleRef.current?.value) {
+      toast.error("Please enter a title for your photo");
+      return;
+    }
+
+    uploadPhoto();
+  };
+
+  const uploadPhoto = async () => {
     try {
       setUploading(true);
       setUploadProgress(0);
@@ -56,6 +74,26 @@ export function PhotoUploadModal({
     } finally {
       setUploading(false);
       setUploadProgress(0);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    fileRef.current = e.target;
+    setPhotoSelected(!!file);
+    setShowError(false);
+
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const preview = document.getElementById("imagePreview");
+        preview.src = e.target.result;
+        preview.style.display = "block";
+      };
+      reader.readAsDataURL(file);
+    } else {
+      const preview = document.getElementById("imagePreview");
+      preview.style.display = "none";
     }
   };
 
@@ -99,35 +137,29 @@ export function PhotoUploadModal({
             </button>
           </div>
 
-          <form onSubmit={handleUpload} className={formStyles.form}>
+          <form onSubmit={handleUpload} className={formStyles.form} noValidate>
             <div className={formStyles.formGroup}>
               <input
                 type="file"
-                onChange={(e) => {
-                  fileRef.current = e.target;
-                  if (e.target.files[0]) {
-                    // Show preview
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                      const preview = document.getElementById("imagePreview");
-                      preview.src = e.target.result;
-                      preview.style.display = "block";
-                    };
-                    reader.readAsDataURL(e.target.files[0]);
-                  }
-                }}
+                onChange={handleFileChange}
                 accept="image/*"
                 className="hidden"
                 id="photoUpload"
-                required
               />
 
-              <label
-                htmlFor="photoUpload"
-                className={`${formStyles.button} ${formStyles.secondaryButton} w-full flex items-center justify-center cursor-pointer mb-4`}
-              >
-                Select Photo
-              </label>
+              <div className="mb-4">
+                <label
+                  htmlFor="photoUpload"
+                  className={`${formStyles.button} ${formStyles.secondaryButton} w-full flex items-center justify-center cursor-pointer`}
+                >
+                  {photoSelected ? "Change Photo" : "Select Photo"}
+                </label>
+                {showError && (
+                  <p className="mt-2 text-red-400 text-sm">
+                    Please select a photo to upload
+                  </p>
+                )}
+              </div>
 
               <img
                 id="imagePreview"

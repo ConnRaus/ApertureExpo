@@ -14,7 +14,13 @@ const s3Client = new S3Client({
 });
 
 const processAndUploadImage = async (buffer, options) => {
-  const { maxWidth, maxHeight, quality, isThumbnail = false } = options;
+  const {
+    maxWidth,
+    maxHeight,
+    quality,
+    isThumbnail = false,
+    maxSizeInMB = 2,
+  } = options;
 
   // Get the image metadata to determine dimensions
   const metadata = await sharp(buffer).metadata();
@@ -23,31 +29,22 @@ const processAndUploadImage = async (buffer, options) => {
   // Calculate the aspect ratio
   const aspectRatio = originalWidth / originalHeight;
 
-  // Determine new dimensions while maintaining aspect ratio
-  let newWidth, newHeight;
+  // Calculate scaling factors for both dimensions
+  const widthScale = maxWidth / originalWidth;
+  const heightScale = maxHeight / originalHeight;
 
-  if (aspectRatio > 1) {
-    // Image is wider than tall (landscape or panorama)
-    if (originalWidth > maxWidth) {
-      newWidth = maxWidth;
-      newHeight = Math.round(maxWidth / aspectRatio);
-    } else {
-      newWidth = originalWidth;
-      newHeight = originalHeight;
-    }
-  } else {
-    // Image is taller than wide (portrait)
-    if (originalHeight > maxHeight) {
-      newHeight = maxHeight;
-      newWidth = Math.round(maxHeight * aspectRatio);
-    } else {
-      newWidth = originalWidth;
-      newHeight = originalHeight;
-    }
-  }
+  // Use the larger scaling factor to ensure the smaller dimension fits within bounds
+  const scale = Math.max(widthScale, heightScale);
 
-  // Only resize if the image is larger than our target dimensions
-  const shouldResize = originalWidth > newWidth || originalHeight > newHeight;
+  // Only scale down, never up
+  const finalScale = Math.min(scale, 1);
+
+  // Calculate new dimensions
+  const newWidth = Math.round(originalWidth * finalScale);
+  const newHeight = Math.round(originalHeight * finalScale);
+
+  // Only resize if the image needs to be scaled down
+  const shouldResize = finalScale < 1;
 
   let processedImage = sharp(buffer);
 
@@ -60,14 +57,38 @@ const processAndUploadImage = async (buffer, options) => {
     });
   }
 
-  const processedBuffer = await processedImage
-    .jpeg({
-      quality,
-      mozjpeg: true,
-      // Force better chroma subsampling for thumbnails
-      chromaSubsampling: isThumbnail ? "4:4:4" : "4:2:0",
-    })
-    .toBuffer();
+  // Progressive quality reduction to meet size target
+  let currentQuality = quality;
+  let processedBuffer;
+  const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
+
+  do {
+    processedBuffer = await processedImage
+      .jpeg({
+        quality: currentQuality,
+        mozjpeg: true,
+        // Force better chroma subsampling for thumbnails
+        chromaSubsampling: isThumbnail ? "4:4:4" : "4:2:0",
+      })
+      .toBuffer();
+
+    // Reduce quality by 5% each iteration if we're over the size limit
+    if (processedBuffer.length > maxSizeInBytes) {
+      currentQuality = Math.max(currentQuality - 5, 30); // Don't go below 30% quality
+    }
+  } while (processedBuffer.length > maxSizeInBytes && currentQuality > 30);
+
+  // If we still exceed the size limit at minimum quality, use more aggressive compression
+  if (processedBuffer.length > maxSizeInBytes) {
+    processedBuffer = await processedImage
+      .jpeg({
+        quality: 30,
+        mozjpeg: true,
+        chromaSubsampling: "4:2:0",
+        force: true,
+      })
+      .toBuffer();
+  }
 
   return processedBuffer;
 };
@@ -83,11 +104,12 @@ export const uploadToS3 = async (
   const basePath = customPath || `photos/${file.userId}`;
 
   try {
-    // Process main image (max 4K resolution, 85% quality)
+    // Process main image (max 4K resolution, 85% quality, max 2MB)
     const mainBuffer = await processAndUploadImage(fileStream, {
       maxWidth: 3840,
       maxHeight: 2160,
       quality: 85,
+      maxSizeInMB: 2,
       isThumbnail: false,
     });
 
@@ -108,11 +130,12 @@ export const uploadToS3 = async (
       return result.Location;
     }
 
-    // Process thumbnail (max 600px on longest side, 90% quality)
+    // Process thumbnail (max 600px on longest side, 80% quality, max 100KB)
     const thumbnailBuffer = await processAndUploadImage(fileStream, {
       maxWidth: 600,
       maxHeight: 600,
       quality: 80,
+      maxSizeInMB: 0.1,
       isThumbnail: true,
     });
 
