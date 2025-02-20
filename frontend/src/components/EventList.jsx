@@ -28,18 +28,20 @@ export function EventList() {
   }
 
   return (
-    <div className="contest-grid">
-      {contests.length === 0 ? (
-        <p>No active contests at the moment. Check back later!</p>
-      ) : (
-        contests.map((contest) => (
-          <ContestCard
-            key={contest.id}
-            contest={contest}
-            onClick={() => navigate(`/events/${contest.id}`)}
-          />
-        ))
-      )}
+    <div className="mt-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {contests.length === 0 ? (
+          <p>No active contests at the moment. Check back later!</p>
+        ) : (
+          contests.map((contest) => (
+            <ContestCard
+              key={contest.id}
+              contest={contest}
+              onClick={() => navigate(`/events/${contest.id}`)}
+            />
+          ))
+        )}
+      </div>
     </div>
   );
 }

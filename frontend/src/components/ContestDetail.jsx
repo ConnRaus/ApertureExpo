@@ -47,22 +47,24 @@ export function ContestDetail({
         bannerImageUrl={contest.bannerImageUrl}
       />
 
-      {!showUploadForm ? (
-        <button
-          className="sign-in-button mb-8"
-          onClick={() => setShowUploadForm(true)}
-        >
-          Submit a Photo
-        </button>
-      ) : (
-        <UploadForm
-          contestId={contestId}
-          onUploadSuccess={() => {
-            setShowUploadForm(false);
-            fetchContestDetails();
-          }}
-        />
-      )}
+      <div className="mb-8">
+        {!showUploadForm ? (
+          <button
+            className="sign-in-button"
+            onClick={() => setShowUploadForm(true)}
+          >
+            Submit a Photo
+          </button>
+        ) : (
+          <UploadForm
+            contestId={contestId}
+            onUploadSuccess={() => {
+              setShowUploadForm(false);
+              fetchContestDetails();
+            }}
+          />
+        )}
+      </div>
 
       <ContestSubmissions photos={contest.Photos || []} />
     </div>

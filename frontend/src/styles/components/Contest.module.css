@@ -37,7 +37,7 @@
 }
 
 .bannerSection img {
-  @apply w-full h-64 object-cover;
+  @apply w-full h-48 sm:h-64 object-cover;
 }
 
 .bannerOverlay {
@@ -45,19 +45,22 @@
 }
 
 .contestHeader {
-  @apply absolute bottom-0 left-0 right-0 p-8 text-white;
+  @apply absolute bottom-0 left-0 right-0 p-4 sm:p-6 md:p-8 text-white;
 }
 
 .contestHeader h1 {
-  @apply text-4xl font-bold mb-4;
+  @apply text-2xl sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-4 
+         break-words hyphens-auto
+         [text-wrap:balance];
 }
 
 .contestHeader p {
-  @apply text-lg text-gray-200 max-w-2xl;
+  @apply text-base sm:text-lg text-gray-200 max-w-2xl 
+         line-clamp-2 sm:line-clamp-none;
 }
 
 .contestMeta {
-  @apply flex items-center gap-4 mt-4 text-sm text-gray-300;
+  @apply flex flex-wrap items-center gap-2 sm:gap-4 mt-2 sm:mt-4 text-sm text-gray-300;
 }
 
 .statusBadge {
@@ -65,7 +68,7 @@
 }
 
 .dateRange {
-  @apply flex items-center gap-2;
+  @apply flex items-center gap-2 text-xs sm:text-sm;
 }
 
 /* Contest Submissions Grid */
