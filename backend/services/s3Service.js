@@ -112,7 +112,7 @@ export const uploadToS3 = async (
     const thumbnailBuffer = await processAndUploadImage(fileStream, {
       maxWidth: 600,
       maxHeight: 600,
-      quality: 90,
+      quality: 80,
       isThumbnail: true,
     });
 
