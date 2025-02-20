@@ -21,6 +21,7 @@ export function PhotoUploadModal({
   const [uploading, setUploading] = useState(false);
   const [photoSelected, setPhotoSelected] = useState(false);
   const [showError, setShowError] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const contestService = useContestService();
 
   const handleUpload = (e) => {
@@ -79,6 +80,10 @@ export function PhotoUploadModal({
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
+    if (file && !file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
     fileRef.current = e.target;
     setPhotoSelected(!!file);
     setShowError(false);
@@ -95,6 +100,48 @@ export function PhotoUploadModal({
       const preview = document.getElementById("imagePreview");
       preview.style.display = "none";
     }
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please drop an image file");
+      return;
+    }
+
+    // Create a new DataTransfer object and add our file
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(file);
+
+    // Create a new file input event
+    const fileInput = document.getElementById("photoUpload");
+    fileInput.files = dataTransfer.files;
+
+    // Trigger the file change handler
+    handleFileChange({ target: fileInput });
   };
 
   const modalContent = (
@@ -147,15 +194,45 @@ export function PhotoUploadModal({
                 id="photoUpload"
               />
 
-              <div className="mb-4">
+              <div
+                className={`mb-4 border-2 border-dashed rounded-xl p-8 text-center transition-colors duration-200 ${
+                  isDragging
+                    ? "border-indigo-500 bg-indigo-500/10"
+                    : "border-gray-600 hover:border-gray-500"
+                }`}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+              >
                 <label
                   htmlFor="photoUpload"
-                  className={`${formStyles.button} ${formStyles.secondaryButton} w-full flex items-center justify-center cursor-pointer`}
+                  className="flex flex-col items-center justify-center cursor-pointer"
                 >
-                  {photoSelected ? "Change Photo" : "Select Photo"}
+                  <svg
+                    className={`w-12 h-12 mb-4 transition-colors duration-200 ${
+                      isDragging ? "text-indigo-400" : "text-gray-400"
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                  <p className="text-lg mb-2">
+                    {photoSelected ? "Change Photo" : "Drop your photo here"}
+                  </p>
+                  <p className="text-sm text-gray-400">
+                    or click to select a file
+                  </p>
                 </label>
                 {showError && (
-                  <p className="mt-2 text-red-400 text-sm">
+                  <p className="mt-4 text-red-400 text-sm">
                     Please select a photo to upload
                   </p>
                 )}
