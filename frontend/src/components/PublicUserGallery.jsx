@@ -6,10 +6,12 @@ import { EditProfileModal } from "./EditProfileModal";
 import { PhotoSelector } from "./PhotoSelector";
 import { ProfileHeader } from "./ProfileHeader";
 import { UserService, PhotoService } from "../services/api";
+import "../styles/loading.css";
 
 export function PublicUserGallery({ userId, isOwner }) {
   const [photos, setPhotos] = useState([]);
   const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(-1);
   const [profile, setProfile] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -28,6 +30,7 @@ export function PublicUserGallery({ userId, isOwner }) {
   }, [userId]);
 
   const fetchUserProfile = async () => {
+    setIsLoading(true);
     try {
       const data = await userService.fetchUserProfile(userId);
       setPhotos(data.photos || []);
@@ -38,6 +41,8 @@ export function PublicUserGallery({ userId, isOwner }) {
     } catch (error) {
       console.error("Error fetching user profile:", error);
       setError("Failed to load user profile");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -108,6 +113,26 @@ export function PublicUserGallery({ userId, isOwner }) {
 
   if (error) {
     return <div className="error-message">{error}</div>;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-skeleton">
+          <div className="banner-skeleton"></div>
+          {/* Photo grid skeleton - matching PhotoGrid's responsive layout */}
+          <div className="photo-grid mt-8">
+            {[...Array(6)].map((_, index) => (
+              <div key={index} className="photo-card-skeleton">
+                <div className="aspect-square rounded-lg overflow-hidden">
+                  <div className="banner-skeleton h-full"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

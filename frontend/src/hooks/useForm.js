@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 export function useFormField(initialValue = "", maxLength = Infinity) {
   const [value, setValue] = useState(initialValue);
@@ -17,41 +17,44 @@ export function useFormField(initialValue = "", maxLength = Infinity) {
 }
 
 export function usePhotoUploadForm(onSuccess) {
-  const [file, setFile] = useState(null);
+  // Use useRef for file to prevent re-renders
+  const fileRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
   const [showUploadForm, setShowUploadForm] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const title = useFormField("", 100);
   const description = useFormField("", 500);
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
-      setFile(selectedFile);
+      fileRef.current = selectedFile;
       setShowUploadForm(true);
       setError(null);
     }
   };
 
   const handleCancel = () => {
-    setFile(null);
+    fileRef.current = null;
     title.setValue("");
     description.setValue("");
     setShowUploadForm(false);
     setError(null);
+    setUploadProgress(0);
   };
 
   const getFormData = () => {
     const formData = new FormData();
-    formData.append("photo", file);
+    formData.append("photo", fileRef.current);
     formData.append("title", title.value);
     formData.append("description", description.value);
     return formData;
   };
 
   return {
-    file,
-    setFile,
+    file: fileRef.current,
+    handleFileChange,
     title,
     description,
     uploading,
@@ -60,7 +63,8 @@ export function usePhotoUploadForm(onSuccess) {
     setError,
     showUploadForm,
     setShowUploadForm,
-    handleFileChange,
+    uploadProgress,
+    setUploadProgress,
     handleCancel,
     getFormData,
   };
