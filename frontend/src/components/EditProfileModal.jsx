@@ -52,9 +52,12 @@ export function EditProfileModal({
               </span>
             </div>
 
-            <label className={formStyles.label}>Bio</label>
+            <label className={formStyles.label} htmlFor="bio">
+              Bio
+            </label>
             <div className="relative">
               <textarea
+                id="bio"
                 value={bio}
                 onChange={(e) => setBio(e.target.value.slice(0, 250))}
                 placeholder="Tell us about yourself"

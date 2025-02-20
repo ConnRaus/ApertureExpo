@@ -20,7 +20,14 @@
 }
 
 .label {
-  @apply block text-sm font-medium text-gray-300 mb-2;
+  @apply block text-sm font-medium text-gray-300;
+}
+
+/* Add extra spacing for description labels */
+.label[for="description"],
+.label[for="bio"],
+label:has(+ textarea) {
+  @apply mt-1;
 }
 
 .formGroup {
