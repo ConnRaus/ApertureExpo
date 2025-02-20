@@ -24,6 +24,62 @@ export function PhotoUploadModal({
   const [isDragging, setIsDragging] = useState(false);
   const contestService = useContestService();
 
+  // List of accepted image MIME types and extensions
+  const ACCEPTED_TYPES = {
+    // Standard web formats
+    "image/jpeg": [".jpg", ".jpeg"],
+    "image/png": [".png"],
+    "image/webp": [".webp"],
+    "image/heic": [".heic"],
+    // Common RAW formats
+    "image/x-canon-cr2": [".cr2"],
+    "image/x-nikon-nef": [".nef"],
+    "image/x-sony-arw": [".arw"],
+    "image/x-adobe-dng": [".dng"],
+    "image/x-olympus-orf": [".orf"],
+    "image/x-panasonic-rw2": [".rw2"],
+    "image/x-fuji-raf": [".raf"],
+    "image/x-nikon-nrw": [".nrw"],
+  };
+
+  const isAcceptedFileType = (file) => {
+    // Check MIME type first
+    if (ACCEPTED_TYPES[file.type]) return true;
+
+    // If MIME type check fails, check file extension
+    const extension = "." + file.name.split(".").pop().toLowerCase();
+    return Object.values(ACCEPTED_TYPES).flat().includes(extension);
+  };
+
+  const validateAndProcessFile = (file) => {
+    if (!file) return false;
+
+    if (!isAcceptedFileType(file)) {
+      const acceptedExtensions = Object.values(ACCEPTED_TYPES)
+        .flat()
+        .join(", ");
+      toast.error(
+        `Unsupported file type. Please upload one of the following: ${acceptedExtensions}`
+      );
+      return false;
+    }
+
+    // For now, only allow web-compatible formats
+    // In the future, we could add RAW conversion here
+    if (
+      !file.type.startsWith("image/jpeg") &&
+      !file.type.startsWith("image/png") &&
+      !file.type.startsWith("image/webp")
+    ) {
+      toast.error(
+        "Currently only JPEG, PNG, and WebP files are supported. RAW file support coming soon!"
+      );
+      return false;
+    }
+
+    return true;
+  };
+
   const handleUpload = (e) => {
     e.preventDefault();
 
@@ -80,26 +136,24 @@ export function PhotoUploadModal({
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (file && !file.type.startsWith("image/")) {
-      toast.error("Please select an image file");
+    if (!file) return;
+
+    if (!validateAndProcessFile(file)) {
+      e.target.value = ""; // Reset file input
       return;
     }
+
     fileRef.current = e.target;
-    setPhotoSelected(!!file);
+    setPhotoSelected(true);
     setShowError(false);
 
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const preview = document.getElementById("imagePreview");
-        preview.src = e.target.result;
-        preview.style.display = "block";
-      };
-      reader.readAsDataURL(file);
-    } else {
+    const reader = new FileReader();
+    reader.onload = (e) => {
       const preview = document.getElementById("imagePreview");
-      preview.style.display = "none";
-    }
+      preview.src = e.target.result;
+      preview.style.display = "block";
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleDragEnter = (e) => {
@@ -127,8 +181,7 @@ export function PhotoUploadModal({
     const file = e.dataTransfer.files[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please drop an image file");
+    if (!validateAndProcessFile(file)) {
       return;
     }
 

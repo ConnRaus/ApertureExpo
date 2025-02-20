@@ -1,8 +1,8 @@
 import express from "express";
 import multer from "multer";
 import { uploadToS3, deleteFromS3 } from "../services/s3Service.js";
-import Photo from "../models/Photo.js";
-import Contest from "../models/Contest.js";
+import Photo from "../database/models/Photo.js";
+import Contest from "../database/models/Contest.js";
 import { requireAuth } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -34,7 +34,12 @@ router.post(
       });
 
       const createdPhoto = await Photo.findByPk(photo.id, {
-        include: [Contest],
+        include: [
+          {
+            model: Contest,
+            as: "Contest",
+          },
+        ],
       });
 
       res.json({ message: "Photo uploaded successfully", photo: createdPhoto });
@@ -141,7 +146,12 @@ router.post("/photos/:id/submit", requireAuth, async (req, res) => {
 
     // Fetch the updated photo with contest information
     const updatedPhoto = await Photo.findByPk(photo.id, {
-      include: [Contest],
+      include: [
+        {
+          model: Contest,
+          as: "Contest",
+        },
+      ],
     });
 
     res.json({

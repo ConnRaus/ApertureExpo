@@ -1,7 +1,7 @@
 import express from "express";
-import Contest from "../models/Contest.js";
-import Photo from "../models/Photo.js";
 import { requireAuth } from "../middleware/auth.js";
+import Contest from "../database/models/Contest.js";
+import Photo from "../database/models/Photo.js";
 
 const router = express.Router();
 
@@ -29,6 +29,7 @@ router.get("/contests", async (req, res) => {
       include: [
         {
           model: Photo,
+          as: "Photos",
           attributes: ["id", "title", "s3Url", "thumbnailUrl", "userId"],
         },
       ],
@@ -48,6 +49,7 @@ router.get("/contests/:id", async (req, res) => {
       include: [
         {
           model: Photo,
+          as: "Photos",
           attributes: [
             "id",
             "title",

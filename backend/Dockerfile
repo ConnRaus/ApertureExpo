@@ -14,5 +14,5 @@ COPY . .
 # Expose port 3000
 EXPOSE 3000
 
-# Start the backend
-CMD ["node", "server.js"]
+# Start the backend using npm start
+CMD ["npm", "start"]

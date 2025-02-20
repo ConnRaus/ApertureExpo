@@ -1,8 +1,8 @@
 import express from "express";
 import multer from "multer";
-import User from "../models/User.js";
-import Photo from "../models/Photo.js";
-import Contest from "../models/Contest.js";
+import User from "../database/models/User.js";
+import Photo from "../database/models/Photo.js";
+import Contest from "../database/models/Contest.js";
 import { requireAuth } from "../middleware/auth.js";
 import { uploadToS3, deleteFromS3 } from "../services/s3Service.js";
 
@@ -26,7 +26,12 @@ router.get("/:userId/profile", requireAuth, async (req, res) => {
     const photos = await Photo.findAll({
       where: { userId: req.params.userId },
       order: [["createdAt", "DESC"]],
-      include: [Contest],
+      include: [
+        {
+          model: Contest,
+          as: "Contest",
+        },
+      ],
     });
 
     res.json({

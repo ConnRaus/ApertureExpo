@@ -3,9 +3,7 @@ import express from "express";
 import { ClerkExpressWithAuth } from "@clerk/clerk-sdk-node";
 import dotenv from "dotenv";
 import cors from "cors";
-import sequelize from "./config/database.js";
-import Contest from "./models/Contest.js";
-import Photo from "./models/Photo.js";
+import { initializeDatabase } from "./database/index.js";
 import photoRoutes from "./routes/photos.js";
 import contestRoutes from "./routes/contests.js";
 import userRoutes from "./routes/users.js";
@@ -15,26 +13,18 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Configure CORS
-const defaultOrigins = [
-  "http://localhost",
-  "http://localhost:80",
-  "http://127.0.0.1",
-  "http://127.0.0.1:80",
-];
-
-const corsOptions = {
-  origin: process.env.CORS_ORIGINS
-    ? [...defaultOrigins, ...process.env.CORS_ORIGINS.split(",")]
-    : defaultOrigins,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true,
-};
-
-app.use(cors(corsOptions));
+// Middleware
 app.use(express.json());
-app.options("*", cors(corsOptions));
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGINS?.split(",") || [
+      "http://localhost",
+      "http://localhost:80",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
 // Clerk middleware setup
 app.use((req, res, next) => {
@@ -52,32 +42,23 @@ app.use(
   })
 );
 
-// Initialize database and associations
-const initializeDatabase = async () => {
-  try {
-    Contest.hasMany(Photo);
-    Photo.belongsTo(Contest);
-    await sequelize.sync({ alter: true });
-    console.log("Database synchronized");
-  } catch (error) {
-    console.error("Database initialization error:", error);
-    process.exit(1);
-  }
-};
-
-initializeDatabase();
-
 // Routes
 app.use("/", photoRoutes);
 app.use("/", contestRoutes);
 app.use("/users", userRoutes);
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error("Server error:", err);
-  res.status(500).json({ error: err.message || "Something broke!" });
-});
+// Initialize database and start server
+async function startServer() {
+  try {
+    await initializeDatabase();
 
-app.listen(port, () => {
-  console.log(`Backend running on port ${port}`);
-});
+    app.listen(port, () => {
+      console.log(`Server is running on port ${port}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
+}
+
+startServer();

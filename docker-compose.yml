@@ -18,8 +18,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: >
-      sh -c "npm run setup && npm start"
+    command: npm start
     restart: unless-stopped
 
   frontend:
