@@ -1,12 +1,12 @@
 import express from "express";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth } from "@clerk/express";
 import Contest from "../database/models/Contest.js";
 import Photo from "../database/models/Photo.js";
 
 const router = express.Router();
 
 // Create contest
-router.post("/contests", requireAuth, async (req, res) => {
+router.post("/contests", requireAuth(), async (req, res) => {
   try {
     const contest = await Contest.create({
       title: req.body.title,

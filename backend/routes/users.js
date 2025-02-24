@@ -3,14 +3,14 @@ import multer from "multer";
 import User from "../database/models/User.js";
 import Photo from "../database/models/Photo.js";
 import Contest from "../database/models/Contest.js";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth } from "@clerk/express";
 import { uploadToS3, deleteFromS3 } from "../services/s3Service.js";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 // Get user profile
-router.get("/:userId/profile", requireAuth, async (req, res) => {
+router.get("/:userId/profile", requireAuth(), async (req, res) => {
   try {
     let user = await User.findByPk(req.params.userId);
 
@@ -45,7 +45,7 @@ router.get("/:userId/profile", requireAuth, async (req, res) => {
 });
 
 // Update user profile
-router.put("/:userId/profile", requireAuth, async (req, res) => {
+router.put("/:userId/profile", requireAuth(), async (req, res) => {
   try {
     if (req.params.userId !== req.auth.userId) {
       return res
@@ -82,7 +82,7 @@ router.put("/:userId/profile", requireAuth, async (req, res) => {
 // Upload banner image
 router.post(
   "/:userId/banner",
-  requireAuth,
+  requireAuth(),
   upload.single("banner"),
   async (req, res) => {
     try {

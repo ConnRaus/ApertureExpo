@@ -1,6 +1,6 @@
 // backend/server.js
 import express from "express";
-import { ClerkExpressWithAuth } from "@clerk/clerk-sdk-node";
+import { clerkMiddleware, requireAuth } from "@clerk/express";
 import dotenv from "dotenv";
 import cors from "cors";
 import { initializeDatabase } from "./database/index.js";
@@ -27,25 +27,12 @@ app.use(
 );
 
 // Clerk middleware setup
-app.use((req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (authHeader) {
-    req.headers.authorization = authHeader.replace("Bearer ", "");
-  }
-  next();
-});
+app.use(clerkMiddleware());
 
-app.use(
-  ClerkExpressWithAuth({
-    publishableKey: process.env.VITE_CLERK_PUBLISHABLE_KEY,
-    secretKey: process.env.CLERK_SECRET_KEY,
-  })
-);
-
-// Routes
-app.use("/", photoRoutes);
-app.use("/", contestRoutes);
-app.use("/users", userRoutes);
+// Routes with authentication
+app.use("/", requireAuth(), photoRoutes);
+app.use("/", requireAuth(), contestRoutes);
+app.use("/users", requireAuth(), userRoutes);
 
 // Initialize database and start server
 async function startServer() {

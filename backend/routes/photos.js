@@ -3,7 +3,7 @@ import multer from "multer";
 import { uploadToS3, deleteFromS3 } from "../services/s3Service.js";
 import Photo from "../database/models/Photo.js";
 import Contest from "../database/models/Contest.js";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth } from "@clerk/express";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -11,7 +11,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 // Photo upload endpoint
 router.post(
   "/upload",
-  requireAuth,
+  requireAuth(),
   upload.single("photo"),
   async (req, res) => {
     try {
@@ -54,7 +54,7 @@ router.post(
 );
 
 // Get user's photos
-router.get("/photos", requireAuth, async (req, res) => {
+router.get("/photos", requireAuth(), async (req, res) => {
   try {
     const photos = await Photo.findAll({
       where: { userId: req.auth.userId },
@@ -68,7 +68,7 @@ router.get("/photos", requireAuth, async (req, res) => {
 });
 
 // Update photo
-router.put("/photos/:id", requireAuth, async (req, res) => {
+router.put("/photos/:id", requireAuth(), async (req, res) => {
   try {
     const photo = await Photo.findByPk(req.params.id);
 
@@ -95,7 +95,7 @@ router.put("/photos/:id", requireAuth, async (req, res) => {
 });
 
 // Delete photo
-router.delete("/photos/:id", requireAuth, async (req, res) => {
+router.delete("/photos/:id", requireAuth(), async (req, res) => {
   try {
     const photo = await Photo.findByPk(req.params.id);
 
@@ -120,7 +120,7 @@ router.delete("/photos/:id", requireAuth, async (req, res) => {
 });
 
 // Submit existing photo to contest
-router.post("/photos/:id/submit", requireAuth, async (req, res) => {
+router.post("/photos/:id/submit", requireAuth(), async (req, res) => {
   try {
     const photo = await Photo.findByPk(req.params.id);
 
