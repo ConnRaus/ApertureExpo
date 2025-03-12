@@ -18,8 +18,8 @@ COPY . .
 ENV VITE_CLERK_PUBLISHABLE_KEY=${VITE_CLERK_PUBLISHABLE_KEY}
 ENV VITE_API_URL=${VITE_API_URL}
 
-# Build the Vite app
-RUN npm run build
+# Build the Vite app using the special docker-build script
+RUN npm run docker-build
 
 # Stage 2: Serve the app with Nginx
 FROM nginx:stable-alpine

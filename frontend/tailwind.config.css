@@ -1,0 +1,8 @@
+@config {
+  content: [ "./src/**/*.{js,jsx,ts,tsx}", "./index.html"];
+  theme: {
+    extend: {
+      /* You can extend the theme here */
+    }
+  }
+}

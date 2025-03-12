@@ -1,91 +1,150 @@
 .contestCard {
-  @apply bg-gray-800/50 backdrop-blur-sm rounded-xl overflow-hidden transition-all duration-300
-         border border-gray-700/50 hover:border-indigo-500/50 hover:shadow-xl hover:-translate-y-1;
+  background-color: rgba(31, 41, 55, 0.5);
+  backdrop-filter: blur(4px);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  transition: all 0.3s;
+  border: 1px solid rgba(55, 65, 81, 0.5);
+}
+
+.contestCard:hover {
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transform: translateY(-0.25rem);
 }
 
 .bannerImage {
-  @apply w-full h-48 object-cover transition-transform duration-500;
+  width: 100%;
+  height: 12rem;
+  object-fit: cover;
+  transition: transform 0.5s;
 }
 
 .contestCard:hover .bannerImage {
-  @apply scale-105;
+  transform: scale(1.05);
 }
 
 .contestInfo {
-  @apply p-6;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .contestInfo h3 {
-  @apply text-xl font-semibold text-gray-100 mb-3;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: white;
+  margin: 0;
 }
 
 .contestInfo p {
-  @apply text-gray-400 text-sm leading-relaxed;
+  color: rgb(156, 163, 175);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
 }
 
 .submissionCount {
-  @apply mt-4 text-indigo-400 font-medium text-sm;
+  margin-top: 1rem;
+  color: rgb(129, 140, 248);
+  font-weight: 500;
+  font-size: 0.875rem;
 }
 
-/* Contest Detail Styles */
+/* Contest Detail Page */
 .contestDetail {
-  @apply max-w-6xl mx-auto;
+  margin-bottom: 2rem;
 }
 
 .bannerSection {
-  @apply relative mb-8 rounded-xl overflow-hidden;
+  position: relative;
+  height: 18rem;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
 }
 
 .bannerSection img {
-  @apply w-full h-48 sm:h-64 object-cover;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .bannerOverlay {
-  @apply absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent;
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent, rgba(17, 24, 39, 0.8));
 }
 
 .contestHeader {
-  @apply absolute bottom-0 left-0 right-0 p-4 sm:p-6 md:p-8 text-white;
+  position: relative;
+  z-index: 10;
+  padding: 1.5rem;
+  margin-top: -6rem;
 }
 
 .contestHeader h1 {
-  @apply text-2xl sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-4 
-         break-words hyphens-auto
-         [text-wrap:balance];
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .contestHeader p {
-  @apply text-base sm:text-lg text-gray-200 max-w-2xl 
-         line-clamp-2 sm:line-clamp-none;
+  color: rgb(209, 213, 219);
+  font-size: 1rem;
+  line-height: 1.5rem;
+  max-width: 42rem;
 }
 
 .contestMeta {
-  @apply flex flex-wrap items-center gap-2 sm:gap-4 mt-2 sm:mt-4 text-sm text-gray-300;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
 }
 
 .statusBadge {
-  @apply px-3 py-1 rounded-full bg-green-500/20 text-green-400 font-medium border border-green-500/20;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background-color: rgb(55, 65, 81);
+  color: rgb(229, 231, 235);
 }
 
 .dateRange {
-  @apply flex items-center gap-2 text-xs sm:text-sm;
+  display: flex;
+  align-items: center;
+  color: rgb(209, 213, 219);
+  font-size: 0.875rem;
+  gap: 0.5rem;
 }
 
-/* Contest Submissions Grid */
+/* Submissions */
 .submissionsGrid {
-  @apply grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
 }
 
-/* Contest Photo Card */
 .contestPhotoCard {
-  @apply relative aspect-square rounded-lg overflow-hidden cursor-pointer 
-         transition-all duration-300 hover:scale-[1.02] hover:shadow-xl;
+  position: relative;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  transition: all 0.3s;
 }
 
 .contestSubmissionImage {
-  @apply w-full h-full object-cover transition-transform duration-500;
+  width: 100%;
+  height: 14rem;
+  object-fit: cover;
+  transition: transform 0.5s;
 }
 
 .contestPhotoCard:hover .contestSubmissionImage {
-  @apply scale-105;
+  transform: scale(1.05);
 }

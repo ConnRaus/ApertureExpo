@@ -1,27 +1,59 @@
 .navHeader {
-  @apply flex justify-between items-center py-4 px-6 bg-gray-800/50 backdrop-blur-md rounded-lg shadow-lg mb-8 border border-gray-700/50;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background-color: rgba(31, 41, 55, 0.5);
+  backdrop-filter: blur(12px);
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+  border: 1px solid rgba(55, 65, 81, 0.5);
 }
 
 .navLeft,
 .navRight {
-  @apply flex items-center gap-6;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
 }
 
 .navLink {
-  @apply text-gray-300 hover:text-white transition-all duration-200 hover:scale-105 relative;
+  color: rgb(209, 213, 219);
+  position: relative;
+  transition: all 0.2s;
+}
+
+.navLink:hover {
+  color: white;
+  transform: scale(1.05);
 }
 
 .navLink::after {
-  @apply content-[''] absolute bottom-0 left-0 w-0 h-0.5 bg-indigo-500 transition-all duration-200;
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: rgb(99, 102, 241);
+  transition: all 0.2s;
 }
 
 .navLink:hover::after {
-  @apply w-full;
+  width: 100%;
 }
 
 .signInButton {
-  @apply w-full py-3 px-6 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500
-         text-white font-medium rounded-lg shadow-lg transition-all duration-300
-         hover:shadow-indigo-500/25 hover:shadow-xl hover:-translate-y-0.5
-         focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-800;
+  background-color: rgb(79, 70, 229);
+  color: white;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+}
+
+.signInButton:hover {
+  background-color: rgb(99, 102, 241);
 }

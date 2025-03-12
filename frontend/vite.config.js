@@ -1,9 +1,16 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    tailwindcss({
+      // Configure Tailwind to properly handle CSS modules
+      cssModules: true,
+    }),
+  ],
   envPrefix: "VITE_",
   server: {
     host: true,
@@ -16,5 +23,8 @@ export default defineConfig({
   },
   build: {
     target: "es2020",
+    // Configure how CSS modules are processed
+    cssCodeSplit: true,
+    cssMinify: true,
   },
 });
