@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from "@clerk/clerk-react";
-
-const API_URL = import.meta.env.VITE_API_URL;
+import { useDelayedLoading, usePhotoService } from "../hooks";
 
 export function PhotoSelector({
   isOpen,
@@ -13,7 +11,10 @@ export function PhotoSelector({
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { getToken } = useAuth();
+  const photoService = usePhotoService();
+
+  // Use our delayed loading hook with a shorter delay since this is a modal
+  const shouldShowLoading = useDelayedLoading(loading, 300, 400);
 
   useEffect(() => {
     if (isOpen) {
@@ -24,17 +25,8 @@ export function PhotoSelector({
   const fetchPhotos = async () => {
     try {
       setLoading(true);
-      const token = await getToken();
-      const response = await fetch(`${API_URL}/photos`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-      });
+      const data = await photoService.fetchPhotos();
 
-      if (!response.ok) throw new Error("Failed to fetch photos");
-
-      const data = await response.json();
       // Filter out excluded photos and sort by contest submission status
       const filteredPhotos = data
         .filter((photo) => !excludePhotoIds.includes(photo.id))
@@ -75,10 +67,13 @@ export function PhotoSelector({
           </div>
         )}
 
-        {loading ? (
+        {shouldShowLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div>
           </div>
+        ) : loading ? (
+          // If loading but not showing loading state yet, show empty space
+          <div className="py-12"></div>
         ) : (
           <div className="overflow-y-auto flex-1 pr-2 -mr-2">
             {photos.length === 0 ? (

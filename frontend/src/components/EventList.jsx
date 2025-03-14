@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ContestCard } from "./ContestCard";
-import { useContestService } from "../hooks/useServices";
+import { useContestService, useDelayedLoading } from "../hooks";
 import "../styles/loading.css";
 
 export function EventList() {
@@ -10,6 +10,9 @@ export function EventList() {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const contestService = useContestService();
+
+  // Use our delayed loading hook to prevent flashing on fast connections
+  const shouldShowLoading = useDelayedLoading(isLoading);
 
   useEffect(() => {
     fetchContests();
@@ -32,7 +35,8 @@ export function EventList() {
     return <div className="error-message">{error}</div>;
   }
 
-  if (isLoading) {
+  // Only show loading state if shouldShowLoading is true
+  if (shouldShowLoading) {
     return (
       <div className="mt-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -52,6 +56,11 @@ export function EventList() {
         </div>
       </div>
     );
+  }
+
+  // If we're loading but not showing the loading state yet, render nothing or a minimal placeholder
+  if (isLoading) {
+    return <div className="mt-8"></div>; // Empty container to maintain layout
   }
 
   return (

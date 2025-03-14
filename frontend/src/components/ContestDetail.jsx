@@ -3,7 +3,7 @@ import styles from "../styles/components/Contest.module.css";
 import { ContestHeader } from "./ContestHeader";
 import { ContestSubmissions } from "./ContestSubmissions";
 import { UploadForm } from "./UploadForm";
-import { useContestService } from "../hooks/useServices";
+import { useContestService, useDelayedLoading } from "../hooks";
 import "../styles/loading.css";
 
 export function ContestDetail({
@@ -15,6 +15,9 @@ export function ContestDetail({
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const contestService = useContestService();
+
+  // Use our delayed loading hook to prevent flashing on fast connections
+  const shouldShowLoading = useDelayedLoading(isLoading);
 
   useEffect(() => {
     fetchContestDetails();
@@ -37,7 +40,8 @@ export function ContestDetail({
     return <div className="error-message">{error}</div>;
   }
 
-  if (isLoading) {
+  // Only show loading state if shouldShowLoading is true
+  if (shouldShowLoading) {
     return (
       <div className={styles.contestDetail}>
         <div className="contest-detail-skeleton">
@@ -68,6 +72,11 @@ export function ContestDetail({
         </div>
       </div>
     );
+  }
+
+  // If we're loading but not showing the loading state yet, render nothing or a minimal placeholder
+  if (isLoading) {
+    return <div className={styles.contestDetail}></div>; // Empty container to maintain layout
   }
 
   return (

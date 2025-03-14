@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { useAuth, useUser } from "@clerk/clerk-react";
+import { useUser } from "@clerk/clerk-react";
 import { PhotoGrid } from "./PhotoGrid";
 import { PhotoLightbox } from "./PhotoLightbox";
-import { PhotoService } from "../services/api";
+import { usePhotoService } from "../hooks";
 
 export function UserPhotoGallery({ isEditing }) {
   const [photos, setPhotos] = useState([]);
   const [error, setError] = useState(null);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(-1);
-  const { getToken } = useAuth();
   const { user } = useUser();
-  const photoService = new PhotoService(getToken);
+  const photoService = usePhotoService();
 
   useEffect(() => {
     fetchPhotos();

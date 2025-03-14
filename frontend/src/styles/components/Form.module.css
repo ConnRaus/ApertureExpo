@@ -25,6 +25,8 @@
   outline: none;
   border-color: transparent;
   box-shadow: 0 0 0 2px rgb(99, 102, 241);
+  position: relative;
+  z-index: 1;
 }
 
 .textarea {
@@ -101,6 +103,8 @@ label:has(+ textarea) {
   .textarea:focus {
     border-color: transparent;
     box-shadow: 0 0 0 2px rgb(79, 70, 229);
+    position: relative;
+    z-index: 1;
   }
 
   .label {

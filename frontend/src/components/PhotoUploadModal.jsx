@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import formStyles from "../styles/components/Form.module.css";
-import { useContestService } from "../hooks/useServices";
+import { useContestService } from "../hooks";
 
 export function PhotoUploadModal({
   isOpen,

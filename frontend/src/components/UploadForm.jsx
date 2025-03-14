@@ -4,7 +4,7 @@ import "react-toastify/dist/ReactToastify.css";
 import formStyles from "../styles/components/Form.module.css";
 import { PhotoSelector } from "./PhotoSelector";
 import { PhotoUploadModal } from "./PhotoUploadModal";
-import { useContestService } from "../hooks/useServices";
+import { useContestService } from "../hooks";
 
 export function UploadForm({ onUploadSuccess, contestId }) {
   const [showPhotoSelector, setShowPhotoSelector] = useState(false);

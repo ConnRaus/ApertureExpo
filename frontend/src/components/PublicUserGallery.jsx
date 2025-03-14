@@ -5,7 +5,7 @@ import { PhotoLightbox } from "./PhotoLightbox";
 import { EditProfileModal } from "./EditProfileModal";
 import { PhotoSelector } from "./PhotoSelector";
 import { ProfileHeader } from "./ProfileHeader";
-import { UserService, PhotoService } from "../services/api";
+import { usePhotoService, useUserService, useDelayedLoading } from "../hooks";
 import "../styles/loading.css";
 
 export function PublicUserGallery({ userId, isOwner }) {
@@ -18,16 +18,27 @@ export function PublicUserGallery({ userId, isOwner }) {
   const [nickname, setNickname] = useState("");
   const [bio, setBio] = useState("");
   const [bannerImage, setBannerImage] = useState("");
+  const [tempBannerImage, setTempBannerImage] = useState("");
+  const [bannerFileToUpload, setBannerFileToUpload] = useState(null);
   const [showPhotoSelector, setShowPhotoSelector] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const { getToken } = useAuth();
 
-  const userService = new UserService(getToken);
-  const photoService = new PhotoService(getToken);
+  const shouldShowLoading = useDelayedLoading(isLoading);
+  const userService = useUserService();
+  const photoService = usePhotoService();
 
   useEffect(() => {
     fetchUserProfile();
   }, [userId]);
+
+  useEffect(() => {
+    return () => {
+      if (tempBannerImage && tempBannerImage.startsWith("blob:")) {
+        URL.revokeObjectURL(tempBannerImage);
+      }
+    };
+  }, [tempBannerImage]);
 
   const fetchUserProfile = async () => {
     setIsLoading(true);
@@ -38,6 +49,8 @@ export function PublicUserGallery({ userId, isOwner }) {
       setNickname(data.profile.nickname || "");
       setBio(data.profile.bio || "");
       setBannerImage(data.profile.bannerImage || "");
+      setTempBannerImage("");
+      setBannerFileToUpload(null);
     } catch (error) {
       console.error("Error fetching user profile:", error);
       setError("Failed to load user profile");
@@ -64,63 +77,78 @@ export function PublicUserGallery({ userId, isOwner }) {
 
   const handleProfileUpdate = async () => {
     try {
+      let finalBannerImage = bannerImage;
+
+      if (bannerFileToUpload) {
+        setUploadingBanner(true);
+        const formData = new FormData();
+        formData.append("banner", bannerFileToUpload);
+
+        const data = await userService.uploadBanner(userId, formData);
+        finalBannerImage = data.bannerImage;
+        setBannerFileToUpload(null);
+      }
+
       const updatedProfile = await userService.updateProfile(userId, {
         nickname,
         bio,
-        bannerImage,
+        bannerImage: finalBannerImage,
       });
+
+      if (tempBannerImage && tempBannerImage.startsWith("blob:")) {
+        URL.revokeObjectURL(tempBannerImage);
+      }
+
       setProfile(updatedProfile);
+      setBannerImage(updatedProfile.bannerImage);
+      setTempBannerImage("");
       setIsEditing(false);
     } catch (error) {
       console.error("Error updating profile:", error);
       alert("Failed to update profile");
-    }
-  };
-
-  const handlePhotoSelect = async (photo) => {
-    try {
-      const updatedProfile = await userService.updateProfile(userId, {
-        nickname,
-        bio,
-        bannerImage: photo.s3Url,
-      });
-      setBannerImage(updatedProfile.bannerImage);
-      setShowPhotoSelector(false);
-    } catch (error) {
-      console.error("Error handling photo selection:", error);
-      alert("Failed to update banner image. Please try again.");
-    }
-  };
-
-  const handleBannerUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    try {
-      setUploadingBanner(true);
-      const formData = new FormData();
-      formData.append("banner", file);
-
-      const data = await userService.uploadBanner(userId, formData);
-      setBannerImage(data.bannerImage);
-    } catch (error) {
-      console.error("Error uploading banner:", error);
-      alert("Failed to upload banner image. Please try again.");
     } finally {
       setUploadingBanner(false);
     }
+  };
+
+  const handlePhotoSelect = (photo) => {
+    setTempBannerImage(photo.s3Url);
+    setShowPhotoSelector(false);
+  };
+
+  const handleBannerUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (tempBannerImage && tempBannerImage.startsWith("blob:")) {
+      URL.revokeObjectURL(tempBannerImage);
+    }
+
+    setBannerFileToUpload(file);
+
+    const tempUrl = URL.createObjectURL(file);
+    setTempBannerImage(tempUrl);
+  };
+
+  const handleCancelEdit = () => {
+    if (tempBannerImage && tempBannerImage.startsWith("blob:")) {
+      URL.revokeObjectURL(tempBannerImage);
+    }
+
+    setTempBannerImage("");
+    setBannerFileToUpload(null);
+    setIsEditing(false);
   };
 
   if (error) {
     return <div className="error-message">{error}</div>;
   }
 
-  if (isLoading) {
+  if (shouldShowLoading) {
     return (
       <div className="loading-container">
         <div className="loading-skeleton">
           <div className="banner-skeleton"></div>
-          {/* Photo grid skeleton - matching PhotoGrid's responsive layout */}
           <div className="photo-grid mt-8">
             {[...Array(6)].map((_, index) => (
               <div key={index} className="photo-card-skeleton">
@@ -133,6 +161,10 @@ export function PublicUserGallery({ userId, isOwner }) {
         </div>
       </div>
     );
+  }
+
+  if (isLoading) {
+    return <div className="loading-container"></div>;
   }
 
   return (
@@ -158,13 +190,12 @@ export function PublicUserGallery({ userId, isOwner }) {
 
       <EditProfileModal
         isEditing={isEditing}
-        setIsEditing={setIsEditing}
+        setIsEditing={handleCancelEdit}
         nickname={nickname}
         setNickname={setNickname}
         bio={bio}
         setBio={setBio}
-        bannerImage={bannerImage}
-        setBannerImage={setBannerImage}
+        bannerImage={tempBannerImage || bannerImage}
         uploadingBanner={uploadingBanner}
         handleBannerUpload={handleBannerUpload}
         setShowPhotoSelector={setShowPhotoSelector}

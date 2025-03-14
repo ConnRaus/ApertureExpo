@@ -9,7 +9,6 @@ export function EditProfileModal({
   bio,
   setBio,
   bannerImage,
-  setBannerImage,
   uploadingBanner,
   handleBannerUpload,
   setShowPhotoSelector,
