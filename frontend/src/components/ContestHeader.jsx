@@ -23,8 +23,8 @@ export function ContestHeader({
       <img src={bannerImageUrl || defaultBanner} alt={title} />
       <div className={styles.bannerOverlay} />
       <div className={styles.contestHeader}>
-        <h1>{title}</h1>
-        <p>{description}</p>
+        <h1 title={title}>{title}</h1>
+        <p title={description}>{description}</p>
         <div className={styles.contestMeta}>
           <span className={styles.statusBadge}>{status}</span>
           <span className={styles.dateRange}>

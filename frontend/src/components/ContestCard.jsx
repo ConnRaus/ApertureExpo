@@ -13,8 +13,8 @@ export function ContestCard({ contest, onClick }) {
         className={styles.bannerImage}
       />
       <div className={styles.contestInfo}>
-        <h3>{contest.title}</h3>
-        <p>{contest.description}</p>
+        <h3 title={contest.title}>{contest.title}</h3>
+        <p title={contest.description}>{contest.description}</p>
         <p className={styles.submissionCount}>
           {contest.Photos?.length || 0} submissions
         </p>

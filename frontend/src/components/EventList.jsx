@@ -39,7 +39,7 @@ export function EventList() {
   if (shouldShowLoading) {
     return (
       <div className="mt-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
           {[...Array(6)].map((_, index) => (
             <div key={index} className="contest-card-skeleton">
               <div className="banner-skeleton"></div>
@@ -65,7 +65,7 @@ export function EventList() {
 
   return (
     <div className="mt-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
         {contests.length === 0 ? (
           <p>No active contests at the moment. Check back later!</p>
         ) : (

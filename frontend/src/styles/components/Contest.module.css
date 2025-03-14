@@ -5,6 +5,9 @@
   overflow: hidden;
   transition: all 0.3s;
   border: 1px solid rgba(55, 65, 81, 0.5);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .contestCard:hover {
@@ -30,6 +33,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  flex-grow: 1;
+  min-height: 8rem;
 }
 
 .contestInfo h3 {
@@ -37,16 +42,27 @@
   font-weight: 600;
   color: white;
   margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-wrap: break-word;
+  line-height: 1.5rem;
 }
 
 .contestInfo p {
   color: rgb(156, 163, 175);
   font-size: 0.875rem;
   line-height: 1.25rem;
+  overflow: visible;
+  word-wrap: break-word;
+  margin: 0;
 }
 
 .submissionCount {
-  margin-top: 1rem;
+  margin-top: auto;
+  padding-top: 0.75rem;
   color: rgb(129, 140, 248);
   font-weight: 500;
   font-size: 0.875rem;
@@ -74,14 +90,25 @@
 .bannerOverlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, transparent, rgba(17, 24, 39, 0.8));
+  background: linear-gradient(
+    to bottom,
+    rgba(17, 24, 39, 0.1) 0%,
+    rgba(17, 24, 39, 0.4) 50%,
+    rgba(17, 24, 39, 0.85) 100%
+  );
 }
 
 .contestHeader {
-  position: relative;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
   z-index: 10;
-  padding: 1.5rem;
-  margin-top: -6rem;
+  padding: 2rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
 }
 
 .contestHeader h1 {
@@ -90,20 +117,25 @@
   color: white;
   margin-bottom: 0.5rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .contestHeader p {
-  color: rgb(209, 213, 219);
+  color: rgb(229, 231, 235);
   font-size: 1rem;
   line-height: 1.5rem;
   max-width: 42rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .contestMeta {
   display: flex;
   align-items: center;
   gap: 1.5rem;
-  margin-top: 1.5rem;
+  margin-top: 1rem;
 }
 
 .statusBadge {
@@ -147,4 +179,35 @@
 
 .contestPhotoCard:hover .contestSubmissionImage {
   transform: scale(1.05);
+}
+
+/* Responsive styles for smaller screens */
+@media (max-width: 768px) {
+  .contestHeader {
+    padding: 1.5rem;
+  }
+
+  .contestHeader h1 {
+    font-size: 1.75rem;
+  }
+
+  .contestMeta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .bannerSection {
+    height: 14rem;
+  }
+
+  .contestHeader {
+    padding: 1rem;
+  }
+
+  .contestHeader h1 {
+    font-size: 1.5rem;
+  }
 }
