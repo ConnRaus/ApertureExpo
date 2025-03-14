@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import styles from "../../styles/components/Forum.module.css";
 
 const formatDate = (dateString) => {
@@ -30,7 +31,12 @@ export function PostList({ posts, currentUserId, threadAuthorId }) {
               />
               <div className={styles.postAuthorInfo}>
                 <span className={styles.postAuthorName}>
-                  {post.author?.nickname || "Anonymous"}
+                  <Link
+                    to={`/users/${post.author?.id}`}
+                    className="hover:text-indigo-600 hover:underline"
+                  >
+                    {post.author?.nickname || "Anonymous"}
+                  </Link>
                   {post.author?.id === threadAuthorId && (
                     <span className="ml-2 text-indigo-400 text-xs">
                       (Thread Author)

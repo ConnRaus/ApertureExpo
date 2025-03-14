@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import styles from "../../styles/components/Forum.module.css";
 
 const formatDate = (dateString) => {
@@ -35,15 +35,11 @@ export function ThreadList({ threads }) {
           key={thread.id}
           className={`${styles.threadCard} ${
             thread.isPinned ? styles.pinnedThread : ""
-          }`}
+          } cursor-pointer hover:bg-gray-50 transition duration-150`}
+          onClick={() => handleThreadClick(thread.id)}
         >
           <div className={styles.threadCardHeader}>
-            <h3
-              className={styles.threadTitle}
-              onClick={() => handleThreadClick(thread.id)}
-            >
-              {thread.title}
-            </h3>
+            <h3 className={styles.threadTitle}>{thread.title}</h3>
           </div>
 
           <span className={styles.threadCategory}>{thread.category}</span>
@@ -52,15 +48,21 @@ export function ThreadList({ threads }) {
 
           <div className={styles.threadMeta}>
             <div className={styles.threadAuthor}>
-              <div className="flex items-center mt-2">
+              <div
+                className="flex items-center mt-2"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <img
                   src={thread.author?.avatarUrl || "/default-avatar.png"}
                   className="w-6 h-6 rounded-full mr-2"
                   alt={thread.author?.nickname || "User"}
                 />
-                <span className="text-sm text-gray-600">
+                <Link
+                  to={`/users/${thread.author?.id}`}
+                  className="text-sm text-gray-400 hover:text-indigo-600 hover:underline"
+                >
                   {thread.author?.nickname || "Anonymous"}
-                </span>
+                </Link>
               </div>
             </div>
 

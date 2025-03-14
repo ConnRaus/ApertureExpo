@@ -31,8 +31,6 @@ const addClerkImageToUser = async (user) => {
 
   const userId = user.id;
 
-  console.log(`Adding Clerk image for user ${userId}`);
-
   try {
     // Check if we have a cached image URL that's not expired
     const cachedData = userImageCache.get(userId);
@@ -44,10 +42,6 @@ const addClerkImageToUser = async (user) => {
       now - cachedData.timestamp < CACHE_EXPIRY &&
       now - cachedData.lastFetchTime < REFRESH_THRESHOLD
     ) {
-      console.log(
-        `Using cached image for user ${userId}: ${cachedData.imageUrl}`
-      );
-
       // Add the avatar URL without modifying other fields
       return {
         ...user,
@@ -65,7 +59,6 @@ const addClerkImageToUser = async (user) => {
 
           // Only update cache if image URL has changed
           if (newImageUrl !== cachedData.imageUrl) {
-            console.log(`Background refresh: Image changed for user ${userId}`);
             userImageCache.set(userId, {
               imageUrl: newImageUrl,
               timestamp: Date.now(),
@@ -85,10 +78,8 @@ const addClerkImageToUser = async (user) => {
     }
 
     // Fetch from Clerk if not cached or expired
-    console.log(`Fetching Clerk data for user ${userId}`);
     const clerkUser = await clerkClient.users.getUser(userId);
     const imageUrl = clerkUser.imageUrl || null;
-    console.log(`Got image URL: ${imageUrl}`);
 
     // Cache the image URL with current timestamp
     userImageCache.set(userId, {
@@ -126,10 +117,6 @@ const transformThreadsWithClerkData = async (threads) => {
 
   for (const thread of threads) {
     const threadData = thread.toJSON ? thread.toJSON() : thread;
-    console.log(
-      `Original author data for thread ${threadData.id}:`,
-      JSON.stringify(threadData.author, null, 2)
-    );
 
     if (threadData.author) {
       // Save the original ID and nickname to ensure they're preserved
@@ -141,11 +128,6 @@ const transformThreadsWithClerkData = async (threads) => {
       // Ensure the ID and nickname are preserved
       threadData.author.id = authorId;
       threadData.author.nickname = authorNickname;
-
-      console.log(
-        `Transformed author data for thread ${threadData.id}:`,
-        JSON.stringify(threadData.author, null, 2)
-      );
     }
     transformedThreads.push(threadData);
   }
@@ -215,13 +197,6 @@ router.get("/threads", async (req, res) => {
       threadsWithCounts
     );
 
-    console.log(
-      "Sample transformed thread:",
-      transformedThreads.length > 0
-        ? JSON.stringify(transformedThreads[0], null, 2)
-        : "No threads found"
-    );
-
     res.json({
       threads: transformedThreads,
       totalPages: Math.ceil(count / limit),
@@ -288,10 +263,6 @@ router.get("/threads/:threadId", async (req, res) => {
 
     // Transform thread data with Clerk image
     const threadData = thread.toJSON();
-    console.log(
-      "Original thread author data:",
-      JSON.stringify(threadData.author, null, 2)
-    );
 
     // Make sure thread author data is correct
     if (threadData.author) {
@@ -304,21 +275,12 @@ router.get("/threads/:threadId", async (req, res) => {
       // Ensure the ID and nickname are preserved
       threadData.author.id = authorId;
       threadData.author.nickname = authorNickname;
-
-      console.log(
-        "Transformed thread author data:",
-        JSON.stringify(threadData.author, null, 2)
-      );
     }
 
     // Transform posts with Clerk data
     const transformedPosts = await Promise.all(
       posts.map(async (post) => {
         const postData = post.toJSON();
-        console.log(
-          `Original post author data for post ${postData.id}:`,
-          JSON.stringify(postData.author, null, 2)
-        );
 
         if (postData.author) {
           // Save the original ID and nickname to ensure they're preserved
@@ -330,11 +292,6 @@ router.get("/threads/:threadId", async (req, res) => {
           // Ensure the ID and nickname are preserved
           postData.author.id = authorId;
           postData.author.nickname = authorNickname;
-
-          console.log(
-            `Transformed post author data for post ${postData.id}:`,
-            JSON.stringify(postData.author, null, 2)
-          );
         }
         return postData;
       })
@@ -389,10 +346,6 @@ router.post("/threads", requireAuth, ensureUserExists, async (req, res) => {
 
     // Add Clerk image to author
     const threadData = threadWithAuthor.toJSON();
-    console.log(
-      "New thread author data:",
-      JSON.stringify(threadData.author, null, 2)
-    );
 
     if (threadData.author) {
       // Save the original ID and nickname
@@ -460,10 +413,6 @@ router.post(
 
       // Add Clerk image to author
       const postData = postWithAuthor.toJSON();
-      console.log(
-        "New post author data:",
-        JSON.stringify(postData.author, null, 2)
-      );
 
       if (postData.author) {
         // Save the original ID and nickname

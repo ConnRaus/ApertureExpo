@@ -1,5 +1,6 @@
 import React from "react";
 import { useUser } from "@clerk/clerk-react";
+import { Link } from "react-router-dom";
 import styles from "../../styles/components/Forum.module.css";
 import { PostList } from "./PostList";
 import { ReplyForm } from "./ReplyForm";
@@ -40,9 +41,12 @@ export function ThreadDetail({ thread, posts, onReply, totalPosts }) {
                 alt={thread.author?.nickname || "User"}
                 className={styles.authorAvatar}
               />
-              <span className={styles.authorName}>
+              <Link
+                to={`/users/${thread.author?.id}`}
+                className={`${styles.authorName} hover:text-indigo-600 hover:underline`}
+              >
                 {thread.author?.nickname || "Anonymous"}
-              </span>
+              </Link>
             </div>
             <div>
               <span className={styles.threadCategory}>{thread.category}</span>
