@@ -14,6 +14,7 @@ export {
   usePhotoService,
   useUserService,
   useContestService,
+  useForumService,
 } from "./useServices";
 
 // Export other hooks here as they are created

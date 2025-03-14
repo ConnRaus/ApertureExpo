@@ -13,5 +13,9 @@ export const requireAuth = (req, res, next) => {
   if (!req.auth?.userId) {
     return res.status(401).json({ error: "Unauthorized" });
   }
+
+  // Set the user object with the id from req.auth
+  req.user = { id: req.auth.userId };
+
   next();
 };

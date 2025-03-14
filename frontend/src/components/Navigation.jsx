@@ -21,6 +21,9 @@ function Navigation() {
         <Link to="/events" className={styles.navLink}>
           Events
         </Link>
+        <Link to="/forum" className={styles.navLink}>
+          Forum
+        </Link>
       </div>
       <div className={styles.navRight}>
         <SignedIn>

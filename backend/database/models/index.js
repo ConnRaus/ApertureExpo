@@ -2,6 +2,12 @@ import sequelize from "../config/config.js";
 import Photo from "./Photo.js";
 import User from "./User.js";
 import Contest from "./Contest.js";
+import ForumThreadInit from "./ForumThread.js";
+import ForumPostInit from "./ForumPost.js";
+
+// Initialize forum models with sequelize
+const ForumThread = ForumThreadInit(sequelize);
+const ForumPost = ForumPostInit(sequelize);
 
 // Define associations
 Contest.hasMany(Photo, {
@@ -15,11 +21,35 @@ Photo.belongsTo(Contest, {
   as: "Contest",
 });
 
+// Forum associations
+ForumThread.belongsTo(User, {
+  foreignKey: "userId",
+  as: "author",
+});
+
+ForumThread.hasMany(ForumPost, {
+  foreignKey: "threadId",
+  as: "posts",
+  onDelete: "CASCADE",
+});
+
+ForumPost.belongsTo(User, {
+  foreignKey: "userId",
+  as: "author",
+});
+
+ForumPost.belongsTo(ForumThread, {
+  foreignKey: "threadId",
+  as: "thread",
+});
+
 // Initialize models
 const models = {
   Photo,
   User,
   Contest,
+  ForumThread,
+  ForumPost,
   sequelize,
 };
 
@@ -33,6 +63,16 @@ Photo.prototype.toJSON = function () {
 Contest.prototype.toJSON = function () {
   const values = { ...this.get() };
   // Add any computed properties here
+  return values;
+};
+
+ForumThread.prototype.toJSON = function () {
+  const values = { ...this.get() };
+  return values;
+};
+
+ForumPost.prototype.toJSON = function () {
+  const values = { ...this.get() };
   return values;
 };
 

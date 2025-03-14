@@ -9,6 +9,8 @@ import EventsPage from "./pages/EventsPage";
 import EventDetailPage from "./pages/EventDetailPage";
 import ProfilePage from "./pages/ProfilePage";
 import UserProfilePage from "./pages/UserProfilePage";
+import ForumPage from "./pages/ForumPage";
+import ThreadDetailPage from "./pages/ThreadDetailPage";
 
 function App() {
   return (
@@ -25,6 +27,11 @@ function App() {
               <Route
                 path="/profile"
                 element={<Navigate to={`/users/${useUser()?.id}`} />}
+              />
+              <Route path="/forum" element={<ForumPage />} />
+              <Route
+                path="/forum/threads/:threadId"
+                element={<ThreadDetailPage />}
               />
             </Routes>
           </SignedIn>

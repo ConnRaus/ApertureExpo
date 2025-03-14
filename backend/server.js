@@ -7,6 +7,8 @@ import { initializeDatabase } from "./database/index.js";
 import photoRoutes from "./routes/photos.js";
 import contestRoutes from "./routes/contests.js";
 import userRoutes from "./routes/users.js";
+import forumRoutes from "./routes/forum.js";
+import { ensureUserExists } from "./middleware/ensureUserExists.js";
 
 dotenv.config();
 
@@ -33,6 +35,9 @@ app.use(clerkMiddleware());
 app.use("/", requireAuth(), photoRoutes);
 app.use("/", requireAuth(), contestRoutes);
 app.use("/users", requireAuth(), userRoutes);
+
+// Forum routes with user existence check
+app.use("/forum", requireAuth(), ensureUserExists, forumRoutes);
 
 // Initialize database and start server
 async function startServer() {
