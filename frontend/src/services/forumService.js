@@ -138,4 +138,17 @@ export class ForumService {
     if (!response.ok) throw new Error("Failed to delete post");
     return response.json();
   }
+
+  async clearImageCache() {
+    const token = await this.getToken();
+    const response = await fetch(`${API_URL}/forum/clear-image-cache`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) throw new Error("Failed to clear image cache");
+    return response.json();
+  }
 }

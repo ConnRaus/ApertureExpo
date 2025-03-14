@@ -3,11 +3,128 @@ import multer from "multer";
 import User from "../database/models/User.js";
 import Photo from "../database/models/Photo.js";
 import Contest from "../database/models/Contest.js";
-import { requireAuth } from "@clerk/express";
+import { requireAuth, clerkClient } from "@clerk/express";
 import { uploadToS3, deleteFromS3 } from "../services/s3Service.js";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
+
+// Get the current user's profile with Clerk data
+router.get("/me", async (req, res) => {
+  try {
+    const userId = req.auth.userId;
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Fetch Clerk user data to get the profile image
+    const clerkUser = await clerkClient.users.getUser(userId);
+
+    // Combine DB user with Clerk data
+    const userData = user.toJSON();
+    userData.avatarUrl = clerkUser.imageUrl || null;
+    userData.fullName =
+      clerkUser.firstName && clerkUser.lastName
+        ? `${clerkUser.firstName} ${clerkUser.lastName}`
+        : clerkUser.username || clerkUser.firstName || userData.nickname;
+
+    res.json(userData);
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    res.status(500).json({ error: "Failed to fetch profile" });
+  }
+});
+
+// Get a user's profile by ID with Clerk data
+router.get("/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const userData = user.toJSON();
+
+    // If the requested user is the current user or a public user,
+    // try to fetch their Clerk profile image
+    try {
+      const clerkUser = await clerkClient.users.getUser(userId);
+      userData.avatarUrl = clerkUser.imageUrl || null;
+    } catch (err) {
+      // If we can't get Clerk data, just continue without the avatar
+      console.log(`Could not fetch Clerk data for user ${userId}`);
+    }
+
+    res.json(userData);
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    res.status(500).json({ error: "Failed to fetch profile" });
+  }
+});
+
+// Update the current user's profile
+router.put("/me", async (req, res) => {
+  try {
+    const userId = req.auth.userId;
+    const { nickname, bio, bannerImage } = req.body;
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Update user fields
+    if (nickname !== undefined) {
+      user.nickname = nickname;
+    }
+
+    if (bio !== undefined) {
+      user.bio = bio;
+    }
+
+    if (bannerImage !== undefined) {
+      user.bannerImage = bannerImage;
+    }
+
+    await user.save();
+
+    // Get updated user with Clerk data
+    const updatedUser = user.toJSON();
+
+    try {
+      const clerkUser = await clerkClient.users.getUser(userId);
+      updatedUser.avatarUrl = clerkUser.imageUrl || null;
+    } catch (err) {
+      // If we can't get Clerk data, just continue
+      console.log(`Could not fetch Clerk data for user ${userId}`);
+    }
+
+    res.json(updatedUser);
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).json({ error: "Failed to update profile" });
+  }
+});
+
+// Get a user's photos
+router.get("/:userId/photos", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const photos = await Photo.findAll({
+      where: { userId },
+      order: [["createdAt", "DESC"]],
+    });
+
+    res.json(photos);
+  } catch (error) {
+    console.error("Error fetching user photos:", error);
+    res.status(500).json({ error: "Failed to fetch photos" });
+  }
+});
 
 // Get user profile
 router.get("/:userId/profile", requireAuth(), async (req, res) => {

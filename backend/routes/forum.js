@@ -1,9 +1,174 @@
 import express from "express";
 import models from "../database/models/index.js";
 import { requireAuth } from "../middleware/auth.js";
+import { clerkClient } from "@clerk/express";
+import { ensureUserExists } from "../middleware/ensureUserExists.js";
+import { Op } from "sequelize";
 
 const router = express.Router();
 const { ForumThread, ForumPost, User } = models;
+
+// Cache for user images with a shorter expiry
+const userImageCache = new Map();
+const CACHE_EXPIRY = 60 * 1000; // 1 minute in milliseconds
+const REFRESH_THRESHOLD = 10 * 60 * 1000; // Force refresh after 10 minutes
+
+// Constants for forum categories
+const FORUM_CATEGORIES = [
+  "General",
+  "Photography Tips",
+  "Equipment",
+  "Contest Discussion",
+  "Post-Processing",
+  "Critique & Feedback",
+];
+
+/**
+ * Helper function to add Clerk image URL to a user object
+ */
+const addClerkImageToUser = async (user) => {
+  if (!user) return user;
+
+  const userId = user.id;
+
+  console.log(`Adding Clerk image for user ${userId}`);
+
+  try {
+    // Check if we have a cached image URL that's not expired
+    const cachedData = userImageCache.get(userId);
+    const now = Date.now();
+
+    // Use cache if it exists, isn't expired, and isn't due for a refresh check
+    if (
+      cachedData &&
+      now - cachedData.timestamp < CACHE_EXPIRY &&
+      now - cachedData.lastFetchTime < REFRESH_THRESHOLD
+    ) {
+      console.log(
+        `Using cached image for user ${userId}: ${cachedData.imageUrl}`
+      );
+
+      // Add the avatar URL without modifying other fields
+      return {
+        ...user,
+        avatarUrl: cachedData.imageUrl,
+      };
+    }
+
+    // If cache exists but due for refresh check, use cached value but trigger background refresh
+    if (cachedData && now - cachedData.timestamp < CACHE_EXPIRY) {
+      // Schedule async refresh without waiting for it
+      setTimeout(async () => {
+        try {
+          const clerkUser = await clerkClient.users.getUser(userId);
+          const newImageUrl = clerkUser.imageUrl || null;
+
+          // Only update cache if image URL has changed
+          if (newImageUrl !== cachedData.imageUrl) {
+            console.log(`Background refresh: Image changed for user ${userId}`);
+            userImageCache.set(userId, {
+              imageUrl: newImageUrl,
+              timestamp: Date.now(),
+              lastFetchTime: Date.now(),
+            });
+          }
+        } catch (error) {
+          console.error(`Background refresh error for ${userId}:`, error);
+        }
+      }, 0);
+
+      // Add the avatar URL without modifying other fields
+      return {
+        ...user,
+        avatarUrl: cachedData.imageUrl,
+      };
+    }
+
+    // Fetch from Clerk if not cached or expired
+    console.log(`Fetching Clerk data for user ${userId}`);
+    const clerkUser = await clerkClient.users.getUser(userId);
+    const imageUrl = clerkUser.imageUrl || null;
+    console.log(`Got image URL: ${imageUrl}`);
+
+    // Cache the image URL with current timestamp
+    userImageCache.set(userId, {
+      imageUrl,
+      timestamp: Date.now(),
+      lastFetchTime: Date.now(),
+    });
+
+    // Add the avatar URL without modifying other fields
+    return {
+      ...user,
+      avatarUrl: imageUrl,
+    };
+  } catch (error) {
+    console.error(`Error fetching Clerk data for user ${userId}:`, error);
+
+    // If there's an error but we have cached data, use it
+    const cachedData = userImageCache.get(userId);
+    if (cachedData) {
+      return {
+        ...user,
+        avatarUrl: cachedData.imageUrl,
+      };
+    }
+
+    return user; // Return user without image in case of error
+  }
+};
+
+/**
+ * Transform an array of threads with Clerk data
+ */
+const transformThreadsWithClerkData = async (threads) => {
+  const transformedThreads = [];
+
+  for (const thread of threads) {
+    const threadData = thread.toJSON ? thread.toJSON() : thread;
+    console.log(
+      `Original author data for thread ${threadData.id}:`,
+      JSON.stringify(threadData.author, null, 2)
+    );
+
+    if (threadData.author) {
+      // Save the original ID and nickname to ensure they're preserved
+      const authorId = threadData.author.id;
+      const authorNickname = threadData.author.nickname;
+
+      threadData.author = await addClerkImageToUser(threadData.author);
+
+      // Ensure the ID and nickname are preserved
+      threadData.author.id = authorId;
+      threadData.author.nickname = authorNickname;
+
+      console.log(
+        `Transformed author data for thread ${threadData.id}:`,
+        JSON.stringify(threadData.author, null, 2)
+      );
+    }
+    transformedThreads.push(threadData);
+  }
+
+  return transformedThreads;
+};
+
+/**
+ * Transform an array of posts with Clerk data
+ */
+const transformPostsWithClerkData = async (posts) => {
+  const transformedPosts = [];
+
+  for (const post of posts) {
+    const postData = post.toJSON ? post.toJSON() : post;
+    if (postData.author) {
+      postData.author = await addClerkImageToUser(postData.author);
+    }
+    transformedPosts.push(postData);
+  }
+
+  return transformedPosts;
+};
 
 // Get all forum threads (with pagination)
 router.get("/threads", async (req, res) => {
@@ -45,8 +210,20 @@ router.get("/threads", async (req, res) => {
       })
     );
 
+    // Transform threads with Clerk data
+    const transformedThreads = await transformThreadsWithClerkData(
+      threadsWithCounts
+    );
+
+    console.log(
+      "Sample transformed thread:",
+      transformedThreads.length > 0
+        ? JSON.stringify(transformedThreads[0], null, 2)
+        : "No threads found"
+    );
+
     res.json({
-      threads: threadsWithCounts,
+      threads: transformedThreads,
       totalPages: Math.ceil(count / limit),
       currentPage: page,
       totalThreads: count,
@@ -60,11 +237,8 @@ router.get("/threads", async (req, res) => {
 // Get thread categories
 router.get("/categories", async (req, res) => {
   try {
-    const categories = await ForumThread.findAll({
-      attributes: ["category"],
-      group: ["category"],
-    });
-    res.json(categories.map((c) => c.category));
+    // Return predefined categories instead of querying the database
+    res.json(FORUM_CATEGORIES);
   } catch (error) {
     console.error("Error fetching categories:", error);
     res.status(500).json({ error: "Failed to fetch categories" });
@@ -112,9 +286,63 @@ router.get("/threads/:threadId", async (req, res) => {
       ],
     });
 
+    // Transform thread data with Clerk image
+    const threadData = thread.toJSON();
+    console.log(
+      "Original thread author data:",
+      JSON.stringify(threadData.author, null, 2)
+    );
+
+    // Make sure thread author data is correct
+    if (threadData.author) {
+      // Save the original ID and nickname to ensure they're preserved
+      const authorId = threadData.author.id;
+      const authorNickname = threadData.author.nickname;
+
+      threadData.author = await addClerkImageToUser(threadData.author);
+
+      // Ensure the ID and nickname are preserved
+      threadData.author.id = authorId;
+      threadData.author.nickname = authorNickname;
+
+      console.log(
+        "Transformed thread author data:",
+        JSON.stringify(threadData.author, null, 2)
+      );
+    }
+
+    // Transform posts with Clerk data
+    const transformedPosts = await Promise.all(
+      posts.map(async (post) => {
+        const postData = post.toJSON();
+        console.log(
+          `Original post author data for post ${postData.id}:`,
+          JSON.stringify(postData.author, null, 2)
+        );
+
+        if (postData.author) {
+          // Save the original ID and nickname to ensure they're preserved
+          const authorId = postData.author.id;
+          const authorNickname = postData.author.nickname;
+
+          postData.author = await addClerkImageToUser(postData.author);
+
+          // Ensure the ID and nickname are preserved
+          postData.author.id = authorId;
+          postData.author.nickname = authorNickname;
+
+          console.log(
+            `Transformed post author data for post ${postData.id}:`,
+            JSON.stringify(postData.author, null, 2)
+          );
+        }
+        return postData;
+      })
+    );
+
     res.json({
-      thread,
-      posts,
+      thread: threadData,
+      posts: transformedPosts,
       totalPages: Math.ceil(count / limit),
       currentPage: page,
       totalPosts: count,
@@ -126,7 +354,7 @@ router.get("/threads/:threadId", async (req, res) => {
 });
 
 // Create a new thread
-router.post("/threads", requireAuth, async (req, res) => {
+router.post("/threads", requireAuth, ensureUserExists, async (req, res) => {
   try {
     const { title, content, category } = req.body;
     const userId = req.user.id;
@@ -135,10 +363,16 @@ router.post("/threads", requireAuth, async (req, res) => {
       return res.status(400).json({ error: "Title and content are required" });
     }
 
+    // Use a default category if none provided or if the provided category is invalid
+    let selectedCategory = category || "General";
+    if (!FORUM_CATEGORIES.includes(selectedCategory)) {
+      selectedCategory = "General";
+    }
+
     const thread = await ForumThread.create({
       title,
       content,
-      category: category || "General",
+      category: selectedCategory,
       userId,
     });
 
@@ -153,7 +387,26 @@ router.post("/threads", requireAuth, async (req, res) => {
       ],
     });
 
-    res.status(201).json(threadWithAuthor);
+    // Add Clerk image to author
+    const threadData = threadWithAuthor.toJSON();
+    console.log(
+      "New thread author data:",
+      JSON.stringify(threadData.author, null, 2)
+    );
+
+    if (threadData.author) {
+      // Save the original ID and nickname
+      const authorId = threadData.author.id;
+      const authorNickname = threadData.author.nickname;
+
+      threadData.author = await addClerkImageToUser(threadData.author);
+
+      // Ensure the ID and nickname are preserved
+      threadData.author.id = authorId;
+      threadData.author.nickname = authorNickname;
+    }
+
+    res.status(201).json(threadData);
   } catch (error) {
     console.error("Error creating thread:", error);
     res.status(500).json({ error: "Failed to create thread" });
@@ -161,170 +414,214 @@ router.post("/threads", requireAuth, async (req, res) => {
 });
 
 // Create a new post in a thread
-router.post("/threads/:threadId/posts", requireAuth, async (req, res) => {
-  try {
-    const { threadId } = req.params;
-    const { content } = req.body;
-    const userId = req.user.id;
+router.post(
+  "/threads/:threadId/posts",
+  requireAuth,
+  ensureUserExists,
+  async (req, res) => {
+    try {
+      const { threadId } = req.params;
+      const { content } = req.body;
+      const userId = req.user.id;
 
-    if (!content) {
-      return res.status(400).json({ error: "Content is required" });
+      if (!content) {
+        return res.status(400).json({ error: "Content is required" });
+      }
+
+      // Check if thread exists and is not locked
+      const thread = await ForumThread.findByPk(threadId);
+      if (!thread) {
+        return res.status(404).json({ error: "Thread not found" });
+      }
+
+      if (thread.isLocked) {
+        return res.status(403).json({ error: "Thread is locked" });
+      }
+
+      const post = await ForumPost.create({
+        content,
+        userId,
+        threadId,
+      });
+
+      // Update the thread's last activity timestamp
+      await thread.update({ lastActivityAt: new Date() });
+
+      // Fetch the created post with author information
+      const postWithAuthor = await ForumPost.findByPk(post.id, {
+        include: [
+          {
+            model: User,
+            as: "author",
+            attributes: ["id", "nickname"],
+          },
+        ],
+      });
+
+      // Add Clerk image to author
+      const postData = postWithAuthor.toJSON();
+      console.log(
+        "New post author data:",
+        JSON.stringify(postData.author, null, 2)
+      );
+
+      if (postData.author) {
+        // Save the original ID and nickname
+        const authorId = postData.author.id;
+        const authorNickname = postData.author.nickname;
+
+        postData.author = await addClerkImageToUser(postData.author);
+
+        // Ensure the ID and nickname are preserved
+        postData.author.id = authorId;
+        postData.author.nickname = authorNickname;
+      }
+
+      res.status(201).json(postData);
+    } catch (error) {
+      console.error("Error creating post:", error);
+      res.status(500).json({ error: "Failed to create post" });
     }
-
-    // Check if thread exists and is not locked
-    const thread = await ForumThread.findByPk(threadId);
-    if (!thread) {
-      return res.status(404).json({ error: "Thread not found" });
-    }
-
-    if (thread.isLocked) {
-      return res.status(403).json({ error: "Thread is locked" });
-    }
-
-    const post = await ForumPost.create({
-      content,
-      userId,
-      threadId,
-    });
-
-    // Update the thread's last activity timestamp
-    await thread.update({ lastActivityAt: new Date() });
-
-    // Fetch the created post with author information
-    const postWithAuthor = await ForumPost.findByPk(post.id, {
-      include: [
-        {
-          model: User,
-          as: "author",
-          attributes: ["id", "nickname"],
-        },
-      ],
-    });
-
-    res.status(201).json(postWithAuthor);
-  } catch (error) {
-    console.error("Error creating post:", error);
-    res.status(500).json({ error: "Failed to create post" });
   }
-});
+);
 
 // Update a thread (title, content, or category)
-router.put("/threads/:threadId", requireAuth, async (req, res) => {
-  try {
-    const { threadId } = req.params;
-    const { title, content, category } = req.body;
-    const userId = req.user.id;
+router.put(
+  "/threads/:threadId",
+  requireAuth,
+  ensureUserExists,
+  async (req, res) => {
+    try {
+      const { threadId } = req.params;
+      const { title, content, category } = req.body;
+      const userId = req.user.id;
 
-    const thread = await ForumThread.findByPk(threadId);
-    if (!thread) {
-      return res.status(404).json({ error: "Thread not found" });
+      const thread = await ForumThread.findByPk(threadId);
+      if (!thread) {
+        return res.status(404).json({ error: "Thread not found" });
+      }
+
+      // Only allow the thread author to update it
+      if (thread.userId !== userId) {
+        return res.status(403).json({ error: "Unauthorized" });
+      }
+
+      await thread.update({
+        title: title || thread.title,
+        content: content || thread.content,
+        category: category || thread.category,
+      });
+
+      res.json(thread);
+    } catch (error) {
+      console.error("Error updating thread:", error);
+      res.status(500).json({ error: "Failed to update thread" });
     }
-
-    // Only allow the thread author to update it
-    if (thread.userId !== userId) {
-      return res.status(403).json({ error: "Unauthorized" });
-    }
-
-    await thread.update({
-      title: title || thread.title,
-      content: content || thread.content,
-      category: category || thread.category,
-    });
-
-    res.json(thread);
-  } catch (error) {
-    console.error("Error updating thread:", error);
-    res.status(500).json({ error: "Failed to update thread" });
   }
-});
+);
 
 // Update a post
-router.put("/posts/:postId", requireAuth, async (req, res) => {
-  try {
-    const { postId } = req.params;
-    const { content } = req.body;
-    const userId = req.user.id;
+router.put(
+  "/posts/:postId",
+  requireAuth,
+  ensureUserExists,
+  async (req, res) => {
+    try {
+      const { postId } = req.params;
+      const { content } = req.body;
+      const userId = req.user.id;
 
-    const post = await ForumPost.findByPk(postId);
-    if (!post) {
-      return res.status(404).json({ error: "Post not found" });
+      const post = await ForumPost.findByPk(postId);
+      if (!post) {
+        return res.status(404).json({ error: "Post not found" });
+      }
+
+      // Only allow the post author to update it
+      if (post.userId !== userId) {
+        return res.status(403).json({ error: "Unauthorized" });
+      }
+
+      await post.update({
+        content,
+        isEdited: true,
+      });
+
+      // Fetch updated post with author
+      const updatedPost = await ForumPost.findByPk(postId, {
+        include: [
+          {
+            model: User,
+            as: "author",
+            attributes: ["id", "nickname"],
+          },
+        ],
+      });
+
+      res.json(updatedPost);
+    } catch (error) {
+      console.error("Error updating post:", error);
+      res.status(500).json({ error: "Failed to update post" });
     }
-
-    // Only allow the post author to update it
-    if (post.userId !== userId) {
-      return res.status(403).json({ error: "Unauthorized" });
-    }
-
-    await post.update({
-      content,
-      isEdited: true,
-    });
-
-    // Fetch updated post with author
-    const updatedPost = await ForumPost.findByPk(postId, {
-      include: [
-        {
-          model: User,
-          as: "author",
-          attributes: ["id", "nickname"],
-        },
-      ],
-    });
-
-    res.json(updatedPost);
-  } catch (error) {
-    console.error("Error updating post:", error);
-    res.status(500).json({ error: "Failed to update post" });
   }
-});
+);
 
 // Delete a thread
-router.delete("/threads/:threadId", requireAuth, async (req, res) => {
-  try {
-    const { threadId } = req.params;
-    const userId = req.user.id;
+router.delete(
+  "/threads/:threadId",
+  requireAuth,
+  ensureUserExists,
+  async (req, res) => {
+    try {
+      const { threadId } = req.params;
+      const userId = req.user.id;
 
-    const thread = await ForumThread.findByPk(threadId);
-    if (!thread) {
-      return res.status(404).json({ error: "Thread not found" });
+      const thread = await ForumThread.findByPk(threadId);
+      if (!thread) {
+        return res.status(404).json({ error: "Thread not found" });
+      }
+
+      // Only allow the thread author to delete it
+      if (thread.userId !== userId) {
+        return res.status(403).json({ error: "Unauthorized" });
+      }
+
+      await thread.destroy();
+      res.json({ message: "Thread deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting thread:", error);
+      res.status(500).json({ error: "Failed to delete thread" });
     }
-
-    // Only allow the thread author to delete it
-    if (thread.userId !== userId) {
-      return res.status(403).json({ error: "Unauthorized" });
-    }
-
-    await thread.destroy();
-    res.json({ message: "Thread deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting thread:", error);
-    res.status(500).json({ error: "Failed to delete thread" });
   }
-});
+);
 
 // Delete a post
-router.delete("/posts/:postId", requireAuth, async (req, res) => {
-  try {
-    const { postId } = req.params;
-    const userId = req.user.id;
+router.delete(
+  "/posts/:postId",
+  requireAuth,
+  ensureUserExists,
+  async (req, res) => {
+    try {
+      const { postId } = req.params;
+      const userId = req.user.id;
 
-    const post = await ForumPost.findByPk(postId);
-    if (!post) {
-      return res.status(404).json({ error: "Post not found" });
+      const post = await ForumPost.findByPk(postId);
+      if (!post) {
+        return res.status(404).json({ error: "Post not found" });
+      }
+
+      // Only allow the post author to delete it
+      if (post.userId !== userId) {
+        return res.status(403).json({ error: "Unauthorized" });
+      }
+
+      await post.destroy();
+      res.json({ message: "Post deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      res.status(500).json({ error: "Failed to delete post" });
     }
-
-    // Only allow the post author to delete it
-    if (post.userId !== userId) {
-      return res.status(403).json({ error: "Unauthorized" });
-    }
-
-    await post.destroy();
-    res.json({ message: "Post deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting post:", error);
-    res.status(500).json({ error: "Failed to delete post" });
   }
-});
+);
 
 // Pin or unpin a thread (admin only)
 router.patch("/threads/:threadId/pin", requireAuth, async (req, res) => {
@@ -371,5 +668,40 @@ router.patch("/threads/:threadId/lock", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Failed to update thread" });
   }
 });
+
+// Clear profile image cache for a user
+router.post(
+  "/clear-image-cache",
+  requireAuth,
+  ensureUserExists,
+  async (req, res) => {
+    try {
+      const userId = req.user.id;
+
+      // Remove from cache
+      userImageCache.delete(userId);
+
+      // Fetch fresh image
+      const clerkUser = await clerkClient.users.getUser(userId);
+      const imageUrl = clerkUser.imageUrl || null;
+
+      // Update cache with new data
+      userImageCache.set(userId, {
+        imageUrl,
+        timestamp: Date.now(),
+        lastFetchTime: Date.now(),
+      });
+
+      res.json({
+        success: true,
+        message: "Image cache cleared and refreshed",
+        imageUrl,
+      });
+    } catch (error) {
+      console.error("Error clearing image cache:", error);
+      res.status(500).json({ error: "Failed to clear image cache" });
+    }
+  }
+);
 
 export default router;
