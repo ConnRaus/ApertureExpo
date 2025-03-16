@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ContestCard } from "./ContestCard";
 import { useContestService, useDelayedLoading } from "../hooks";
-import "../styles/loading.css";
+import LoadingSpinner from "./LoadingSpinner";
 
 export function EventList() {
   const [contests, setContests] = useState([]);
@@ -39,21 +39,7 @@ export function EventList() {
   if (shouldShowLoading) {
     return (
       <div className="mt-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
-          {[...Array(6)].map((_, index) => (
-            <div key={index} className="contest-card-skeleton">
-              <div className="banner-skeleton"></div>
-              <div className="content-skeleton">
-                <div className="title-skeleton"></div>
-                <div className="text-skeleton"></div>
-                <div
-                  className="text-skeleton"
-                  style={{ width: "100px", marginTop: "12px" }}
-                ></div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <LoadingSpinner size="lg" message="Loading contests..." />
       </div>
     );
   }

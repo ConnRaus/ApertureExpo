@@ -4,7 +4,7 @@ import { ContestHeader } from "./ContestHeader";
 import { ContestSubmissions } from "./ContestSubmissions";
 import { UploadForm } from "./UploadForm";
 import { useContestService, useDelayedLoading } from "../hooks";
-import "../styles/loading.css";
+import LoadingSpinner from "./LoadingSpinner";
 
 export function ContestDetail({
   contestId,
@@ -44,31 +44,8 @@ export function ContestDetail({
   if (shouldShowLoading) {
     return (
       <div className={styles.contestDetail}>
-        <div className="contest-detail-skeleton">
-          {/* Header skeleton */}
-          <div className="banner-skeleton h-64"></div>
-          <div className="content-skeleton">
-            <div className="title-skeleton w-1/2 h-8 mb-4"></div>
-            <div className="text-skeleton w-3/4 mb-2"></div>
-            <div className="text-skeleton w-1/4"></div>
-          </div>
-
-          {/* Upload button skeleton */}
-          <div className="my-8">
-            <div className="button-skeleton w-32 h-10 rounded-lg"></div>
-          </div>
-
-          {/* Submissions skeleton */}
-          <div className="mt-8">
-            <div className="title-skeleton w-48 mb-6"></div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {[...Array(10)].map((_, index) => (
-                <div key={index} className="aspect-square">
-                  <div className="banner-skeleton h-full"></div>
-                </div>
-              ))}
-            </div>
-          </div>
+        <div className="py-12">
+          <LoadingSpinner size="lg" message="Loading contest details..." />
         </div>
       </div>
     );

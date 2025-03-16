@@ -21,6 +21,7 @@ const FORUM_CATEGORIES = [
   "Contest Discussion",
   "Post-Processing",
   "Critique & Feedback",
+  "Other",
 ];
 
 /**

@@ -6,7 +6,7 @@ import { EditProfileModal } from "./EditProfileModal";
 import { PhotoSelector } from "./PhotoSelector";
 import { ProfileHeader } from "./ProfileHeader";
 import { usePhotoService, useUserService, useDelayedLoading } from "../hooks";
-import "../styles/loading.css";
+import LoadingSpinner from "./LoadingSpinner";
 
 export function PublicUserGallery({ userId, isOwner }) {
   const [photos, setPhotos] = useState([]);
@@ -146,25 +146,14 @@ export function PublicUserGallery({ userId, isOwner }) {
 
   if (shouldShowLoading) {
     return (
-      <div className="loading-container">
-        <div className="loading-skeleton">
-          <div className="banner-skeleton"></div>
-          <div className="photo-grid mt-8">
-            {[...Array(6)].map((_, index) => (
-              <div key={index} className="photo-card-skeleton">
-                <div className="aspect-square rounded-lg overflow-hidden">
-                  <div className="banner-skeleton h-full"></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className="py-12">
+        <LoadingSpinner size="lg" message="Loading user profile..." />
       </div>
     );
   }
 
   if (isLoading) {
-    return <div className="loading-container"></div>;
+    return <div></div>;
   }
 
   return (

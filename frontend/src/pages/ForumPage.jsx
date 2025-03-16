@@ -3,7 +3,7 @@ import { useForumService, useDelayedLoading } from "../hooks";
 import styles from "../styles/components/Forum.module.css";
 import { ThreadList } from "../components/forum/ThreadList";
 import { CreateThreadForm } from "../components/forum/CreateThreadForm";
-import "../styles/loading.css";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 function ForumPage() {
   const [threads, setThreads] = useState([]);
@@ -121,19 +121,8 @@ function ForumPage() {
       )}
 
       {shouldShowLoading ? (
-        <div className="loading-container">
-          {[...Array(5)].map((_, index) => (
-            <div key={index} className="mb-4">
-              <div className="title-skeleton w-1/3 h-6 mb-2"></div>
-              <div className="text-skeleton w-1/6 h-4 mb-4"></div>
-              <div className="text-skeleton w-full h-4 mb-2"></div>
-              <div className="text-skeleton w-3/4 h-4 mb-4"></div>
-              <div className="flex justify-between">
-                <div className="text-skeleton w-1/4 h-4"></div>
-                <div className="text-skeleton w-1/4 h-4"></div>
-              </div>
-            </div>
-          ))}
+        <div className="py-12">
+          <LoadingSpinner size="lg" message="Loading forum threads..." />
         </div>
       ) : (
         <>

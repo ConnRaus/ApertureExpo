@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useForumService, useDelayedLoading } from "../hooks";
 import { ThreadDetail } from "../components/forum/ThreadDetail";
 import styles from "../styles/components/Forum.module.css";
-import "../styles/loading.css";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 function ThreadDetailPage() {
   const { threadId } = useParams();
@@ -82,17 +82,8 @@ function ThreadDetailPage() {
       </div>
 
       {shouldShowLoading ? (
-        <div className="loading-container">
-          <div className="contest-detail-skeleton">
-            <div className="banner-skeleton h-32"></div>
-            <div className="content-skeleton">
-              <div className="title-skeleton w-1/2 h-8 mb-4"></div>
-              <div className="text-skeleton w-1/4 mb-6"></div>
-              <div className="text-skeleton w-full mb-2"></div>
-              <div className="text-skeleton w-full mb-2"></div>
-              <div className="text-skeleton w-3/4 mb-6"></div>
-            </div>
-          </div>
+        <div className="py-12">
+          <LoadingSpinner size="lg" message="Loading thread details..." />
         </div>
       ) : (
         <>
