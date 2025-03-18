@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
-import formStyles from "../styles/components/Form.module.css";
-import { PhotoService } from "../services/api";
+import formStyles from "../../styles/components/Form.module.css";
+import { PhotoService } from "../../services/api";
 
 export function PhotoCard({
   photo,

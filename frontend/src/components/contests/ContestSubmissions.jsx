@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import styles from "../styles/components/Contest.module.css";
-import { PhotoLightbox } from "./PhotoLightbox";
+import styles from "../../styles/components/Contest.module.css";
+import { PhotoLightbox } from "../photos/PhotoLightbox";
 
 function ContestPhotoCard({ photo, onClick }) {
   const handleImageError = (e) => {

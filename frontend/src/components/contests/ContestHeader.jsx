@@ -1,5 +1,5 @@
 import React from "react";
-import styles from "../styles/components/Contest.module.css";
+import styles from "../../styles/components/Contest.module.css";
 
 const formatDate = (date) => {
   return new Date(date).toLocaleDateString("en-US", {

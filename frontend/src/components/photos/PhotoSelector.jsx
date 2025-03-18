@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useDelayedLoading, usePhotoService } from "../hooks";
+import { useDelayedLoading, usePhotoService } from "../../hooks";
 
 export function PhotoSelector({
   isOpen,

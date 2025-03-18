@@ -2,11 +2,15 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { PhotoGrid } from "./PhotoGrid";
 import { PhotoLightbox } from "./PhotoLightbox";
-import { EditProfileModal } from "./EditProfileModal";
+import { EditProfileModal } from "../user/EditProfileModal";
 import { PhotoSelector } from "./PhotoSelector";
-import { ProfileHeader } from "./ProfileHeader";
-import { usePhotoService, useUserService, useDelayedLoading } from "../hooks";
-import LoadingSpinner from "./LoadingSpinner";
+import { ProfileHeader } from "../user/ProfileHeader";
+import {
+  usePhotoService,
+  useUserService,
+  useDelayedLoading,
+} from "../../hooks";
+import { LoadingSpinner } from "../common/CommonComponents";
 
 export function PublicUserGallery({ userId, isOwner }) {
   const [photos, setPhotos] = useState([]);

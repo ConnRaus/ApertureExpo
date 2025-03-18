@@ -1,5 +1,5 @@
 import React from "react";
-import { EventList } from "../components/ContestComponents";
+import { EventList } from "../components/contests/ContestComponents";
 
 function EventsPage() {
   return (

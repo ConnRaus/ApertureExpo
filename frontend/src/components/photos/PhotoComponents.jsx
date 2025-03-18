@@ -1,7 +1,9 @@
 export { PhotoCard } from "./PhotoCard";
 export { UserPhotoGallery } from "./UserPhotoGallery";
 export { PublicUserGallery } from "./PublicUserGallery";
-export { EditProfileModal } from "./EditProfileModal";
+export { EditProfileModal } from "../user/EditProfileModal";
 export { PhotoGrid } from "./PhotoGrid";
 export { PhotoLightbox } from "./PhotoLightbox";
-export { ProfileHeader } from "./ProfileHeader";
+export { ProfileHeader } from "../user/ProfileHeader";
+export { PhotoSelector } from "./PhotoSelector";
+export { PhotoUploadModal } from "./PhotoUploadModal";

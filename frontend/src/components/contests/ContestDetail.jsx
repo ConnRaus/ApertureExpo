@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import styles from "../styles/components/Contest.module.css";
+import styles from "../../styles/components/Contest.module.css";
 import { ContestHeader } from "./ContestHeader";
 import { ContestSubmissions } from "./ContestSubmissions";
-import { UploadForm } from "./UploadForm";
-import { useContestService, useDelayedLoading } from "../hooks";
-import LoadingSpinner from "./LoadingSpinner";
+import { UploadForm } from "../user/UploadForm";
+import { useContestService, useDelayedLoading } from "../../hooks";
+import { LoadingSpinner } from "../common/CommonComponents";
 
 export function ContestDetail({
   contestId,

@@ -1,7 +1,7 @@
 import React from "react";
 import { useParams } from "react-router-dom";
+import { PublicUserGallery } from "../components/photos/PhotoComponents";
 import { useUser } from "@clerk/clerk-react";
-import { PublicUserGallery } from "../components/PhotoComponents";
 
 function UserProfilePage() {
   const { userId } = useParams();

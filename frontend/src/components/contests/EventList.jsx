@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ContestCard } from "./ContestCard";
-import { useContestService, useDelayedLoading } from "../hooks";
-import LoadingSpinner from "./LoadingSpinner";
+import { useContestService, useDelayedLoading } from "../../hooks";
+import { LoadingSpinner } from "../common/CommonComponents";
 
 export function EventList() {
   const [contests, setContests] = useState([]);

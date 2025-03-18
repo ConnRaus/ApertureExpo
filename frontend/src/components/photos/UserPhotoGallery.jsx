@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { PhotoGrid } from "./PhotoGrid";
 import { PhotoLightbox } from "./PhotoLightbox";
-import { usePhotoService } from "../hooks";
+import { usePhotoService } from "../../hooks";
 
 export function UserPhotoGallery({ isEditing }) {
   const [photos, setPhotos] = useState([]);

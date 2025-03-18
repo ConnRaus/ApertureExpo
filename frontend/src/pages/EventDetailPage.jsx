@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
-import { ContestDetail } from "../components/ContestComponents";
+import { ContestDetail } from "../components/contests/ContestComponents";
 
 function EventDetailPage() {
   const [showUploadForm, setShowUploadForm] = useState(false);

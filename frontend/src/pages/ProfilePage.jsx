@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useUser } from "@clerk/clerk-react";
-import { UserPhotoGallery } from "../components/PhotoComponents";
+import { UserPhotoGallery } from "../components/photos/PhotoComponents";
 
 function ProfilePage() {
   const { user } = useUser();

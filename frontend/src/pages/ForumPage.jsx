@@ -3,7 +3,7 @@ import { useForumService, useDelayedLoading } from "../hooks";
 import styles from "../styles/components/Forum.module.css";
 import { ThreadList } from "../components/forum/ThreadList";
 import { CreateThreadForm } from "../components/forum/CreateThreadForm";
-import LoadingSpinner from "../components/LoadingSpinner";
+import { LoadingSpinner } from "../components/common/CommonComponents";
 
 function ForumPage() {
   const [threads, setThreads] = useState([]);

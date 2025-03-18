@@ -7,7 +7,7 @@ import {
   UserButton,
   useUser,
 } from "@clerk/clerk-react";
-import styles from "../styles/components/Navigation.module.css";
+import styles from "../../styles/components/Navigation.module.css";
 
 function Navigation() {
   const { user } = useUser();

@@ -1,5 +1,5 @@
 import React from "react";
-import formStyles from "../styles/components/Form.module.css";
+import formStyles from "../../styles/components/Form.module.css";
 
 export function EditProfileModal({
   isEditing,

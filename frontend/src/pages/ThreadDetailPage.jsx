@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useForumService, useDelayedLoading } from "../hooks";
 import { ThreadDetail } from "../components/forum/ThreadDetail";
 import styles from "../styles/components/Forum.module.css";
-import LoadingSpinner from "../components/LoadingSpinner";
+import { LoadingSpinner } from "../components/common/CommonComponents";
 
 function ThreadDetailPage() {
   const { threadId } = useParams();
