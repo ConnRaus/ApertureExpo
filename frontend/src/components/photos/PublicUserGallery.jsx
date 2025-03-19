@@ -48,6 +48,8 @@ export function PublicUserGallery({ userId, isOwner }) {
     setIsLoading(true);
     try {
       const data = await userService.fetchUserProfile(userId);
+      console.log("Profile data fetched:", data);
+      console.log("Banner image URL:", data.profile.bannerImage);
       setPhotos(data.photos || []);
       setProfile(data.profile);
       setNickname(data.profile.nickname || "");
@@ -81,35 +83,109 @@ export function PublicUserGallery({ userId, isOwner }) {
 
   const handleProfileUpdate = async () => {
     try {
-      let finalBannerImage = bannerImage;
-
+      // First, handle banner upload if there's a new file
       if (bannerFileToUpload) {
         setUploadingBanner(true);
+
+        // Create form data for the file upload
         const formData = new FormData();
         formData.append("banner", bannerFileToUpload);
 
-        const data = await userService.uploadBanner(userId, formData);
-        finalBannerImage = data.bannerImage;
+        // Upload the banner file to S3
+        const uploadResponse = await userService.uploadBanner(userId, formData);
+        console.log("Banner upload complete:", uploadResponse);
+
+        if (!uploadResponse.bannerImage) {
+          console.error(
+            "Banner upload response missing bannerImage URL:",
+            uploadResponse
+          );
+          throw new Error("Failed to upload banner image - no URL returned");
+        }
+
+        // Use the returned banner URL from the upload for the profile update
+        const profileUpdateData = {
+          nickname,
+          bio,
+          bannerImage: uploadResponse.bannerImage,
+        };
+
+        console.log(
+          "Updating profile with uploaded banner:",
+          profileUpdateData
+        );
+
+        // Update the profile with the new banner URL
+        const updatedProfile = await userService.updateProfile(
+          userId,
+          profileUpdateData
+        );
+        console.log("Profile update successful:", updatedProfile);
+
+        // Update the state with the new profile data
+        setProfile(updatedProfile);
+        setBannerImage(updatedProfile.bannerImage || "");
+        setTempBannerImage("");
         setBannerFileToUpload(null);
       }
+      // If using an existing photo (not a file upload)
+      else if (tempBannerImage && !tempBannerImage.startsWith("blob:")) {
+        const profileUpdateData = {
+          nickname,
+          bio,
+          bannerImage: tempBannerImage,
+        };
 
-      const updatedProfile = await userService.updateProfile(userId, {
-        nickname,
-        bio,
-        bannerImage: finalBannerImage,
-      });
+        console.log("Updating profile with selected photo:", profileUpdateData);
 
+        // Update the profile with the selected photo URL
+        const updatedProfile = await userService.updateProfile(
+          userId,
+          profileUpdateData
+        );
+        console.log("Profile update successful:", updatedProfile);
+
+        // Update the state with the new profile data
+        setProfile(updatedProfile);
+        setBannerImage(updatedProfile.bannerImage || "");
+        setTempBannerImage("");
+      }
+      // Just updating profile info without changing the banner
+      else {
+        const profileUpdateData = {
+          nickname,
+          bio,
+          bannerImage: bannerImage || "",
+        };
+
+        console.log("Updating profile info only:", profileUpdateData);
+
+        // Update just the profile info
+        const updatedProfile = await userService.updateProfile(
+          userId,
+          profileUpdateData
+        );
+        console.log("Profile update successful:", updatedProfile);
+
+        // Update the state with the new profile data
+        setProfile(updatedProfile);
+        setBannerImage(updatedProfile.bannerImage || "");
+      }
+
+      // Clean up the blob URL if it exists
       if (tempBannerImage && tempBannerImage.startsWith("blob:")) {
         URL.revokeObjectURL(tempBannerImage);
       }
 
-      setProfile(updatedProfile);
-      setBannerImage(updatedProfile.bannerImage);
-      setTempBannerImage("");
       setIsEditing(false);
+
+      // Force a reload of the user profile after a short delay
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (error) {
       console.error("Error updating profile:", error);
-      alert("Failed to update profile");
+      alert("Failed to update profile: " + (error.message || "Unknown error"));
     } finally {
       setUploadingBanner(false);
     }

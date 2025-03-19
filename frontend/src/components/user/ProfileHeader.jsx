@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 
 export function ProfileHeader({
   profile,
@@ -9,14 +9,45 @@ export function ProfileHeader({
   onEditClick,
   defaultBanner = "https://i.redd.it/jlpv3gf20c291.png",
 }) {
+  useEffect(() => {
+    console.log("ProfileHeader rendered with banner:", bannerImage);
+    console.log("Using banner source:", bannerImage || defaultBanner);
+    console.log("Profile data:", profile);
+  }, [bannerImage, defaultBanner, profile]);
+
+  // Ensure we have a valid banner URL
+  const bannerUrl = bannerImage || defaultBanner;
+
+  // Log the final banner URL being used
+  console.log("Final banner URL:", bannerUrl);
+
   return (
     <div className="profile-header-container">
       <div
         className="profile-banner"
         style={{
-          backgroundImage: `url(${bannerImage || defaultBanner})`,
+          backgroundImage: `url(${bannerUrl})`,
+          backgroundColor: "#000033", // Fallback color
+          backgroundSize: "cover",
+          backgroundPosition: "center",
         }}
       >
+        {/* Banner debug info - will be hidden under overlay */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            color: "white",
+            fontSize: "10px",
+            zIndex: 100,
+            padding: "2px",
+            backgroundColor: "rgba(0,0,0,0.5)",
+          }}
+        >
+          {bannerUrl.substring(0, 50)}...
+        </div>
+
         {isOwner && (
           <button className="edit-profile-button" onClick={onEditClick}>
             Edit Profile
@@ -26,13 +57,28 @@ export function ProfileHeader({
       </div>
       <div className="profile-content">
         <div className="profile-info">
-          <h1 className="profile-name">
-            {profile?.nickname || `User ${userId}`}
-          </h1>
-          {profile?.bio && <p className="profile-bio">{profile.bio}</p>}
-          <div className="profile-stats">
-            <span>{photosCount} Photos</span>
+          <div className="flex items-center gap-6">
+            {profile?.avatarUrl ? (
+              <img
+                src={profile.avatarUrl}
+                alt={profile?.nickname || `User ${userId}`}
+                className="w-24 h-24 rounded-full object-cover border-3 border-white shadow-lg"
+              />
+            ) : (
+              <div className="w-24 h-24 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 text-xl border-3 border-white shadow-lg">
+                {(profile?.nickname?.[0] || userId[0] || "U").toUpperCase()}
+              </div>
+            )}
+            <div className="flex flex-col justify-center -mt-1">
+              <h1 className="profile-name mb-0">
+                {profile?.nickname || `User ${userId}`}
+              </h1>
+              <div className="profile-stats mt-1">
+                <span>{photosCount} Photos</span>
+              </div>
+            </div>
           </div>
+          {profile?.bio && <p className="profile-bio mt-5">{profile.bio}</p>}
         </div>
       </div>
     </div>
