@@ -20,6 +20,8 @@ export function PhotoUploadModal({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [photoSelected, setPhotoSelected] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const [showError, setShowError] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const contestService = useContestService();
@@ -83,8 +85,8 @@ export function PhotoUploadModal({
   const handleUpload = (e) => {
     e.preventDefault();
 
-    // Check if a file is selected
-    if (!photoSelected || !fileRef.current?.files[0]) {
+    // Only check previewUrl and selectedFile state
+    if (!previewUrl || !selectedFile) {
       setShowError(true);
       toast.error("Please select a photo to upload");
       return;
@@ -106,7 +108,7 @@ export function PhotoUploadModal({
       const toastId = toast.loading("Preparing to upload...");
 
       const formData = new FormData();
-      formData.append("photo", fileRef.current.files[0]);
+      formData.append("photo", selectedFile);
       formData.append("title", titleRef.current.value);
       formData.append("description", descriptionRef.current.value);
 
@@ -136,7 +138,10 @@ export function PhotoUploadModal({
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file) {
+      // If no file was selected (user cancelled), keep the existing selection
+      return;
+    }
 
     if (!validateAndProcessFile(file)) {
       e.target.value = ""; // Reset file input
@@ -145,13 +150,12 @@ export function PhotoUploadModal({
 
     fileRef.current = e.target;
     setPhotoSelected(true);
+    setSelectedFile(file);
     setShowError(false);
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      const preview = document.getElementById("imagePreview");
-      preview.src = e.target.result;
-      preview.style.display = "block";
+      setPreviewUrl(e.target.result);
     };
     reader.readAsDataURL(file);
   };
@@ -192,6 +196,10 @@ export function PhotoUploadModal({
     // Create a new file input event
     const fileInput = document.getElementById("photoUpload");
     fileInput.files = dataTransfer.files;
+
+    // Store the file directly
+    setSelectedFile(file);
+    setPhotoSelected(true);
 
     // Trigger the file change handler
     handleFileChange({ target: fileInput });
@@ -248,7 +256,7 @@ export function PhotoUploadModal({
               />
 
               <div
-                className={`mb-4 border-2 border-dashed rounded-xl p-8 text-center transition-colors duration-200 ${
+                className={`mb-4 border-2 border-dashed rounded-xl overflow-hidden transition-colors duration-200 ${
                   isDragging
                     ? "border-indigo-500 bg-indigo-500/10"
                     : "border-gray-600 hover:border-gray-500"
@@ -258,44 +266,52 @@ export function PhotoUploadModal({
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
               >
-                <label
-                  htmlFor="photoUpload"
-                  className="flex flex-col items-center justify-center cursor-pointer"
-                >
-                  <svg
-                    className={`w-12 h-12 mb-4 transition-colors duration-200 ${
-                      isDragging ? "text-indigo-400" : "text-gray-400"
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                {previewUrl ? (
+                  <div className="relative">
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      className="w-full h-64 object-cover"
                     />
-                  </svg>
-                  <p className="text-lg mb-2">
-                    {photoSelected ? "Change Photo" : "Drop your photo here"}
-                  </p>
-                  <p className="text-sm text-gray-400">
-                    or click to select a file
-                  </p>
-                </label>
+                    <label
+                      htmlFor="photoUpload"
+                      className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer bg-black/40 opacity-0 hover:opacity-100 transition-opacity duration-200"
+                    >
+                      <p className="text-lg mb-2 text-white">Change Photo</p>
+                    </label>
+                  </div>
+                ) : (
+                  <label
+                    htmlFor="photoUpload"
+                    className="flex flex-col items-center justify-center cursor-pointer p-8 text-center"
+                  >
+                    <svg
+                      className={`w-12 h-12 mb-4 transition-colors duration-200 ${
+                        isDragging ? "text-indigo-400" : "text-gray-400"
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
+                    </svg>
+                    <p className="text-lg mb-2">Drop your photo here</p>
+                    <p className="text-sm text-gray-400">
+                      or click to select a file
+                    </p>
+                  </label>
+                )}
                 {showError && (
-                  <p className="mt-4 text-red-400 text-sm">
+                  <p className="text-center mt-4 text-red-400 text-sm">
                     Please select a photo to upload
                   </p>
                 )}
               </div>
-
-              <img
-                id="imagePreview"
-                alt="Preview"
-                className="w-full h-64 object-cover rounded-lg mb-4 hidden"
-              />
 
               <label className={formStyles.label}>Title</label>
               <input

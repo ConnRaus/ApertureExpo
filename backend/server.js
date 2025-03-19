@@ -32,8 +32,8 @@ app.use(
 app.use(clerkMiddleware());
 
 // Routes with authentication
-app.use("/", requireAuth(), photoRoutes);
-app.use("/", requireAuth(), contestRoutes);
+app.use("/", requireAuth(), ensureUserExists, photoRoutes);
+app.use("/", requireAuth(), ensureUserExists, contestRoutes);
 app.use("/users", requireAuth(), userRoutes);
 
 // Forum routes with user existence check

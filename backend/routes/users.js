@@ -5,9 +5,13 @@ import Photo from "../database/models/Photo.js";
 import Contest from "../database/models/Contest.js";
 import { requireAuth, clerkClient } from "@clerk/express";
 import { uploadToS3, deleteFromS3 } from "../services/s3Service.js";
+import { ensureUserExists } from "../middleware/ensureUserExists.js";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
+
+// Apply the ensureUserExists middleware to all user routes
+router.use(ensureUserExists);
 
 // Get the current user's profile with Clerk data
 router.get("/me", async (req, res) => {
@@ -132,12 +136,7 @@ router.get("/:userId/profile", requireAuth(), async (req, res) => {
     let user = await User.findByPk(req.params.userId);
 
     if (!user) {
-      user = await User.create({
-        id: req.params.userId,
-        nickname: null,
-        bio: null,
-        bannerImage: null,
-      });
+      return res.status(404).json({ error: "User not found" });
     }
 
     const photos = await Photo.findAll({
@@ -173,19 +172,14 @@ router.put("/:userId/profile", requireAuth(), async (req, res) => {
     let user = await User.findByPk(req.params.userId);
 
     if (!user) {
-      user = await User.create({
-        id: req.params.userId,
-        nickname: req.body.nickname,
-        bio: req.body.bio,
-        bannerImage: req.body.bannerImage,
-      });
-    } else {
-      await user.update({
-        nickname: req.body.nickname,
-        bio: req.body.bio,
-        bannerImage: req.body.bannerImage,
-      });
+      return res.status(404).json({ error: "User not found" });
     }
+
+    await user.update({
+      nickname: req.body.nickname,
+      bio: req.body.bio,
+      bannerImage: req.body.bannerImage,
+    });
 
     // Fetch the updated user to ensure we have the latest data
     const updatedUser = await User.findByPk(req.params.userId);
@@ -216,8 +210,12 @@ router.post(
       // Get the user and check if they have an existing banner
       let user = await User.findByPk(req.params.userId);
 
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
       // If there's an existing banner image, only delete it if it's in the banners directory
-      if (user && user.bannerImage) {
+      if (user.bannerImage) {
         // Check if the current banner is from the banners directory
         const isBannerImage = user.bannerImage.includes(
           `/photos/${req.params.userId}/banners/`
@@ -233,28 +231,25 @@ router.post(
       }
 
       // Upload new banner to S3
-      const s3Url = await uploadToS3(
+      const { mainUrl } = await uploadToS3(
         req.file,
         `photos/${req.auth.userId}/banners`,
         { generateThumbnail: false }
       );
 
-      // Create or update user with new banner image
-      if (!user) {
-        user = await User.create({
-          id: req.params.userId,
-          nickname: null,
-          bio: null,
-          bannerImage: s3Url,
-        });
-      } else {
-        await user.update({ bannerImage: s3Url });
-      }
+      // Update user with new banner image
+      await user.update({ bannerImage: mainUrl });
 
-      res.json({ bannerImage: s3Url });
+      // Return updated user
+      res.json({
+        id: user.id,
+        nickname: user.nickname,
+        bio: user.bio,
+        bannerImage: mainUrl,
+      });
     } catch (error) {
       console.error("Error uploading banner:", error);
-      res.status(500).json({ error: "Failed to upload banner image" });
+      res.status(500).json({ error: "Failed to upload banner" });
     }
   }
 );

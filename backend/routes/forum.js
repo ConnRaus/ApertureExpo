@@ -2,7 +2,6 @@ import express from "express";
 import models from "../database/models/index.js";
 import { requireAuth } from "../middleware/auth.js";
 import { clerkClient } from "@clerk/express";
-import { ensureUserExists } from "../middleware/ensureUserExists.js";
 import { Op } from "sequelize";
 
 const router = express.Router();
@@ -312,7 +311,7 @@ router.get("/threads/:threadId", async (req, res) => {
 });
 
 // Create a new thread
-router.post("/threads", requireAuth, ensureUserExists, async (req, res) => {
+router.post("/threads", requireAuth, async (req, res) => {
   try {
     const { title, content, category } = req.body;
     const userId = req.user.id;
@@ -368,210 +367,185 @@ router.post("/threads", requireAuth, ensureUserExists, async (req, res) => {
 });
 
 // Create a new post in a thread
-router.post(
-  "/threads/:threadId/posts",
-  requireAuth,
-  ensureUserExists,
-  async (req, res) => {
-    try {
-      const { threadId } = req.params;
-      const { content } = req.body;
-      const userId = req.user.id;
+router.post("/threads/:threadId/posts", requireAuth, async (req, res) => {
+  try {
+    const { threadId } = req.params;
+    const { content } = req.body;
+    const userId = req.user.id;
 
-      if (!content) {
-        return res.status(400).json({ error: "Content is required" });
-      }
-
-      // Check if thread exists and is not locked
-      const thread = await ForumThread.findByPk(threadId);
-      if (!thread) {
-        return res.status(404).json({ error: "Thread not found" });
-      }
-
-      if (thread.isLocked) {
-        return res.status(403).json({ error: "Thread is locked" });
-      }
-
-      const post = await ForumPost.create({
-        content,
-        userId,
-        threadId,
-      });
-
-      // Update the thread's last activity timestamp
-      await thread.update({ lastActivityAt: new Date() });
-
-      // Fetch the created post with author information
-      const postWithAuthor = await ForumPost.findByPk(post.id, {
-        include: [
-          {
-            model: User,
-            as: "author",
-            attributes: ["id", "nickname"],
-          },
-        ],
-      });
-
-      // Add Clerk image to author
-      const postData = postWithAuthor.toJSON();
-
-      if (postData.author) {
-        // Save the original ID and nickname
-        const authorId = postData.author.id;
-        const authorNickname = postData.author.nickname;
-
-        postData.author = await addClerkImageToUser(postData.author);
-
-        // Ensure the ID and nickname are preserved
-        postData.author.id = authorId;
-        postData.author.nickname = authorNickname;
-      }
-
-      res.status(201).json(postData);
-    } catch (error) {
-      console.error("Error creating post:", error);
-      res.status(500).json({ error: "Failed to create post" });
+    if (!content) {
+      return res.status(400).json({ error: "Content is required" });
     }
+
+    // Check if thread exists and is not locked
+    const thread = await ForumThread.findByPk(threadId);
+    if (!thread) {
+      return res.status(404).json({ error: "Thread not found" });
+    }
+
+    if (thread.isLocked) {
+      return res.status(403).json({ error: "Thread is locked" });
+    }
+
+    const post = await ForumPost.create({
+      content,
+      userId,
+      threadId,
+    });
+
+    // Update the thread's last activity timestamp
+    await thread.update({ lastActivityAt: new Date() });
+
+    // Fetch the created post with author information
+    const postWithAuthor = await ForumPost.findByPk(post.id, {
+      include: [
+        {
+          model: User,
+          as: "author",
+          attributes: ["id", "nickname"],
+        },
+      ],
+    });
+
+    // Add Clerk image to author
+    const postData = postWithAuthor.toJSON();
+
+    if (postData.author) {
+      // Save the original ID and nickname
+      const authorId = postData.author.id;
+      const authorNickname = postData.author.nickname;
+
+      postData.author = await addClerkImageToUser(postData.author);
+
+      // Ensure the ID and nickname are preserved
+      postData.author.id = authorId;
+      postData.author.nickname = authorNickname;
+    }
+
+    res.status(201).json(postData);
+  } catch (error) {
+    console.error("Error creating post:", error);
+    res.status(500).json({ error: "Failed to create post" });
   }
-);
+});
 
 // Update a thread (title, content, or category)
-router.put(
-  "/threads/:threadId",
-  requireAuth,
-  ensureUserExists,
-  async (req, res) => {
-    try {
-      const { threadId } = req.params;
-      const { title, content, category } = req.body;
-      const userId = req.user.id;
+router.put("/threads/:threadId", requireAuth, async (req, res) => {
+  try {
+    const { threadId } = req.params;
+    const { title, content, category } = req.body;
+    const userId = req.user.id;
 
-      const thread = await ForumThread.findByPk(threadId);
-      if (!thread) {
-        return res.status(404).json({ error: "Thread not found" });
-      }
-
-      // Only allow the thread author to update it
-      if (thread.userId !== userId) {
-        return res.status(403).json({ error: "Unauthorized" });
-      }
-
-      await thread.update({
-        title: title || thread.title,
-        content: content || thread.content,
-        category: category || thread.category,
-      });
-
-      res.json(thread);
-    } catch (error) {
-      console.error("Error updating thread:", error);
-      res.status(500).json({ error: "Failed to update thread" });
+    const thread = await ForumThread.findByPk(threadId);
+    if (!thread) {
+      return res.status(404).json({ error: "Thread not found" });
     }
+
+    // Only allow the thread author to update it
+    if (thread.userId !== userId) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    await thread.update({
+      title: title || thread.title,
+      content: content || thread.content,
+      category: category || thread.category,
+    });
+
+    res.json(thread);
+  } catch (error) {
+    console.error("Error updating thread:", error);
+    res.status(500).json({ error: "Failed to update thread" });
   }
-);
+});
 
 // Update a post
-router.put(
-  "/posts/:postId",
-  requireAuth,
-  ensureUserExists,
-  async (req, res) => {
-    try {
-      const { postId } = req.params;
-      const { content } = req.body;
-      const userId = req.user.id;
+router.put("/posts/:postId", requireAuth, async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { content } = req.body;
+    const userId = req.user.id;
 
-      const post = await ForumPost.findByPk(postId);
-      if (!post) {
-        return res.status(404).json({ error: "Post not found" });
-      }
-
-      // Only allow the post author to update it
-      if (post.userId !== userId) {
-        return res.status(403).json({ error: "Unauthorized" });
-      }
-
-      await post.update({
-        content,
-        isEdited: true,
-      });
-
-      // Fetch updated post with author
-      const updatedPost = await ForumPost.findByPk(postId, {
-        include: [
-          {
-            model: User,
-            as: "author",
-            attributes: ["id", "nickname"],
-          },
-        ],
-      });
-
-      res.json(updatedPost);
-    } catch (error) {
-      console.error("Error updating post:", error);
-      res.status(500).json({ error: "Failed to update post" });
+    const post = await ForumPost.findByPk(postId);
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
     }
+
+    // Only allow the post author to update it
+    if (post.userId !== userId) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    await post.update({
+      content,
+      isEdited: true,
+    });
+
+    // Fetch updated post with author
+    const updatedPost = await ForumPost.findByPk(postId, {
+      include: [
+        {
+          model: User,
+          as: "author",
+          attributes: ["id", "nickname"],
+        },
+      ],
+    });
+
+    res.json(updatedPost);
+  } catch (error) {
+    console.error("Error updating post:", error);
+    res.status(500).json({ error: "Failed to update post" });
   }
-);
+});
 
 // Delete a thread
-router.delete(
-  "/threads/:threadId",
-  requireAuth,
-  ensureUserExists,
-  async (req, res) => {
-    try {
-      const { threadId } = req.params;
-      const userId = req.user.id;
+router.delete("/threads/:threadId", requireAuth, async (req, res) => {
+  try {
+    const { threadId } = req.params;
+    const userId = req.user.id;
 
-      const thread = await ForumThread.findByPk(threadId);
-      if (!thread) {
-        return res.status(404).json({ error: "Thread not found" });
-      }
-
-      // Only allow the thread author to delete it
-      if (thread.userId !== userId) {
-        return res.status(403).json({ error: "Unauthorized" });
-      }
-
-      await thread.destroy();
-      res.json({ message: "Thread deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting thread:", error);
-      res.status(500).json({ error: "Failed to delete thread" });
+    const thread = await ForumThread.findByPk(threadId);
+    if (!thread) {
+      return res.status(404).json({ error: "Thread not found" });
     }
+
+    // Only allow the thread author to delete it
+    if (thread.userId !== userId) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    await thread.destroy();
+    res.json({ message: "Thread deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting thread:", error);
+    res.status(500).json({ error: "Failed to delete thread" });
   }
-);
+});
 
 // Delete a post
-router.delete(
-  "/posts/:postId",
-  requireAuth,
-  ensureUserExists,
-  async (req, res) => {
-    try {
-      const { postId } = req.params;
-      const userId = req.user.id;
+router.delete("/posts/:postId", requireAuth, async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const userId = req.user.id;
 
-      const post = await ForumPost.findByPk(postId);
-      if (!post) {
-        return res.status(404).json({ error: "Post not found" });
-      }
-
-      // Only allow the post author to delete it
-      if (post.userId !== userId) {
-        return res.status(403).json({ error: "Unauthorized" });
-      }
-
-      await post.destroy();
-      res.json({ message: "Post deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting post:", error);
-      res.status(500).json({ error: "Failed to delete post" });
+    const post = await ForumPost.findByPk(postId);
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
     }
+
+    // Only allow the post author to delete it
+    if (post.userId !== userId) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    await post.destroy();
+    res.json({ message: "Post deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting post:", error);
+    res.status(500).json({ error: "Failed to delete post" });
   }
-);
+});
 
 // Pin or unpin a thread (admin only)
 router.patch("/threads/:threadId/pin", requireAuth, async (req, res) => {
@@ -620,38 +594,33 @@ router.patch("/threads/:threadId/lock", requireAuth, async (req, res) => {
 });
 
 // Clear profile image cache for a user
-router.post(
-  "/clear-image-cache",
-  requireAuth,
-  ensureUserExists,
-  async (req, res) => {
-    try {
-      const userId = req.user.id;
+router.post("/clear-image-cache", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
 
-      // Remove from cache
-      userImageCache.delete(userId);
+    // Remove from cache
+    userImageCache.delete(userId);
 
-      // Fetch fresh image
-      const clerkUser = await clerkClient.users.getUser(userId);
-      const imageUrl = clerkUser.imageUrl || null;
+    // Fetch fresh image
+    const clerkUser = await clerkClient.users.getUser(userId);
+    const imageUrl = clerkUser.imageUrl || null;
 
-      // Update cache with new data
-      userImageCache.set(userId, {
-        imageUrl,
-        timestamp: Date.now(),
-        lastFetchTime: Date.now(),
-      });
+    // Update cache with new data
+    userImageCache.set(userId, {
+      imageUrl,
+      timestamp: Date.now(),
+      lastFetchTime: Date.now(),
+    });
 
-      res.json({
-        success: true,
-        message: "Image cache cleared and refreshed",
-        imageUrl,
-      });
-    } catch (error) {
-      console.error("Error clearing image cache:", error);
-      res.status(500).json({ error: "Failed to clear image cache" });
-    }
+    res.json({
+      success: true,
+      message: "Image cache cleared and refreshed",
+      imageUrl,
+    });
+  } catch (error) {
+    console.error("Error clearing image cache:", error);
+    res.status(500).json({ error: "Failed to clear image cache" });
   }
-);
+});
 
 export default router;

@@ -38,19 +38,19 @@ export function UploadForm({ onUploadSuccess, contestId }) {
 
       <div className="flex gap-4">
         <button
-          onClick={() => setShowPhotoSelector(true)}
-          className={`${formStyles.button} ${formStyles.secondaryButton} flex-1`}
-          disabled={uploading}
-        >
-          Choose Existing Photo
-        </button>
-        <span className="text-gray-400 flex items-center">or</span>
-        <button
           onClick={() => setShowUploadModal(true)}
           className={`${formStyles.button} ${formStyles.primaryButton} flex-1`}
           disabled={uploading}
         >
           Upload New Photo
+        </button>
+        <span className="text-gray-400 flex items-center">or</span>
+        <button
+          onClick={() => setShowPhotoSelector(true)}
+          className={`${formStyles.button} ${formStyles.secondaryButton} flex-1`}
+          disabled={uploading}
+        >
+          Choose Existing Photo
         </button>
       </div>
 
