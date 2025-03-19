@@ -191,10 +191,6 @@ router.put("/:userId/profile", requireAuth(), async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    console.log("Updating user profile with data:", req.body);
-    console.log("Current banner image:", user.bannerImage);
-    console.log("New banner image:", req.body.bannerImage);
-
     // Create update object with only the fields that are provided
     const updateData = {};
     if (req.body.nickname !== undefined)
@@ -205,7 +201,6 @@ router.put("/:userId/profile", requireAuth(), async (req, res) => {
     // This allows users to remove their banner image if desired
     if (req.body.bannerImage !== undefined) {
       updateData.bannerImage = req.body.bannerImage;
-      console.log("Setting banner image to:", updateData.bannerImage);
     }
 
     // Update the user record
@@ -213,7 +208,6 @@ router.put("/:userId/profile", requireAuth(), async (req, res) => {
 
     // Fetch the updated user to ensure we have the latest data
     const updatedUser = await User.findByPk(req.params.userId);
-    console.log("Updated user data:", updatedUser.toJSON());
 
     // Add Clerk image URL to response
     let userResponse = updatedUser.toJSON();
@@ -239,8 +233,6 @@ router.post(
   upload.single("banner"),
   async (req, res) => {
     try {
-      console.log("Banner upload initiated for user:", req.params.userId);
-
       if (req.params.userId !== req.auth.userId) {
         return res
           .status(403)
@@ -251,21 +243,12 @@ router.post(
         return res.status(400).json({ error: "No file uploaded" });
       }
 
-      console.log(
-        "Banner file received:",
-        req.file.originalname,
-        req.file.size,
-        "bytes"
-      );
-
       // Get the user and check if they have an existing banner
       let user = await User.findByPk(req.params.userId);
 
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
-
-      console.log("Current user banner:", user.bannerImage);
 
       // If there's an existing banner image, only delete it if it's in the banners directory
       if (user.bannerImage) {
@@ -275,9 +258,7 @@ router.post(
         );
         if (isBannerImage) {
           try {
-            console.log("Deleting old banner from S3:", user.bannerImage);
             await deleteFromS3(user.bannerImage);
-            console.log("Old banner deleted successfully");
           } catch (deleteError) {
             console.error("Error deleting old banner:", deleteError);
             // Continue with upload even if delete fails
@@ -286,32 +267,22 @@ router.post(
       }
 
       // Upload new banner to S3
-      console.log("Uploading banner to S3...");
       const result = await uploadToS3(
         req.file,
         `photos/${req.auth.userId}/banners`,
         { generateThumbnail: false }
       );
 
-      console.log("S3 upload result:", result);
-
       if (!result || !result.mainUrl) {
-        console.error("Missing mainUrl in S3 upload result:", result);
         return res.status(500).json({
           error: "Failed to upload banner: S3 did not return a valid URL",
         });
       }
 
       const mainUrl = result.mainUrl;
-      console.log("Banner uploaded to S3:", mainUrl);
 
       // Update user with new banner image
       await user.update({ bannerImage: mainUrl });
-      console.log("User updated with new banner URL:", mainUrl);
-
-      // Get the updated user record to confirm the change
-      const updatedUser = await User.findByPk(req.params.userId);
-      console.log("Updated user banner verification:", updatedUser.bannerImage);
 
       // Return updated user with the banner URL
       const response = {
@@ -321,7 +292,6 @@ router.post(
         bannerImage: mainUrl,
       };
 
-      console.log("Sending banner upload response:", response);
       res.json(response);
     } catch (error) {
       console.error("Error uploading banner:", error);

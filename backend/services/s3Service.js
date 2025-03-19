@@ -127,10 +127,8 @@ export const uploadToS3 = async (
 
     if (!options.generateThumbnail) {
       const result = await mainUpload.done();
-      console.log("Banner upload result:", result);
-      // Fix: Construct the URL manually since result.Location may not be available
+      // Construct the URL manually since result.Location may not be available
       const mainUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${mainKey}`;
-      console.log("Constructed banner URL:", mainUrl);
       return { mainUrl, thumbnailUrl: null };
     }
 

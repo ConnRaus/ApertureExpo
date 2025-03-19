@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 
 export function ProfileHeader({
   profile,
@@ -9,17 +9,8 @@ export function ProfileHeader({
   onEditClick,
   defaultBanner = "https://i.redd.it/jlpv3gf20c291.png",
 }) {
-  useEffect(() => {
-    console.log("ProfileHeader rendered with banner:", bannerImage);
-    console.log("Using banner source:", bannerImage || defaultBanner);
-    console.log("Profile data:", profile);
-  }, [bannerImage, defaultBanner, profile]);
-
   // Ensure we have a valid banner URL
   const bannerUrl = bannerImage || defaultBanner;
-
-  // Log the final banner URL being used
-  console.log("Final banner URL:", bannerUrl);
 
   return (
     <div className="profile-header-container">
@@ -32,22 +23,6 @@ export function ProfileHeader({
           backgroundPosition: "center",
         }}
       >
-        {/* Banner debug info - will be hidden under overlay */}
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            color: "white",
-            fontSize: "10px",
-            zIndex: 100,
-            padding: "2px",
-            backgroundColor: "rgba(0,0,0,0.5)",
-          }}
-        >
-          {bannerUrl.substring(0, 50)}...
-        </div>
-
         {isOwner && (
           <button className="edit-profile-button" onClick={onEditClick}>
             Edit Profile

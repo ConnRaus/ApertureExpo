@@ -48,8 +48,6 @@ export function PublicUserGallery({ userId, isOwner }) {
     setIsLoading(true);
     try {
       const data = await userService.fetchUserProfile(userId);
-      console.log("Profile data fetched:", data);
-      console.log("Banner image URL:", data.profile.bannerImage);
       setPhotos(data.photos || []);
       setProfile(data.profile);
       setNickname(data.profile.nickname || "");
@@ -93,13 +91,8 @@ export function PublicUserGallery({ userId, isOwner }) {
 
         // Upload the banner file to S3
         const uploadResponse = await userService.uploadBanner(userId, formData);
-        console.log("Banner upload complete:", uploadResponse);
 
         if (!uploadResponse.bannerImage) {
-          console.error(
-            "Banner upload response missing bannerImage URL:",
-            uploadResponse
-          );
           throw new Error("Failed to upload banner image - no URL returned");
         }
 
@@ -110,17 +103,11 @@ export function PublicUserGallery({ userId, isOwner }) {
           bannerImage: uploadResponse.bannerImage,
         };
 
-        console.log(
-          "Updating profile with uploaded banner:",
-          profileUpdateData
-        );
-
         // Update the profile with the new banner URL
         const updatedProfile = await userService.updateProfile(
           userId,
           profileUpdateData
         );
-        console.log("Profile update successful:", updatedProfile);
 
         // Update the state with the new profile data
         setProfile(updatedProfile);
@@ -136,14 +123,11 @@ export function PublicUserGallery({ userId, isOwner }) {
           bannerImage: tempBannerImage,
         };
 
-        console.log("Updating profile with selected photo:", profileUpdateData);
-
         // Update the profile with the selected photo URL
         const updatedProfile = await userService.updateProfile(
           userId,
           profileUpdateData
         );
-        console.log("Profile update successful:", updatedProfile);
 
         // Update the state with the new profile data
         setProfile(updatedProfile);
@@ -158,14 +142,11 @@ export function PublicUserGallery({ userId, isOwner }) {
           bannerImage: bannerImage || "",
         };
 
-        console.log("Updating profile info only:", profileUpdateData);
-
         // Update just the profile info
         const updatedProfile = await userService.updateProfile(
           userId,
           profileUpdateData
         );
-        console.log("Profile update successful:", updatedProfile);
 
         // Update the state with the new profile data
         setProfile(updatedProfile);
