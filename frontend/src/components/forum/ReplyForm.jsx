@@ -5,6 +5,7 @@ export function ReplyForm({
   onSubmit,
   initialValue = "",
   buttonText = "Post Reply",
+  onCancel,
 }) {
   const [content, setContent] = useState(initialValue);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -18,7 +19,11 @@ export function ReplyForm({
 
     try {
       await onSubmit(content);
-      setContent("");
+
+      if (!onCancel) {
+        // Only clear the content if not in edit mode
+        setContent("");
+      }
     } catch (error) {
       console.error("Error submitting reply:", error);
       // You could add error handling UI here
@@ -27,9 +32,17 @@ export function ReplyForm({
     }
   };
 
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    } else {
+      setContent("");
+    }
+  };
+
   return (
     <div className={styles.replyForm}>
-      <h3 className={styles.replyFormTitle}>Leave a Reply</h3>
+      {!onCancel && <h3 className={styles.replyFormTitle}>Leave a Reply</h3>}
       <form onSubmit={handleSubmit}>
         <textarea
           className={styles.textarea}
@@ -42,17 +55,17 @@ export function ReplyForm({
           <button
             type="button"
             className={styles.cancelButton}
-            onClick={() => setContent("")}
-            disabled={isSubmitting || !content.trim()}
+            onClick={handleCancel}
+            disabled={isSubmitting}
           >
-            Clear
+            {onCancel ? "Cancel" : "Clear"}
           </button>
           <button
             type="submit"
             className={styles.submitButton}
             disabled={isSubmitting || !content.trim()}
           >
-            {isSubmitting ? "Posting..." : buttonText}
+            {isSubmitting ? "Submitting..." : buttonText}
           </button>
         </div>
       </form>

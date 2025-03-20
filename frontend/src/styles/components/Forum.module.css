@@ -16,6 +16,18 @@
   font-size: 2rem;
   font-weight: 700;
   color: white;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .forumTitle {
+    font-size: 1.5rem;
+  }
+
+  .forumHeader {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
 }
 
 .forumAction {

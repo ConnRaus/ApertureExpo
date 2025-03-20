@@ -96,10 +96,10 @@ function ForumPage() {
         <h1 className={styles.forumTitle}>Photography Forum</h1>
         <div className={styles.forumAction}>
           <button
-            className="sign-in-button"
+            className="sign-in-button forum-new-thread"
             onClick={() => setShowCreateForm(true)}
           >
-            New Thread
+            <span>New Thread</span>
           </button>
         </div>
       </div>
