@@ -80,7 +80,45 @@ export function PhotoCard({
       )}
       <div
         className="photo-image"
-        onClick={() => !isEditingDetails && onClick(photo)}
+        onClick={() => {
+          if (!isEditingDetails) {
+            // Log metadata if available
+            if (photo.metadata) {
+              console.log("Photo Metadata:", photo.metadata);
+
+              // If there's EXIF data, log some common useful information
+              if (photo.metadata.exif) {
+                const exif = photo.metadata.exif;
+                console.log(
+                  "Camera:",
+                  exif.Make?.description,
+                  exif.Model?.description
+                );
+                console.log("Taken on:", exif.DateTimeOriginal?.description);
+                console.log(
+                  "Exposure:",
+                  exif.ExposureTime?.description,
+                  "Aperture:",
+                  exif.FNumber?.description,
+                  "ISO:",
+                  exif.ISO?.description
+                );
+                console.log("Focal Length:", exif.FocalLength?.description);
+              }
+
+              // Log basic metadata even if no EXIF
+              console.log(
+                "Dimensions:",
+                `${photo.metadata.width}x${photo.metadata.height}`
+              );
+              console.log("Format:", photo.metadata.format);
+            } else {
+              console.log("No metadata available for this photo");
+            }
+
+            onClick(photo);
+          }
+        }}
       >
         <img
           src={photo.thumbnailUrl}
