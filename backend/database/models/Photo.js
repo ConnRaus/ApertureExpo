@@ -47,6 +47,10 @@ Photo.init(
         notEmpty: true,
       },
     },
+    metadata: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    },
     ContestId: {
       type: DataTypes.UUID,
       allowNull: true,

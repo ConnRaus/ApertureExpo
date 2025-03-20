@@ -2,6 +2,8 @@ import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import dotenv from "dotenv";
 import sharp from "sharp";
+import exifReader from "exif-reader";
+import { Readable } from "stream";
 
 dotenv.config();
 
@@ -95,22 +97,89 @@ const processAndUploadImage = async (buffer, options) => {
 
 export const uploadToS3 = async (
   file,
-  customPath,
+  basePath,
   options = { generateThumbnail: true }
 ) => {
-  const fileStream = file.buffer;
-  const fileExtension = "jpg";
-  const timestamp = Date.now();
-  const basePath = customPath || `photos/${file.userId}`;
+  if (!file) {
+    throw new Error("No file provided");
+  }
+
+  const timestamp = Date.now().toString();
+  let mainBuffer;
+  let fileStream;
+  let metadata = null;
 
   try {
+    // Initialize fileStream and mainBuffer
+    if (file.buffer) {
+      mainBuffer = file.buffer;
+      fileStream = Readable.from(file.buffer);
+    } else {
+      throw new Error("File buffer is required");
+    }
+
+    // Extract metadata if possible
+    try {
+      const imageMetadata = await sharp(mainBuffer).metadata();
+
+      // If image has EXIF data, process it with exifReader
+      if (imageMetadata.exif) {
+        try {
+          metadata = exifReader(imageMetadata.exif);
+          // Add other metadata properties we want to keep
+          metadata.format = imageMetadata.format;
+          metadata.width = imageMetadata.width;
+          metadata.height = imageMetadata.height;
+          metadata.space = imageMetadata.space;
+          metadata.channels = imageMetadata.channels;
+          metadata.depth = imageMetadata.depth;
+          metadata.density = imageMetadata.density;
+          metadata.hasAlpha = imageMetadata.hasAlpha;
+          metadata.isProgressive = imageMetadata.isProgressive;
+        } catch (exifError) {
+          console.log("Error parsing EXIF data:", exifError);
+          // Provide basic metadata even if EXIF parsing fails
+          metadata = {
+            format: imageMetadata.format,
+            width: imageMetadata.width,
+            height: imageMetadata.height,
+            space: imageMetadata.space,
+            channels: imageMetadata.channels,
+            depth: imageMetadata.depth,
+            density: imageMetadata.density,
+            hasAlpha: imageMetadata.hasAlpha,
+            isProgressive: imageMetadata.isProgressive,
+          };
+        }
+      } else {
+        // No EXIF data, but we can still get basic metadata
+        metadata = {
+          format: imageMetadata.format,
+          width: imageMetadata.width,
+          height: imageMetadata.height,
+          space: imageMetadata.space,
+          channels: imageMetadata.channels,
+          depth: imageMetadata.depth,
+          density: imageMetadata.density,
+          hasAlpha: imageMetadata.hasAlpha,
+          isProgressive: imageMetadata.isProgressive,
+        };
+      }
+    } catch (metadataError) {
+      console.log("Error getting image metadata:", metadataError);
+      // Continue without metadata if extraction fails
+    }
+
+    const fileExtension = file.originalname
+      ? file.originalname.split(".").pop().toLowerCase()
+      : "jpg";
+
     // Process main image (max 4K resolution, 85% quality, max 2MB)
-    const mainBuffer = await processAndUploadImage(fileStream, {
+    const processedMainBuffer = await processAndUploadImage(mainBuffer, {
       maxWidth: 3840,
       maxHeight: 2160,
       quality: 85,
       maxSizeInMB: 2,
-      isThumbnail: false,
     });
 
     // Upload main image
@@ -120,7 +189,7 @@ export const uploadToS3 = async (
       params: {
         Bucket: process.env.AWS_BUCKET_NAME,
         Key: mainKey,
-        Body: mainBuffer,
+        Body: processedMainBuffer,
         ContentType: "image/jpeg",
       },
     });
@@ -129,11 +198,11 @@ export const uploadToS3 = async (
       const result = await mainUpload.done();
       // Construct the URL manually since result.Location may not be available
       const mainUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${mainKey}`;
-      return { mainUrl, thumbnailUrl: null };
+      return { mainUrl, thumbnailUrl: null, metadata };
     }
 
     // Process thumbnail (max 600px on longest side, 80% quality, max 100KB)
-    const thumbnailBuffer = await processAndUploadImage(fileStream, {
+    const thumbnailBuffer = await processAndUploadImage(mainBuffer, {
       maxWidth: 600,
       maxHeight: 600,
       quality: 80,
@@ -162,6 +231,7 @@ export const uploadToS3 = async (
     return {
       mainUrl: mainResult.Location,
       thumbnailUrl: thumbnailResult.Location,
+      metadata,
     };
   } catch (error) {
     console.error("Error uploading to S3:", error);

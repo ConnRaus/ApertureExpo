@@ -19,7 +19,7 @@ router.post(
         return res.status(400).json({ error: "No file uploaded" });
       }
 
-      const { mainUrl, thumbnailUrl } = await uploadToS3(
+      const { mainUrl, thumbnailUrl, metadata } = await uploadToS3(
         req.file,
         `photos/${req.auth.userId}`
       );
@@ -30,6 +30,7 @@ router.post(
         description: req.body.description,
         s3Url: mainUrl,
         thumbnailUrl: thumbnailUrl,
+        metadata: metadata || null,
         ContestId: req.body.contestId || null,
       });
 
