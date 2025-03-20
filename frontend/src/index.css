@@ -287,8 +287,8 @@
     transform: scale(1.1);
   }
 
-  button[type="submit"],
-  .sign-in-button {
+  /* Separate button styles */
+  button[type="submit"] {
     width: 100%;
     padding: 0.5rem 1rem;
     background-image: linear-gradient(
@@ -302,6 +302,25 @@
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
       0 4px 6px -4px rgba(0, 0, 0, 0.1);
     transition: all 0.3s;
+  }
+
+  .sign-in-button {
+    width: 100%;
+    max-width: 300px;
+    padding: 0.5rem 1rem;
+    background-image: linear-gradient(
+      to right,
+      rgb(79, 70, 229),
+      rgb(124, 58, 237)
+    );
+    color: white;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+      0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s;
+    margin: 0 auto;
+    display: inline-block;
   }
 
   button[type="submit"]:hover,
@@ -326,7 +345,9 @@
   .forum-new-thread {
     width: auto;
     min-width: 120px;
+    max-width: none;
     white-space: nowrap;
+    margin: 0;
   }
 
   @media (max-width: 640px) {
@@ -603,6 +624,45 @@
     margin-top: 2rem;
     padding-top: 1rem;
     border-top: 1px solid rgba(55, 65, 81, 0.5);
+  }
+
+  /* Submit buttons - including contest submissions and forum replies */
+  .submit-button {
+    width: 100%;
+    padding: 0.5rem 1rem;
+    background-image: linear-gradient(
+      to right,
+      rgb(79, 70, 229),
+      rgb(124, 58, 237)
+    );
+    color: white;
+    font-weight: 500;
+    border-radius: 0.375rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: none;
+  }
+
+  .submit-button:hover {
+    background-image: linear-gradient(
+      to right,
+      rgb(99, 102, 241),
+      rgb(139, 92, 246)
+    );
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .submit-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+    background-image: linear-gradient(to right, #d1d5db, #9ca3af);
+  }
+
+  /* Contest submission button */
+  .contest-submit-photo {
+    width: 100%;
+    margin-bottom: 1rem;
   }
 }
 

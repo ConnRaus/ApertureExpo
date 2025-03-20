@@ -70,7 +70,7 @@ export function ContestDetail({
       <div className="mb-8">
         {!showUploadForm ? (
           <button
-            className="sign-in-button"
+            className="submit-button contest-submit-photo"
             onClick={() => setShowUploadForm(true)}
           >
             Submit a Photo

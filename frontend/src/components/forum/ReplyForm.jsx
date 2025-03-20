@@ -62,7 +62,7 @@ export function ReplyForm({
           </button>
           <button
             type="submit"
-            className={styles.submitButton}
+            className={`submit-button ${styles.submitButton}`}
             disabled={isSubmitting || !content.trim()}
           >
             {isSubmitting ? "Submitting..." : buttonText}

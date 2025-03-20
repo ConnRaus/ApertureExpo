@@ -41,9 +41,11 @@ function App() {
                 Join our community of photographers, share your work, and
                 participate in exciting photo contests.
               </p>
-              <SignInButton mode="modal">
-                <button className="sign-in-button">Sign In</button>
-              </SignInButton>
+              <div className="flex justify-center w-full">
+                <SignInButton mode="modal">
+                  <button className="sign-in-button">Sign In</button>
+                </SignInButton>
+              </div>
             </div>
           </SignedOut>
         </main>

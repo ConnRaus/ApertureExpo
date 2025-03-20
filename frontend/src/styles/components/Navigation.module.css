@@ -56,16 +56,33 @@
 }
 
 .signInButton {
-  background-color: rgb(79, 70, 229);
+  background-image: linear-gradient(
+    to right,
+    rgb(79, 70, 229),
+    rgb(124, 58, 237)
+  );
   color: white;
   font-weight: 500;
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
-  transition: all 0.2s;
+  transition: all 0.3s;
+  max-width: 200px; /* Maximum width for the button */
+  width: 100%; /* Take available space up to max-width */
+  text-align: center; /* Center the text */
+  display: inline-block;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1);
 }
 
 .signInButton:hover {
-  background-color: rgb(99, 102, 241);
+  background-image: linear-gradient(
+    to right,
+    rgb(99, 102, 241),
+    rgb(139, 92, 246)
+  );
+  box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.25),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transform: translateY(-0.125rem);
 }
 
 /* Hamburger Menu Styles */
