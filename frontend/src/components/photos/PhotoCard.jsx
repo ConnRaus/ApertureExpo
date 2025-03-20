@@ -124,7 +124,11 @@ export function PhotoCard({
         ) : (
           <>
             <h3>{photo.title}</h3>
-            {photo.description && <p>{photo.description}</p>}
+            {photo.description && (
+              <p className="photo-description line-clamp-3">
+                {photo.description}
+              </p>
+            )}
             {!hideProfileLink && (
               <Link
                 to={`/users/${photo.userId}`}

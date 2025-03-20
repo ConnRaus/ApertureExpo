@@ -106,7 +106,7 @@ export function PhotoSelector({
                             {photo.title}
                           </p>
                           {photo.description && (
-                            <p className="text-gray-300 text-xs truncate">
+                            <p className="text-gray-300 text-xs photo-description line-clamp-3">
                               {photo.description}
                             </p>
                           )}
