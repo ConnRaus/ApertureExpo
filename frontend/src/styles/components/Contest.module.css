@@ -177,9 +177,17 @@
 
 .contestMeta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 1.5rem;
+  gap: 0.75rem;
   margin-top: 1rem;
+}
+
+.statusBadgeContainer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 .statusBadge {
@@ -297,6 +305,12 @@
     font-size: 1.75rem;
   }
 
+  .contestHeader p {
+    font-size: 0.9rem;
+    line-height: 1.4rem;
+    -webkit-line-clamp: 2; /* Reduce to 2 lines on smaller screens */
+  }
+
   .contestMeta {
     flex-direction: column;
     align-items: flex-start;
@@ -315,5 +329,10 @@
 
   .contestHeader h1 {
     font-size: 1.5rem;
+  }
+
+  .contestHeader p {
+    font-size: 0.85rem;
+    line-height: 1.3rem;
   }
 }

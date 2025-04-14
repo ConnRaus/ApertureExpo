@@ -49,44 +49,39 @@ export function ContestHeader({
         <h1 title={title}>{title}</h1>
         <p title={description}>{description}</p>
         <div className={styles.contestMeta}>
-          <span className={`${styles.statusBadge} ${statusClass}`}>
-            {statusText}
-          </span>
-          <span className={styles.dateRange}>
-            {formatDate(startDate)} - {formatDate(endDate)}
-          </span>
-
-          {/* Add countdown timer based on status */}
-          <div className={styles.countdownTimer}>
-            {status === "active" ? (
-              <>
-                <span className={styles.countdownLabel}>Ends in: </span>
-                <CountdownTimer
-                  targetDate={endDate}
-                  type="countdown"
-                  className={styles.countdownText}
-                />
-              </>
-            ) : status === "upcoming" ? (
-              <>
-                <span className={styles.countdownLabel}>Starts in: </span>
-                <CountdownTimer
-                  targetDate={startDate}
-                  type="countdown"
-                  className={styles.countdownText}
-                />
-              </>
-            ) : (
-              <>
-                <span className={styles.countdownLabel}>Ended: </span>
-                <CountdownTimer
-                  targetDate={endDate}
-                  type="elapsed"
-                  className={styles.countdownText}
-                />
-              </>
-            )}
+          <div className={styles.statusBadgeContainer}>
+            <span className={`${styles.statusBadge} ${statusClass}`}>
+              {statusText}
+            </span>
+            <span className={styles.dateRange}>
+              {formatDate(startDate)} - {formatDate(endDate)}
+            </span>
           </div>
+
+          {/* Add countdown timer based on status (only for active and upcoming contests) */}
+          {status !== "ended" && (
+            <div className={styles.countdownTimer}>
+              {status === "active" ? (
+                <>
+                  <span className={styles.countdownLabel}>Ends in: </span>
+                  <CountdownTimer
+                    targetDate={endDate}
+                    type="countdown"
+                    className={styles.countdownText}
+                  />
+                </>
+              ) : (
+                <>
+                  <span className={styles.countdownLabel}>Starts in: </span>
+                  <CountdownTimer
+                    targetDate={startDate}
+                    type="countdown"
+                    className={styles.countdownText}
+                  />
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
