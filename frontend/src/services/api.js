@@ -7,7 +7,7 @@ export class PhotoService {
 
   async fetchPhotos() {
     const token = await this.getToken();
-    const response = await fetch(`${API_URL}/photos`, {
+    const response = await fetch(`${API_URL}/photos?include=contests`, {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: "application/json",

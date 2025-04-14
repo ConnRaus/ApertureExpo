@@ -63,8 +63,7 @@ export async function seedTestContests() {
       title: "1-Hour Challenge",
       description:
         "You only have one hour to participate! Show us what you can do in this extremely short challenge.",
-      bannerImageUrl:
-        "https://images.unsplash.com/photo-1533749882128-5782a8c033be?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80",
+      bannerImageUrl: "https://wallpapershome.com/images/pages/pic_h/12465.jpg",
       startDate: new Date(now.getTime() - 60 * 60 * 1000), // 1 hour ago
       endDate: new Date(now.getTime() + 60 * 60 * 1000), // 1 hour from now
       status: "active",

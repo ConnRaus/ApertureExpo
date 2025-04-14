@@ -83,7 +83,14 @@ export function PhotoSelector({
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {photos.map((photo) => {
-                  const isSubmitted = photo.ContestId === contestId;
+                  // Check if the photo is already in this contest by looking at the Contests array
+                  // or the legacy ContestId field for backward compatibility
+                  const isInContestsList =
+                    photo.Contests &&
+                    photo.Contests.some((contest) => contest.id === contestId);
+                  const isInLegacyContest = photo.ContestId === contestId;
+                  const isSubmitted = isInContestsList || isInLegacyContest;
+
                   return (
                     <div
                       key={photo.id}
