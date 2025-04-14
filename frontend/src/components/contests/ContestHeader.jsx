@@ -14,23 +14,34 @@ export function ContestHeader({
   title,
   description,
   status,
+  phase = "submission",
   startDate,
   endDate,
+  votingStartDate,
+  votingEndDate,
   bannerImageUrl,
   defaultBanner = "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&auto=format&fit=crop&q=60",
 }) {
-  // Get status text and class
+  // Get status text and class based on phase
   let statusText;
   let statusClass;
 
-  switch (status) {
-    case "active":
-      statusText = "Active";
-      statusClass = styles.statusActive;
-      break;
+  switch (phase) {
     case "upcoming":
       statusText = "Coming Soon";
       statusClass = styles.statusUpcoming;
+      break;
+    case "submission":
+      statusText = "Accepting Submissions";
+      statusClass = styles.statusActive;
+      break;
+    case "processing":
+      statusText = "Processing";
+      statusClass = styles.statusProcessing;
+      break;
+    case "voting":
+      statusText = "Voting Open";
+      statusClass = styles.statusVoting;
       break;
     case "ended":
       statusText = "Ended";
@@ -40,6 +51,47 @@ export function ContestHeader({
       statusText = status || "Unknown";
       statusClass = "";
   }
+
+  // Determine which dates and countdown to show based on phase
+  const getPhaseInfo = () => {
+    let dateString;
+    let targetDate;
+    let countdownLabel;
+
+    switch (phase) {
+      case "upcoming":
+        dateString = `${formatDate(startDate)} - ${formatDate(endDate)}`;
+        targetDate = startDate;
+        countdownLabel = "Starts in: ";
+        break;
+      case "submission":
+        dateString = `Submissions until: ${formatDate(endDate)}`;
+        targetDate = endDate;
+        countdownLabel = "Ends in: ";
+        break;
+      case "processing":
+        dateString = `Voting: ${formatDate(votingStartDate)} - ${formatDate(
+          votingEndDate
+        )}`;
+        targetDate = votingStartDate;
+        countdownLabel = "Voting begins in: ";
+        break;
+      case "voting":
+        dateString = `Voting until: ${formatDate(votingEndDate)}`;
+        targetDate = votingEndDate;
+        countdownLabel = "Voting ends in: ";
+        break;
+      case "ended":
+        dateString = `Contest ended: ${formatDate(votingEndDate)}`;
+        return { dateString };
+      default:
+        dateString = `${formatDate(startDate)} - ${formatDate(endDate)}`;
+    }
+
+    return { dateString, targetDate, countdownLabel };
+  };
+
+  const phaseInfo = getPhaseInfo();
 
   return (
     <div className={styles.bannerSection}>
@@ -53,33 +105,20 @@ export function ContestHeader({
             <span className={`${styles.statusBadge} ${statusClass}`}>
               {statusText}
             </span>
-            <span className={styles.dateRange}>
-              {formatDate(startDate)} - {formatDate(endDate)}
-            </span>
+            <span className={styles.dateRange}>{phaseInfo.dateString}</span>
           </div>
 
-          {/* Add countdown timer based on status (only for active and upcoming contests) */}
-          {status !== "ended" && (
+          {/* Add countdown timer based on phase */}
+          {phase !== "ended" && phaseInfo.targetDate && (
             <div className={styles.countdownTimer}>
-              {status === "active" ? (
-                <>
-                  <span className={styles.countdownLabel}>Ends in: </span>
-                  <CountdownTimer
-                    targetDate={endDate}
-                    type="countdown"
-                    className={styles.countdownText}
-                  />
-                </>
-              ) : (
-                <>
-                  <span className={styles.countdownLabel}>Starts in: </span>
-                  <CountdownTimer
-                    targetDate={startDate}
-                    type="countdown"
-                    className={styles.countdownText}
-                  />
-                </>
-              )}
+              <span className={styles.countdownLabel}>
+                {phaseInfo.countdownLabel}
+              </span>
+              <CountdownTimer
+                targetDate={phaseInfo.targetDate}
+                type="countdown"
+                className={styles.countdownText}
+              />
             </div>
           )}
         </div>

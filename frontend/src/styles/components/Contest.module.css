@@ -218,6 +218,14 @@
   background-color: rgb(220, 38, 38); /* red */
 }
 
+.statusVoting {
+  background-color: rgb(245, 158, 11); /* amber */
+}
+
+.statusProcessing {
+  background-color: rgb(124, 58, 237); /* purple */
+}
+
 .dateRange {
   display: flex;
   align-items: center;
@@ -295,6 +303,127 @@
   transform: scale(1.05);
 }
 
+/* Contest photo card with voting */
+.photoVoteContainer {
+  padding: 0.75rem;
+  background-color: rgba(31, 41, 55, 0.7);
+  border-top: 1px solid rgba(75, 85, 99, 0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.photoTitle {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: rgb(229, 231, 235);
+  text-align: center;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+/* Results display for ended contests */
+.resultsContainer {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: rgba(31, 41, 55, 0.7);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(75, 85, 99, 0.4);
+}
+
+.resultsTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.podiumContainer {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin: 2rem 0;
+  align-items: flex-end;
+}
+
+.podiumPlace {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.firstPlace {
+  order: 2;
+}
+
+.secondPlace {
+  order: 1;
+}
+
+.thirdPlace {
+  order: 3;
+}
+
+.podiumImage {
+  width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  border: 2px solid;
+  overflow: hidden;
+  transition: transform 0.3s;
+}
+
+.firstPlace .podiumImage {
+  width: 180px;
+  border-color: gold;
+}
+
+.secondPlace .podiumImage {
+  width: 140px;
+  border-color: silver;
+}
+
+.thirdPlace .podiumImage {
+  width: 120px;
+  border-color: #cd7f32; /* bronze */
+}
+
+.podiumPlace:hover .podiumImage {
+  transform: scale(1.05);
+}
+
+.placeBadge {
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(31, 41, 55);
+}
+
+.firstPlace .placeBadge {
+  background-color: gold;
+}
+
+.secondPlace .placeBadge {
+  background-color: silver;
+}
+
+.thirdPlace .placeBadge {
+  background-color: #cd7f32; /* bronze */
+}
+
+.voteCount {
+  font-size: 0.75rem;
+  color: rgb(156, 163, 175);
+  margin-top: 0.25rem;
+}
+
 /* Responsive styles for smaller screens */
 @media (max-width: 768px) {
   .contestHeader {
@@ -334,5 +463,25 @@
   .contestHeader p {
     font-size: 0.85rem;
     line-height: 1.3rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .podiumContainer {
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .firstPlace,
+  .secondPlace,
+  .thirdPlace {
+    order: initial;
+  }
+
+  .firstPlace .podiumImage,
+  .secondPlace .podiumImage,
+  .thirdPlace .podiumImage {
+    width: 200px;
   }
 }

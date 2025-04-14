@@ -1,60 +1,132 @@
 import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { useContestService } from "../../hooks";
 import styles from "../../styles/components/Contest.module.css";
 import { ContestHeader } from "./ContestHeader";
 import { ContestSubmissions } from "./ContestSubmissions";
+import { ContestResults } from "./ContestResults";
 import { UploadForm } from "../user/UploadForm";
-import { useContestService, useDelayedLoading } from "../../hooks";
-import { LoadingSpinner } from "../common/CommonComponents";
+import { toast } from "react-toastify";
 
-export function ContestDetail({
-  contestId,
-  showUploadForm,
-  setShowUploadForm,
-}) {
+export function ContestDetail() {
+  const { contestId } = useParams();
   const [contest, setContest] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [showUploadForm, setShowUploadForm] = useState(false);
   const contestService = useContestService();
-
-  // Use our delayed loading hook to prevent flashing on fast connections
-  const shouldShowLoading = useDelayedLoading(isLoading);
 
   useEffect(() => {
     fetchContestDetails();
+
+    // Set up periodic refresh every minute to check for contest phase changes
+    const refreshInterval = setInterval(() => {
+      fetchContestDetails(false); // Pass false to not show loading state during refresh
+    }, 60000); // Every minute
+
+    // Clean up interval on unmount
+    return () => clearInterval(refreshInterval);
   }, [contestId]);
 
-  const fetchContestDetails = async () => {
-    setIsLoading(true);
+  const fetchContestDetails = async (showLoading = true) => {
     try {
+      if (showLoading) {
+        setLoading(true);
+      }
+
       const data = await contestService.fetchContestDetails(contestId);
       setContest(data);
     } catch (error) {
-      console.error("Error fetching contest details:", error);
+      console.error("Failed to fetch contest details:", error);
       setError("Failed to load contest details");
+      toast.error("Failed to load contest details");
     } finally {
-      setIsLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   };
 
-  if (error) {
-    return <div className="error-message">{error}</div>;
-  }
-
-  // Only show loading state if shouldShowLoading is true
-  if (shouldShowLoading) {
+  if (loading && !contest) {
     return (
-      <div className={styles.contestDetail}>
-        <div className="py-12">
-          <LoadingSpinner size="lg" message="Loading contest details..." />
-        </div>
+      <div className="flex justify-center items-center p-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
       </div>
     );
   }
 
-  // If we're loading but not showing the loading state yet, render nothing or a minimal placeholder
-  if (isLoading) {
-    return <div className={styles.contestDetail}></div>; // Empty container to maintain layout
+  if (error || !contest) {
+    return (
+      <div className="text-center p-12">
+        <h2 className="text-2xl font-bold text-red-500 mb-4">
+          Something went wrong
+        </h2>
+        <p className="text-gray-400">{error || "Contest not found"}</p>
+      </div>
+    );
   }
+
+  const renderPhaseSpecificContent = () => {
+    switch (contest.phase) {
+      case "upcoming":
+        return (
+          <div className="text-center p-3 bg-indigo-900/30 rounded-lg">
+            <p>
+              This contest hasn't started yet. Check back on{" "}
+              {new Date(contest.startDate).toLocaleDateString()}!
+            </p>
+          </div>
+        );
+
+      case "submission":
+        return !showUploadForm ? (
+          <button
+            className="submit-button contest-submit-photo"
+            onClick={() => setShowUploadForm(true)}
+          >
+            Submit a Photo
+          </button>
+        ) : (
+          <UploadForm
+            contestId={contestId}
+            onUploadSuccess={() => {
+              setShowUploadForm(false);
+              fetchContestDetails();
+            }}
+          />
+        );
+
+      case "processing":
+        return (
+          <div className="text-center p-3 bg-yellow-900/30 rounded-lg">
+            <p>
+              The submission period has ended. Voting begins on{" "}
+              {new Date(contest.votingStartDate).toLocaleDateString()}!
+            </p>
+          </div>
+        );
+
+      case "voting":
+        return (
+          <div className="text-center p-3 bg-green-900/30 rounded-lg">
+            <p>
+              Voting is open! Cast your votes for your favorite photos. Voting
+              ends on {new Date(contest.votingEndDate).toLocaleDateString()}.
+            </p>
+          </div>
+        );
+
+      case "ended":
+        return (
+          <div className="text-center p-3 bg-gray-900/30 rounded-lg">
+            <p>This contest has ended. Results are displayed below.</p>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className={styles.contestDetail}>
@@ -62,45 +134,25 @@ export function ContestDetail({
         title={contest.title}
         description={contest.description}
         status={contest.status}
+        phase={contest.phase}
         startDate={contest.startDate}
         endDate={contest.endDate}
+        votingStartDate={contest.votingStartDate}
+        votingEndDate={contest.votingEndDate}
         bannerImageUrl={contest.bannerImageUrl}
       />
 
-      <div className="mb-8">
-        {/* Only show submit button for active contests */}
-        {contest.status === "active" ? (
-          !showUploadForm ? (
-            <button
-              className="submit-button contest-submit-photo"
-              onClick={() => setShowUploadForm(true)}
-            >
-              Submit a Photo
-            </button>
-          ) : (
-            <UploadForm
-              contestId={contestId}
-              onUploadSuccess={() => {
-                setShowUploadForm(false);
-                fetchContestDetails();
-              }}
-            />
-          )
-        ) : contest.status === "upcoming" ? (
-          <div className="text-center p-3 bg-indigo-900/30 rounded-lg">
-            <p>
-              This contest hasn't started yet. Check back on{" "}
-              {new Date(contest.startDate).toLocaleDateString()}!
-            </p>
-          </div>
-        ) : (
-          <div className="text-center p-3 bg-red-900/30 rounded-lg">
-            <p>This contest has ended. No more submissions are allowed.</p>
-          </div>
-        )}
-      </div>
+      <div className="mb-8">{renderPhaseSpecificContent()}</div>
 
-      <ContestSubmissions photos={contest.Photos || []} />
+      {contest.phase === "ended" && contest.Photos?.length > 0 && (
+        <ContestResults photos={contest.Photos} contestId={contestId} />
+      )}
+
+      <ContestSubmissions
+        photos={contest.Photos || []}
+        contestId={contestId}
+        contestPhase={contest.phase}
+      />
     </div>
   );
 }

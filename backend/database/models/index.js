@@ -3,6 +3,7 @@ import Photo from "./Photo.js";
 import User from "./User.js";
 import Contest from "./Contest.js";
 import PhotoContest from "./PhotoContest.js";
+import Vote from "./Vote.js";
 import ForumThreadInit from "./ForumThread.js";
 import ForumPostInit from "./ForumPost.js";
 
@@ -40,6 +41,29 @@ Photo.belongsTo(Contest, {
   as: "Contest",
 });
 
+// Vote associations
+Photo.hasMany(Vote, {
+  foreignKey: "photoId",
+  as: "Votes",
+  onDelete: "CASCADE",
+});
+
+Vote.belongsTo(Photo, {
+  foreignKey: "photoId",
+  as: "Photo",
+});
+
+Contest.hasMany(Vote, {
+  foreignKey: "contestId",
+  as: "Votes",
+  onDelete: "CASCADE",
+});
+
+Vote.belongsTo(Contest, {
+  foreignKey: "contestId",
+  as: "Contest",
+});
+
 // Forum associations
 ForumThread.belongsTo(User, {
   foreignKey: "userId",
@@ -68,6 +92,7 @@ const models = {
   User,
   Contest,
   PhotoContest,
+  Vote,
   ForumThread,
   ForumPost,
   sequelize,
@@ -82,7 +107,31 @@ Photo.prototype.toJSON = function () {
 
 Contest.prototype.toJSON = function () {
   const values = { ...this.get() };
-  // Add any computed properties here
+  // Compute phase if it's not already set
+  if (!values.phase) {
+    const now = new Date();
+    const startDate = new Date(values.startDate);
+    const endDate = new Date(values.endDate);
+    const votingStartDate = new Date(values.votingStartDate);
+    const votingEndDate = new Date(values.votingEndDate);
+
+    if (now < startDate) {
+      values.phase = "upcoming";
+    } else if (now >= startDate && now <= endDate) {
+      values.phase = "submission";
+    } else if (now > endDate && now < votingStartDate) {
+      values.phase = "processing";
+    } else if (now >= votingStartDate && now <= votingEndDate) {
+      values.phase = "voting";
+    } else {
+      values.phase = "ended";
+    }
+  }
+  return values;
+};
+
+Vote.prototype.toJSON = function () {
+  const values = { ...this.get() };
   return values;
 };
 

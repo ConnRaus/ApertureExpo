@@ -14,9 +14,6 @@ export function CountdownTimer({
     isExpired: false,
   });
 
-  // Track previous expired state to detect the moment when timer transitions to expired
-  const [wasPreviouslyExpired, setWasPreviouslyExpired] = useState(false);
-
   useEffect(() => {
     // Function to calculate time remaining or elapsed
     const calculateTimeRemaining = () => {
@@ -40,13 +37,6 @@ export function CountdownTimer({
       minutes = minutes % 60;
       seconds = seconds % 60;
 
-      // Check if the timer just expired (was not expired before, but is now)
-      // If it just expired, refresh the page to update contest status
-      if (type === "countdown" && isExpired && !wasPreviouslyExpired) {
-        setWasPreviouslyExpired(true);
-        window.location.reload();
-      }
-
       setTimeRemaining({
         days,
         hours,
@@ -64,7 +54,7 @@ export function CountdownTimer({
 
     // Clear interval on component unmount
     return () => clearInterval(timer);
-  }, [targetDate, type, wasPreviouslyExpired]);
+  }, [targetDate, type]);
 
   // Format the time units with leading zeros
   const formatTimeUnit = (unit) => {

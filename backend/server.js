@@ -7,6 +7,7 @@ import { initializeDatabase } from "./database/index.js";
 import photoRoutes from "./routes/photos.js";
 import contestRoutes from "./routes/contests.js";
 import userRoutes from "./routes/users.js";
+import voteRoutes from "./routes/votes.js";
 import forumRoutes from "./routes/forum.js";
 import { ensureUserExists } from "./middleware/ensureUserExists.js";
 
@@ -34,6 +35,7 @@ app.use(clerkMiddleware());
 // Routes with authentication
 app.use("/", requireAuth(), ensureUserExists, photoRoutes);
 app.use("/", requireAuth(), ensureUserExists, contestRoutes);
+app.use("/", requireAuth(), ensureUserExists, voteRoutes);
 app.use("/users", requireAuth(), userRoutes);
 
 // Forum routes with user existence check

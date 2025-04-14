@@ -3,40 +3,58 @@ const { Contest } = models;
 
 export async function seedDefaultData() {
   try {
-    // Check if we already have any contests
+    // Check if any contests exist
     const contestCount = await Contest.count();
 
-    // Only create sample contests if none exist
     if (contestCount === 0) {
-      await Contest.bulkCreate([
-        {
-          title: "Things That Are Red",
-          description:
-            "Submit your best photos of red objects, scenes, or moments. Be creative!",
-          bannerImageUrl:
-            "https://4kwallpapers.com/images/wallpapers/apple-macro-water-3840x2160-15523.jpg",
-          startDate: new Date(),
-          endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-          status: "active",
-        },
-        {
-          title: "Things That Are Blue",
-          description:
-            "Submit your best photos of blue objects, scenes, or moments. Be creative!",
-          bannerImageUrl:
-            "https://www.hdwallpapers.net/previews/cloudy-blue-sky-1048.jpg",
-          startDate: new Date(),
-          endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days from now
-          status: "active",
-        },
-      ]);
+      // Create sample contests if none exist
+      const contest1StartDate = new Date();
+      const contest1EndDate = new Date(contest1StartDate);
+      contest1EndDate.setDate(contest1EndDate.getDate() + 14); // 2 weeks after start
+      const contest1VotingStartDate = new Date(contest1EndDate);
+      const contest1VotingEndDate = new Date(contest1VotingStartDate);
+      contest1VotingEndDate.setDate(contest1VotingEndDate.getDate() + 7); // 1 week after submission ends
+
+      await Contest.create({
+        title: "Things That Are Red",
+        description:
+          "Submit your best photographs featuring the color red as the primary subject or dominant color in the composition.",
+        bannerImageUrl:
+          "https://images.pexels.com/photos/3652898/pexels-photo-3652898.jpeg",
+        startDate: contest1StartDate,
+        endDate: contest1EndDate,
+        votingStartDate: contest1VotingStartDate,
+        votingEndDate: contest1VotingEndDate,
+        status: "active",
+      });
+
+      const contest2StartDate = new Date();
+      contest2StartDate.setDate(contest2StartDate.getDate() + 21); // 3 weeks from now
+      const contest2EndDate = new Date(contest2StartDate);
+      contest2EndDate.setDate(contest2EndDate.getDate() + 14); // 2 weeks after start
+      const contest2VotingStartDate = new Date(contest2EndDate);
+      const contest2VotingEndDate = new Date(contest2VotingStartDate);
+      contest2VotingEndDate.setDate(contest2VotingEndDate.getDate() + 7); // 1 week after submission ends
+
+      await Contest.create({
+        title: "Things That Are Blue",
+        description:
+          "Submit your best photographs featuring the color blue as the primary subject or dominant color in the composition.",
+        bannerImageUrl:
+          "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&q=80&w=1386&ixlib=rb-4.0.3",
+        startDate: contest2StartDate,
+        endDate: contest2EndDate,
+        votingStartDate: contest2VotingStartDate,
+        votingEndDate: contest2VotingEndDate,
+        status: "draft",
+      });
 
       console.log("Sample contests created successfully");
     } else {
-      console.log("Existing contests found, skipping sample contest creation");
+      console.log("Skipping contest creation - contests already exist");
     }
   } catch (error) {
-    console.error("Error seeding default data:", error);
+    console.error("Error creating sample contests:", error);
     throw error;
   }
 }

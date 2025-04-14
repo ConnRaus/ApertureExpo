@@ -14,6 +14,7 @@ export {
   usePhotoService,
   useUserService,
   useContestService,
+  useVoteService,
   useForumService,
 } from "./useServices";
 
