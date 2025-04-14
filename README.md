@@ -89,13 +89,31 @@ Before you begin, you'll need:
 ### Database Management
 
 - The database is automatically created and managed by Docker
-- Tables are created/updated using Sequelize migrations
+- Tables are created/updated using Sequelize models
 - Data persists between container restarts in the `pgdata` volume
 - To reset the database:
   ```bash
   docker-compose down -v  # Removes volumes
   docker-compose up --build
   ```
+
+### Seeding Test Data
+
+To seed the database with test contests of various durations (past, active, upcoming):
+
+```bash
+docker-compose exec backend npm run seed-test-contests
+```
+
+This will create:
+
+- Past contests (already ended)
+- Active contests with different durations (12 hours, 1 hour, 1 minute)
+- Upcoming contests (starting soon and in the future)
+
+### Photo Metadata
+
+The application now extracts and stores EXIF metadata from uploaded photos, which can be viewed by clicking on a photo and checking the browser console.
 
 ### Environment Variables
 
@@ -130,6 +148,15 @@ To access the app from other devices on your network:
    ```bash
    docker-compose down && docker-compose up --build
    ```
+
+## Feature Overview
+
+- **User Authentication**: Sign up and sign in using Clerk
+- **Photo Contests**: Browse active, upcoming, and past contests
+- **Photo Uploads**: Submit photos to contests with titles and descriptions
+- **Photo Gallery**: View photos submitted by all users
+- **User Profiles**: View your own profile and profiles of other users
+- **Contest Timeline**: Contests automatically change status based on start/end dates with countdown timers
 
 ## Troubleshooting
 

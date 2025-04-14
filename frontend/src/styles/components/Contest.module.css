@@ -238,8 +238,7 @@
 .countdownText {
   color: rgb(229, 231, 235);
   font-weight: 600;
-  font-family: monospace;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
 }
 
 /* Card countdown timer styles */
@@ -258,7 +257,6 @@
   background-color: rgba(31, 41, 55, 0.7);
   padding: 0.2rem 0.6rem;
   border-radius: 0.25rem;
-  font-family: monospace;
   letter-spacing: 0.02em;
   font-weight: 500;
 }
