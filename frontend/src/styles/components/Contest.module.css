@@ -143,8 +143,27 @@
   border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 500;
-  background-color: rgb(55, 65, 81);
   color: rgb(229, 231, 235);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+}
+
+/* Status badges on cards need additional contrast */
+.contestCard .statusBadge {
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.statusActive {
+  background-color: rgb(16, 185, 129); /* green */
+}
+
+.statusUpcoming {
+  background-color: rgb(79, 70, 229); /* indigo */
+}
+
+.statusEnded {
+  background-color: rgb(220, 38, 38); /* red */
 }
 
 .dateRange {

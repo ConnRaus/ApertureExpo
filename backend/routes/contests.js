@@ -33,9 +33,29 @@ router.get("/contests", async (req, res) => {
           attributes: ["id", "title", "s3Url", "thumbnailUrl", "userId"],
         },
       ],
-      order: [["createdAt", "DESC"]],
+      order: [["startDate", "ASC"]],
     });
-    res.json(contests || []);
+
+    // Calculate the contest status based on current time vs start/end dates
+    const now = new Date();
+    const processedContests = contests.map((contest) => {
+      const contestData = contest.toJSON();
+      const startDate = new Date(contestData.startDate);
+      const endDate = new Date(contestData.endDate);
+
+      // Determine contest status based on dates
+      if (now < startDate) {
+        contestData.status = "upcoming";
+      } else if (now >= startDate && now <= endDate) {
+        contestData.status = "active";
+      } else {
+        contestData.status = "ended";
+      }
+
+      return contestData;
+    });
+
+    res.json(processedContests || []);
   } catch (error) {
     console.error("Error fetching contests:", error);
     res.status(500).json({ error: "Failed to fetch contests" });
@@ -62,10 +82,27 @@ router.get("/contests/:id", async (req, res) => {
         },
       ],
     });
+
     if (!contest) {
       return res.status(404).json({ error: "Contest not found" });
     }
-    res.json(contest);
+
+    // Calculate the contest status based on current time vs start/end dates
+    const contestData = contest.toJSON();
+    const now = new Date();
+    const startDate = new Date(contestData.startDate);
+    const endDate = new Date(contestData.endDate);
+
+    // Determine contest status based on dates
+    if (now < startDate) {
+      contestData.status = "upcoming";
+    } else if (now >= startDate && now <= endDate) {
+      contestData.status = "active";
+    } else {
+      contestData.status = "ended";
+    }
+
+    res.json(contestData);
   } catch (error) {
     console.error("Error fetching contest:", error);
     res.status(500).json({ error: "Failed to fetch contest" });

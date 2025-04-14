@@ -68,21 +68,35 @@ export function ContestDetail({
       />
 
       <div className="mb-8">
-        {!showUploadForm ? (
-          <button
-            className="submit-button contest-submit-photo"
-            onClick={() => setShowUploadForm(true)}
-          >
-            Submit a Photo
-          </button>
+        {/* Only show submit button for active contests */}
+        {contest.status === "active" ? (
+          !showUploadForm ? (
+            <button
+              className="submit-button contest-submit-photo"
+              onClick={() => setShowUploadForm(true)}
+            >
+              Submit a Photo
+            </button>
+          ) : (
+            <UploadForm
+              contestId={contestId}
+              onUploadSuccess={() => {
+                setShowUploadForm(false);
+                fetchContestDetails();
+              }}
+            />
+          )
+        ) : contest.status === "upcoming" ? (
+          <div className="text-center p-3 bg-indigo-900/30 rounded-lg">
+            <p>
+              This contest hasn't started yet. Check back on{" "}
+              {new Date(contest.startDate).toLocaleDateString()}!
+            </p>
+          </div>
         ) : (
-          <UploadForm
-            contestId={contestId}
-            onUploadSuccess={() => {
-              setShowUploadForm(false);
-              fetchContestDetails();
-            }}
-          />
+          <div className="text-center p-3 bg-red-900/30 rounded-lg">
+            <p>This contest has ended. No more submissions are allowed.</p>
+          </div>
         )}
       </div>
 

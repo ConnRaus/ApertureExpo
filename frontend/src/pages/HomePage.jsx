@@ -12,7 +12,8 @@ function HomePage() {
           Join exciting photo contests and showcase your photography skills!
         </p>
       </div>
-      <EventList />
+      <h2>Active Contests</h2>
+      <EventList showAllTypes={false} />
     </div>
   );
 }
