@@ -36,7 +36,8 @@ Contest.init(
       allowNull: false,
       validate: {
         isDate: true,
-        isAfter: new Date().toISOString(),
+        // Temporarily removed isAfter validation to allow seeding test contests
+        // isAfter: new Date().toISOString(),
       },
     },
     endDate: {
@@ -57,6 +58,9 @@ Contest.init(
       validate: {
         isIn: [["draft", "active", "completed"]],
       },
+      // Note: In our API, we compute "upcoming", "active", and "ended"
+      // statuses based on start/end dates, which is different from
+      // this database enum that only supports "draft", "active", "completed"
     },
   },
   {

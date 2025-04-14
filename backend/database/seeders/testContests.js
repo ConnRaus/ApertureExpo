@@ -6,15 +6,11 @@ const { Contest } = models;
 
 export async function seedTestContests() {
   try {
-    // Generate UUIDs for our contests
-    const pastContestId = crypto.randomUUID();
-    const upcomingContestId = crypto.randomUUID();
-
     // Get the current timestamp
     const now = new Date();
 
-    // For the past contest, we need to bypass the model validations
-    // by using a raw SQL query or Sequelize's direct query method
+    // 1. Past contest (ended)
+    const pastContestId = crypto.randomUUID();
     await sequelize.query(`
       INSERT INTO "Contests" (
         "id", "title", "description", "bannerImageUrl", 
@@ -32,7 +28,8 @@ export async function seedTestContests() {
       )
     `);
 
-    // For the upcoming contest, we can still use the model since future dates are valid
+    // 2. Upcoming contest (future - 14 days)
+    const upcomingContestId = crypto.randomUUID();
     const upcomingContest = await Contest.create({
       id: upcomingContestId,
       title: "Urban Architecture",
@@ -45,14 +42,78 @@ export async function seedTestContests() {
       status: "draft", // This will be overridden by our date-based calculation
     });
 
+    // 3. Active contest with 12 hours remaining
+    const shortContestId = crypto.randomUUID();
+    const shortContest = await Contest.create({
+      id: shortContestId,
+      title: "12-Hour Flash Contest",
+      description:
+        "A quick contest that will end in just 12 hours! Capture something spontaneous and share it now.",
+      bannerImageUrl:
+        "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80",
+      startDate: new Date(now.getTime() - 12 * 60 * 60 * 1000), // 12 hours ago
+      endDate: new Date(now.getTime() + 12 * 60 * 60 * 1000), // 12 hours from now
+      status: "active",
+    });
+
+    // 4. Active contest with 1 hour remaining
+    const veryShortContestId = crypto.randomUUID();
+    const veryShortContest = await Contest.create({
+      id: veryShortContestId,
+      title: "1-Hour Challenge",
+      description:
+        "You only have one hour to participate! Show us what you can do in this extremely short challenge.",
+      bannerImageUrl:
+        "https://images.unsplash.com/photo-1533749882128-5782a8c033be?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80",
+      startDate: new Date(now.getTime() - 60 * 60 * 1000), // 1 hour ago
+      endDate: new Date(now.getTime() + 60 * 60 * 1000), // 1 hour from now
+      status: "active",
+    });
+
+    // 5. Active contest with 1 minute remaining
+    const expiringContestId = crypto.randomUUID();
+    const expiringContest = await Contest.create({
+      id: expiringContestId,
+      title: "Last Minute Contest",
+      description:
+        "This contest is about to end! Just one minute remaining to submit your entry.",
+      bannerImageUrl:
+        "https://images.unsplash.com/photo-1472162314594-eca3c3d90df1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80",
+      startDate: new Date(now.getTime() - 60 * 60 * 1000), // 1 hour ago
+      endDate: new Date(now.getTime() + 60 * 1000), // 1 minute from now
+      status: "active",
+    });
+
+    // 6. Contest starting in 1 minute
+    const startingSoonContestId = crypto.randomUUID();
+    const startingSoonContest = await Contest.create({
+      id: startingSoonContestId,
+      title: "Starting in 1 Minute",
+      description:
+        "This contest is about to begin! Just one minute until submissions open.",
+      bannerImageUrl:
+        "https://images.unsplash.com/photo-1502920514313-52581002a659?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80",
+      startDate: new Date(now.getTime() + 60 * 1000), // 1 minute from now
+      endDate: new Date(now.getTime() + 60 * 60 * 1000), // 1 hour from now
+      status: "draft", // Use "draft" instead of "upcoming"
+    });
+
     console.log("Test contests created successfully:", {
       past: pastContestId,
       upcoming: upcomingContestId,
+      shortContest: shortContestId,
+      veryShortContest: veryShortContestId,
+      expiringContest: expiringContestId,
+      startingSoonContest: startingSoonContestId,
     });
 
     return {
       pastContestId,
       upcomingContest,
+      shortContest,
+      veryShortContest,
+      expiringContest,
+      startingSoonContest,
     };
   } catch (error) {
     console.error("Error creating test contests:", error);

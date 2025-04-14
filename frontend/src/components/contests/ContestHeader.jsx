@@ -1,5 +1,6 @@
 import React from "react";
 import styles from "../../styles/components/Contest.module.css";
+import { CountdownTimer } from "../common/CountdownTimer";
 
 const formatDate = (date) => {
   return new Date(date).toLocaleDateString("en-US", {
@@ -54,6 +55,38 @@ export function ContestHeader({
           <span className={styles.dateRange}>
             {formatDate(startDate)} - {formatDate(endDate)}
           </span>
+
+          {/* Add countdown timer based on status */}
+          <div className={styles.countdownTimer}>
+            {status === "active" ? (
+              <>
+                <span className={styles.countdownLabel}>Ends in: </span>
+                <CountdownTimer
+                  targetDate={endDate}
+                  type="countdown"
+                  className={styles.countdownText}
+                />
+              </>
+            ) : status === "upcoming" ? (
+              <>
+                <span className={styles.countdownLabel}>Starts in: </span>
+                <CountdownTimer
+                  targetDate={startDate}
+                  type="countdown"
+                  className={styles.countdownText}
+                />
+              </>
+            ) : (
+              <>
+                <span className={styles.countdownLabel}>Ended: </span>
+                <CountdownTimer
+                  targetDate={endDate}
+                  type="elapsed"
+                  className={styles.countdownText}
+                />
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -28,6 +28,37 @@
   transform: scale(1.05);
 }
 
+/* Badge container at the top of the card */
+.badgeContainer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  align-items: center;
+  z-index: 10;
+}
+
+/* Countdown in the header next to the status badge */
+.headerCountdown {
+  border-radius: 9999px;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgb(229, 231, 235);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.headerCountdownText {
+  font-weight: 500;
+  color: rgb(229, 231, 235);
+  font-size: 0.75rem;
+}
+
 .contestInfo {
   padding: 1rem;
   display: flex;
@@ -35,6 +66,19 @@
   gap: 0.5rem;
   flex-grow: 1;
   min-height: 8rem;
+}
+
+/* Media query for narrower screens */
+@media (max-width: 640px) {
+  .badgeContainer {
+    flex-direction: column;
+    align-items: flex-end;
+    padding: 0.25rem;
+  }
+
+  .headerCountdown {
+    margin-top: 0.25rem;
+  }
 }
 
 .contestInfo h3 {
@@ -172,6 +216,51 @@
   color: rgb(209, 213, 219);
   font-size: 0.875rem;
   gap: 0.5rem;
+}
+
+/* Countdown timer styles */
+.countdownTimer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  background-color: rgba(31, 41, 55, 0.7);
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.countdownLabel {
+  color: rgb(156, 163, 175);
+  font-weight: 500;
+}
+
+.countdownText {
+  color: rgb(229, 231, 235);
+  font-weight: 600;
+  font-family: monospace;
+  letter-spacing: 0.05em;
+}
+
+/* Card countdown timer styles */
+.cardCountdown {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: rgb(156, 163, 175);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cardCountdown div {
+  display: flex;
+  align-items: center;
+  background-color: rgba(31, 41, 55, 0.7);
+  padding: 0.2rem 0.6rem;
+  border-radius: 0.25rem;
+  font-family: monospace;
+  letter-spacing: 0.02em;
+  font-weight: 500;
 }
 
 /* Submissions */

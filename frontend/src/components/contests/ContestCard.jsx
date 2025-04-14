@@ -1,5 +1,6 @@
 import React from "react";
 import styles from "../../styles/components/Contest.module.css";
+import { CountdownTimer } from "../common/CountdownTimer";
 
 export function ContestCard({ contest, onClick }) {
   const defaultBanner =
@@ -35,15 +36,48 @@ export function ContestCard({ contest, onClick }) {
           alt={contest.title}
           className={styles.bannerImage}
         />
-        <span
-          className={`absolute top-2 right-2 ${styles.statusBadge} ${statusClass}`}
-        >
-          {statusText}
-        </span>
+        <div className={styles.badgeContainer}>
+          <span className={`${styles.statusBadge} ${statusClass}`}>
+            {statusText}
+          </span>
+
+          {/* Countdown timer next to status badge */}
+          {contest.status === "active" && (
+            <span
+              className={styles.headerCountdown}
+              title={`Contest ends on ${new Date(
+                contest.endDate
+              ).toLocaleString()}`}
+            >
+              <CountdownTimer
+                targetDate={contest.endDate}
+                type="countdown"
+                compact={true}
+                className={styles.headerCountdownText}
+              />
+            </span>
+          )}
+          {contest.status === "upcoming" && (
+            <span
+              className={styles.headerCountdown}
+              title={`Contest starts on ${new Date(
+                contest.startDate
+              ).toLocaleString()}`}
+            >
+              <CountdownTimer
+                targetDate={contest.startDate}
+                type="countdown"
+                compact={true}
+                className={styles.headerCountdownText}
+              />
+            </span>
+          )}
+        </div>
       </div>
       <div className={styles.contestInfo}>
         <h3 title={contest.title}>{contest.title}</h3>
         <p title={contest.description}>{contest.description}</p>
+
         <p className={styles.submissionCount}>
           {contest.Photos?.length || 0} submissions
         </p>

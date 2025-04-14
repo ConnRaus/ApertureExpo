@@ -14,6 +14,13 @@ async function runSeeder() {
     console.log("Test contests seeded successfully!");
     console.log("Past contest ID:", result.pastContestId);
     console.log("Upcoming contest ID:", result.upcomingContest.id);
+    console.log("Short (12h) contest ID:", result.shortContest.id);
+    console.log("Very short (1h) contest ID:", result.veryShortContest.id);
+    console.log("Expiring (1m) contest ID:", result.expiringContest.id);
+    console.log(
+      "Starting soon (1m) contest ID:",
+      result.startingSoonContest.id
+    );
 
     process.exit(0);
   } catch (error) {
