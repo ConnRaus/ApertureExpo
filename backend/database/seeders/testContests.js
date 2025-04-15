@@ -32,7 +32,7 @@ export async function seedTestContests() {
       endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days from now
       votingStartDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // Same as endDate
       votingEndDate: new Date(Date.now() + 17 * 24 * 60 * 60 * 1000), // 7 days after endDate
-      status: "draft",
+      status: "upcoming",
     });
 
     // Create active contest
@@ -47,7 +47,7 @@ export async function seedTestContests() {
       endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
       votingStartDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // Same as endDate
       votingEndDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 7 days after endDate
-      status: "active",
+      status: "open",
     });
 
     // Create 1-hour challenge
@@ -64,7 +64,7 @@ export async function seedTestContests() {
       votingEndDate: new Date(
         Date.now() + 7 * 24 * 60 * 60 * 1000 + 30 * 60 * 1000
       ), // 7 days after endDate
-      status: "active",
+      status: "open",
     });
 
     // Create last minute contest
@@ -79,7 +79,7 @@ export async function seedTestContests() {
       endDate: new Date(Date.now() + 3 * 60 * 1000), // 3 minutes from now
       votingStartDate: new Date(Date.now() + 3 * 60 * 1000), // Same as endDate
       votingEndDate: new Date(Date.now() + 3 * 60 * 1000 + 3 * 60 * 1000), // 3 minutes after voting start date
-      status: "active",
+      status: "open",
     });
 
     // Create contest starting in 1 minute
@@ -95,7 +95,7 @@ export async function seedTestContests() {
       votingEndDate: new Date(
         Date.now() + 7 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000
       ), // 7 days after endDate
-      status: "draft",
+      status: "upcoming",
     });
 
     console.log("Test contests created with IDs:", {

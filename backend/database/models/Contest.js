@@ -77,10 +77,10 @@ Contest.init(
       },
     },
     status: {
-      type: DataTypes.ENUM("draft", "active", "voting", "completed"),
-      defaultValue: "draft",
+      type: DataTypes.ENUM("upcoming", "open", "voting", "completed"),
+      defaultValue: "upcoming",
       validate: {
-        isIn: [["draft", "active", "voting", "completed"]],
+        isIn: [["upcoming", "open", "voting", "completed"]],
       },
     },
     phase: {

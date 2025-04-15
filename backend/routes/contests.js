@@ -18,7 +18,7 @@ router.post("/contests", requireAuth(), async (req, res) => {
       endDate: req.body.endDate,
       votingStartDate: req.body.votingStartDate,
       votingEndDate: req.body.votingEndDate,
-      status: "active",
+      status: "upcoming",
     });
     res.json(contest);
   } catch (error) {
@@ -50,12 +50,12 @@ router.get("/contests", async (req, res) => {
 
         // Sync status with phase
         const phase = contestData.phase;
-        if (phase === "upcoming" && contestData.status !== "draft") {
-          await contest.update({ status: "draft" });
-          contestData.status = "draft";
-        } else if (phase === "submission" && contestData.status !== "active") {
-          await contest.update({ status: "active" });
-          contestData.status = "active";
+        if (phase === "upcoming" && contestData.status !== "upcoming") {
+          await contest.update({ status: "upcoming" });
+          contestData.status = "upcoming";
+        } else if (phase === "submission" && contestData.status !== "open") {
+          await contest.update({ status: "open" });
+          contestData.status = "open";
         } else if (phase === "voting" && contestData.status !== "voting") {
           await contest.update({ status: "voting" });
           contestData.status = "voting";
@@ -150,12 +150,12 @@ router.get("/contests/:id", async (req, res) => {
 
     // Sync status with phase
     const phase = contestData.phase;
-    if (phase === "upcoming" && contestData.status !== "draft") {
-      await contest.update({ status: "draft" });
-      contestData.status = "draft";
-    } else if (phase === "submission" && contestData.status !== "active") {
-      await contest.update({ status: "active" });
-      contestData.status = "active";
+    if (phase === "upcoming" && contestData.status !== "upcoming") {
+      await contest.update({ status: "upcoming" });
+      contestData.status = "upcoming";
+    } else if (phase === "submission" && contestData.status !== "open") {
+      await contest.update({ status: "open" });
+      contestData.status = "open";
     } else if (phase === "voting" && contestData.status !== "voting") {
       await contest.update({ status: "voting" });
       contestData.status = "voting";

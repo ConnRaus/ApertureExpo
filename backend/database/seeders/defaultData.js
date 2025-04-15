@@ -25,7 +25,7 @@ export async function seedDefaultData() {
         endDate: contest1EndDate,
         votingStartDate: contest1VotingStartDate,
         votingEndDate: contest1VotingEndDate,
-        status: "active",
+        status: "open",
       });
 
       const contest2StartDate = new Date();
@@ -46,7 +46,7 @@ export async function seedDefaultData() {
         endDate: contest2EndDate,
         votingStartDate: contest2VotingStartDate,
         votingEndDate: contest2VotingEndDate,
-        status: "draft",
+        status: "upcoming",
       });
 
       console.log("Sample contests created successfully");

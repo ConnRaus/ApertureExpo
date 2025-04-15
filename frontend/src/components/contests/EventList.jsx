@@ -43,11 +43,20 @@ export function EventList({ showAllTypes = true }) {
       setContests(data || []);
 
       // Group contests by phase
-      const active = data.filter((contest) => contest.phase === "submission");
-      const upcoming = data.filter((contest) => contest.phase === "upcoming");
-      const voting = data.filter((contest) => contest.phase === "voting");
-      const ended = data.filter((contest) =>
-        ["processing", "ended"].includes(contest.phase)
+      const active = data.filter(
+        (contest) => contest.phase === "submission" || contest.status === "open"
+      );
+      const upcoming = data.filter(
+        (contest) =>
+          contest.phase === "upcoming" || contest.status === "upcoming"
+      );
+      const voting = data.filter(
+        (contest) => contest.phase === "voting" || contest.status === "voting"
+      );
+      const ended = data.filter(
+        (contest) =>
+          ["processing", "ended"].includes(contest.phase) ||
+          contest.status === "completed"
       );
 
       setActiveContests(active);

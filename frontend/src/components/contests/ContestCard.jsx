@@ -33,8 +33,28 @@ export function ContestCard({ contest, onClick }) {
       statusClass = styles.statusEnded;
       break;
     default:
-      statusText = contest.status || "Unknown";
-      statusClass = "";
+      // Fall back to status if phase is not available
+      switch (contest.status) {
+        case "open":
+          statusText = "Active";
+          statusClass = styles.statusActive;
+          break;
+        case "upcoming":
+          statusText = "Coming Soon";
+          statusClass = styles.statusUpcoming;
+          break;
+        case "voting":
+          statusText = "Voting Open";
+          statusClass = styles.statusVoting;
+          break;
+        case "completed":
+          statusText = "Ended";
+          statusClass = styles.statusEnded;
+          break;
+        default:
+          statusText = contest.status || "Unknown";
+          statusClass = "";
+      }
   }
 
   return (
