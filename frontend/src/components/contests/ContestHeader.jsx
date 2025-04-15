@@ -48,8 +48,28 @@ export function ContestHeader({
       statusClass = styles.statusEnded;
       break;
     default:
-      statusText = status || "Unknown";
-      statusClass = "";
+      // Fallback to status if phase is not available
+      switch (status) {
+        case "open":
+          statusText = "Accepting Submissions";
+          statusClass = styles.statusActive;
+          break;
+        case "upcoming":
+          statusText = "Coming Soon";
+          statusClass = styles.statusUpcoming;
+          break;
+        case "voting":
+          statusText = "Voting Open";
+          statusClass = styles.statusVoting;
+          break;
+        case "completed":
+          statusText = "Ended";
+          statusClass = styles.statusEnded;
+          break;
+        default:
+          statusText = status || "Unknown";
+          statusClass = "";
+      }
   }
 
   // Determine which dates and countdown to show based on phase
@@ -67,7 +87,7 @@ export function ContestHeader({
       case "submission":
         dateString = `Submissions until: ${formatDate(endDate)}`;
         targetDate = endDate;
-        countdownLabel = "Ends in: ";
+        countdownLabel = "Submissions end in: ";
         break;
       case "processing":
         dateString = `Voting: ${formatDate(votingStartDate)} - ${formatDate(
@@ -98,14 +118,21 @@ export function ContestHeader({
       <img src={bannerImageUrl || defaultBanner} alt={title} />
       <div className={styles.bannerOverlay} />
       <div className={styles.contestHeader}>
-        <h1 title={title}>{title}</h1>
-        <p title={description}>{description}</p>
+        <h1 title={title} className={styles.contestTitle}>
+          {title}
+        </h1>
+
+        {description && (
+          <p title={description} className={styles.contestDescription}>
+            {description}
+          </p>
+        )}
+
         <div className={styles.contestMeta}>
           <div className={styles.statusBadgeContainer}>
             <span className={`${styles.statusBadge} ${statusClass}`}>
               {statusText}
             </span>
-            <span className={styles.dateRange}>{phaseInfo.dateString}</span>
           </div>
 
           {/* Add countdown timer based on phase */}
