@@ -6,12 +6,18 @@ import {
   SignInButton,
   UserButton,
   useUser,
+  useClerk,
 } from "@clerk/clerk-react";
 import styles from "../../styles/components/Navigation.module.css";
 
 function Navigation() {
   const { user } = useUser();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const clerk = useClerk();
+
+  console.log("Clerk version:", clerk?.version);
+  console.log("UserButton:", typeof UserButton);
+  console.log("UserButton.MenuItems:", typeof UserButton.MenuItems);
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -61,7 +67,32 @@ function Navigation() {
               Your Profile
             </Link>
           </div>
-          <UserButton />
+          <UserButton>
+            {/* <UserButton.MenuItems>
+              <UserButton.Action
+                label="Open chat"
+                onClick={() => {
+                  console.log("Chat action clicked!");
+                  alert("Chat initialized!");
+                }}
+                labelIcon={
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                }
+              />
+            </UserButton.MenuItems> */}
+          </UserButton>
         </SignedIn>
         <SignedOut>
           <SignInButton mode="modal">
