@@ -15,10 +15,6 @@ function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const clerk = useClerk();
 
-  console.log("Clerk version:", clerk?.version);
-  console.log("UserButton:", typeof UserButton);
-  console.log("UserButton.MenuItems:", typeof UserButton.MenuItems);
-
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
   };
