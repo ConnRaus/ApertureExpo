@@ -64,7 +64,9 @@ function Navigation() {
             </Link>
           </div>
           <UserButton>
-            {/* <UserButton.MenuItems>
+            {/*
+            DONT DELETE, THIS IS THE ONLY WORKING TEMPLATE BUTTON IVE MADE
+            <UserButton.MenuItems>
               <UserButton.Action
                 label="Open chat"
                 onClick={() => {
