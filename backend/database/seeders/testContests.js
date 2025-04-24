@@ -29,7 +29,7 @@ export async function seedTestContests() {
       endDate: contest1EndDate,
       votingStartDate: contest1VotingStartDate,
       votingEndDate: contest1VotingEndDate,
-      maxPhotosPerUser: 5,
+      maxPhotosPerUser: 3,
       status: "open",
     });
 
@@ -53,7 +53,7 @@ export async function seedTestContests() {
       endDate: contest2EndDate,
       votingStartDate: contest2VotingStartDate,
       votingEndDate: contest2VotingEndDate,
-      maxPhotosPerUser: null,
+      maxPhotosPerUser: 2,
       status: "upcoming",
     });
 
@@ -70,7 +70,7 @@ export async function seedTestContests() {
       endDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
       votingStartDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Same as endDate
       votingEndDate: new Date(Date.now()), // 7 days after endDate (today)
-      maxPhotosPerUser: 10, // Limit for past contest
+      maxPhotosPerUser: 5,
       status: "completed",
     });
 
@@ -86,7 +86,7 @@ export async function seedTestContests() {
       endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days from now
       votingStartDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // Same as endDate
       votingEndDate: new Date(Date.now() + 17 * 24 * 60 * 60 * 1000), // 7 days after endDate
-      maxPhotosPerUser: 3, // Limit for upcoming contest
+      maxPhotosPerUser: 4,
       status: "upcoming",
     });
 
@@ -102,7 +102,7 @@ export async function seedTestContests() {
       endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
       votingStartDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // Same as endDate
       votingEndDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 7 days after endDate
-      maxPhotosPerUser: 5, // Limit for active contest
+      maxPhotosPerUser: 2,
       status: "open",
     });
 
@@ -120,7 +120,7 @@ export async function seedTestContests() {
       votingEndDate: new Date(
         Date.now() + 7 * 24 * 60 * 60 * 1000 + 30 * 60 * 1000
       ), // 7 days after endDate
-      maxPhotosPerUser: 1, // Limit for 1-hour challenge
+      maxPhotosPerUser: 1,
       status: "open",
     });
 
@@ -136,7 +136,7 @@ export async function seedTestContests() {
       endDate: new Date(Date.now() + 3 * 60 * 1000), // 3 minutes from now
       votingStartDate: new Date(Date.now() + 3 * 60 * 1000), // Same as endDate
       votingEndDate: new Date(Date.now() + 3 * 60 * 1000 + 3 * 60 * 1000), // 3 minutes after voting start date
-      maxPhotosPerUser: 2, // Limit for last minute contest
+      maxPhotosPerUser: 3,
       status: "open",
     });
 
@@ -150,10 +150,8 @@ export async function seedTestContests() {
       startDate: new Date(Date.now() + 1 * 60 * 1000), // 1 minute from now
       endDate: new Date(Date.now() + 60 * 60 * 1000), // 1 hour from now
       votingStartDate: new Date(Date.now() + 60 * 60 * 1000), // Same as endDate
-      votingEndDate: new Date(
-        Date.now() + 7 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000
-      ), // 7 days after endDate
-      maxPhotosPerUser: null, // No limit for starting soon contest
+      votingEndDate: new Date(Date.now() + 60 * 60 * 1000 + 1 * 60 * 1000), // Changed: only 1 minute after voting starts
+      maxPhotosPerUser: 5,
       status: "upcoming",
     });
 
