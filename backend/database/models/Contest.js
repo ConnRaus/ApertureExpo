@@ -105,6 +105,11 @@ Contest.init(
         }
       },
     },
+    maxPhotosPerUser: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: null,
+    },
   },
   {
     sequelize,

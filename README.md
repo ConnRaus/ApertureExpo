@@ -97,6 +97,34 @@ Before you begin, you'll need:
   docker-compose up --build
   ```
 
+### Database Commands
+
+For managing contest data:
+
+```bash
+# Delete all existing contests
+docker compose exec db psql -U photo_contest_admin -d photo_contest_db -c "DELETE FROM \"Contests\";"
+
+# Run the seed script to create test contests
+docker compose exec backend node database/seeders/testContests.js
+
+# View all contests (basic info)
+docker compose exec db psql -U photo_contest_admin -d photo_contest_db -c "SELECT id, title, status FROM \"Contests\";"
+
+# View a specific contest details
+docker compose exec db psql -U photo_contest_admin -d photo_contest_db -c "SELECT * FROM \"Contests\" WHERE id = 'contest-id-here';"
+
+# Delete a specific contest by ID
+docker compose exec db psql -U photo_contest_admin -d photo_contest_db -c "DELETE FROM \"Contests\" WHERE id = 'contest-id-here';"
+```
+
+These commands can be useful for:
+
+- Resetting just the contest data without affecting other tables
+- Testing different contest scenarios with the pre-configured test contests
+- Setting up demo data quickly
+- Inspecting or modifying specific contests in the database
+
 ### Seeding Test Data
 
 To seed the database with test contests of various durations (past, active, upcoming):

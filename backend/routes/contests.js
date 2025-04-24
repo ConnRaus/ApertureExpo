@@ -18,6 +18,7 @@ router.post("/contests", requireAuth(), async (req, res) => {
       endDate: req.body.endDate,
       votingStartDate: req.body.votingStartDate,
       votingEndDate: req.body.votingEndDate,
+      maxPhotosPerUser: req.body.maxPhotosPerUser || null,
       status: "upcoming",
     });
     res.json(contest);

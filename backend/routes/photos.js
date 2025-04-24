@@ -21,6 +21,35 @@ router.post(
         return res.status(400).json({ error: "No file uploaded" });
       }
 
+      const contestId = req.body.contestId;
+      const userId = req.auth.userId;
+
+      // Check submission limit if contestId is provided
+      if (contestId) {
+        const contest = await Contest.findByPk(contestId);
+        if (!contest) {
+          return res.status(404).json({ error: "Contest not found" });
+        }
+
+        if (contest.maxPhotosPerUser !== null) {
+          const userSubmissionCount = await PhotoContest.count({
+            where: { contestId: contestId },
+            include: [
+              {
+                model: Photo,
+                where: { userId: userId }, // Ensure the photo belongs to the user
+              },
+            ],
+          });
+
+          if (userSubmissionCount >= contest.maxPhotosPerUser) {
+            return res.status(400).json({
+              error: `Submission limit reached (${contest.maxPhotosPerUser} photos per user).`,
+            });
+          }
+        }
+      }
+
       const { mainUrl, thumbnailUrl, metadata } = await uploadToS3(
         req.file,
         `photos/${req.auth.userId}`
@@ -37,10 +66,12 @@ router.post(
       });
 
       // If a contest ID was provided, associate the photo with that contest using the join table
-      if (req.body.contestId) {
+      if (contestId) {
         await PhotoContest.create({
           photoId: photo.id,
-          contestId: req.body.contestId,
+          contestId: contestId,
+          // Ensure userId is set in PhotoContest if the model supports it
+          // userId: userId,
         });
       }
 
@@ -208,6 +239,27 @@ router.post("/photos/:id/submit", requireAuth(), async (req, res) => {
     const contest = await Contest.findByPk(req.body.contestId);
     if (!contest) {
       return res.status(404).json({ error: "Contest not found" });
+    }
+
+    const userId = req.auth.userId;
+
+    // Check submission limit
+    if (contest.maxPhotosPerUser !== null) {
+      const userSubmissionCount = await PhotoContest.count({
+        where: { contestId: contest.id },
+        include: [
+          {
+            model: Photo,
+            where: { userId: userId }, // Count photos submitted by this user to this contest
+          },
+        ],
+      });
+
+      if (userSubmissionCount >= contest.maxPhotosPerUser) {
+        return res.status(400).json({
+          error: `Submission limit reached (${contest.maxPhotosPerUser} photos per user).`,
+        });
+      }
     }
 
     // Check if photo is already in the contest using the join table

@@ -28,6 +28,15 @@ Contest.belongsToMany(Photo, {
   as: "Photos",
 });
 
+// Add explicit associations for the PhotoContest model
+PhotoContest.belongsTo(Photo, {
+  foreignKey: "photoId",
+});
+
+PhotoContest.belongsTo(Contest, {
+  foreignKey: "contestId",
+});
+
 // Keep the old one-to-many relationship for backwards compatibility
 // This will be deprecated in the future
 Contest.hasMany(Photo, {

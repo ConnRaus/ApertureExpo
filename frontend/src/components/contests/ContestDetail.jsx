@@ -7,6 +7,7 @@ import { ContestSubmissions } from "./ContestSubmissions";
 import { ContestResults } from "./ContestResults";
 import { UploadForm } from "../user/UploadForm";
 import { toast } from "react-toastify";
+import { useUser } from "@clerk/clerk-react";
 
 export function ContestDetail() {
   const { contestId } = useParams();
@@ -15,6 +16,7 @@ export function ContestDetail() {
   const [error, setError] = useState(null);
   const [showUploadForm, setShowUploadForm] = useState(false);
   const contestService = useContestService();
+  const { user, isLoaded: userLoaded } = useUser();
 
   useEffect(() => {
     fetchContestDetails();
@@ -47,6 +49,15 @@ export function ContestDetail() {
     }
   };
 
+  // Calculate user's submission count
+  const userSubmissionCount =
+    contest?.Photos?.filter((photo) => photo.userId === user?.id).length || 0;
+
+  // Check if user has reached the submission limit
+  const maxPhotosPerUser = contest?.maxPhotosPerUser;
+  const limitReached =
+    maxPhotosPerUser !== null && userSubmissionCount >= maxPhotosPerUser;
+
   if (loading && !contest) {
     return (
       <div className="flex justify-center items-center p-12">
@@ -67,6 +78,11 @@ export function ContestDetail() {
   }
 
   const renderPhaseSpecificContent = () => {
+    const limitText =
+      maxPhotosPerUser !== null
+        ? ` (${userSubmissionCount} of ${maxPhotosPerUser} submitted)`
+        : "";
+
     switch (contest.phase) {
       case "upcoming":
         return (
@@ -79,22 +95,40 @@ export function ContestDetail() {
         );
 
       case "submission":
-        return !showUploadForm ? (
-          <button
-            className="submit-button contest-submit-photo"
-            onClick={() => setShowUploadForm(true)}
-          >
-            Submit a Photo
-          </button>
-        ) : (
-          <UploadForm
-            contestId={contestId}
-            onUploadSuccess={() => {
-              setShowUploadForm(false);
-              fetchContestDetails();
-            }}
-          />
-        );
+        if (limitReached) {
+          return (
+            <div className="text-center p-3 bg-yellow-900/30 rounded-lg">
+              <p>You have reached the submission limit{limitText}.</p>
+            </div>
+          );
+        } else if (showUploadForm) {
+          return (
+            <UploadForm
+              contestId={contestId}
+              onUploadSuccess={() => {
+                setShowUploadForm(false);
+                fetchContestDetails();
+              }}
+            />
+          );
+        } else {
+          return (
+            <div className="flex flex-col items-center">
+              <button
+                className="submit-button contest-submit-photo mb-2"
+                onClick={() => setShowUploadForm(true)}
+              >
+                Submit a Photo
+              </button>
+              {maxPhotosPerUser !== null && (
+                <p className="text-sm text-gray-400">
+                  You can submit up to {maxPhotosPerUser} photos.
+                  {limitText}
+                </p>
+              )}
+            </div>
+          );
+        }
 
       case "processing":
         return (

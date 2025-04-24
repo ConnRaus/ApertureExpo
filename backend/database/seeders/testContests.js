@@ -5,7 +5,10 @@ const { Contest, sequelize } = models;
 
 export async function seedTestContests() {
   try {
+    console.log("Beginning to create test contests...");
+
     // Create past contest
+    console.log("Creating past contest: Vintage Photography");
     const pastContest = await Contest.create({
       id: randomUUID(),
       title: "Vintage Photography",
@@ -17,6 +20,7 @@ export async function seedTestContests() {
       endDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
       votingStartDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Same as endDate
       votingEndDate: new Date(Date.now()), // 7 days after endDate (today)
+      maxPhotosPerUser: 10, // Limit for past contest
       status: "completed",
     });
 
@@ -32,6 +36,7 @@ export async function seedTestContests() {
       endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days from now
       votingStartDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // Same as endDate
       votingEndDate: new Date(Date.now() + 17 * 24 * 60 * 60 * 1000), // 7 days after endDate
+      maxPhotosPerUser: 3, // Limit for upcoming contest
       status: "upcoming",
     });
 
@@ -47,6 +52,7 @@ export async function seedTestContests() {
       endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
       votingStartDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // Same as endDate
       votingEndDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 7 days after endDate
+      maxPhotosPerUser: 5, // Limit for active contest
       status: "open",
     });
 
@@ -64,6 +70,7 @@ export async function seedTestContests() {
       votingEndDate: new Date(
         Date.now() + 7 * 24 * 60 * 60 * 1000 + 30 * 60 * 1000
       ), // 7 days after endDate
+      maxPhotosPerUser: 1, // Limit for 1-hour challenge
       status: "open",
     });
 
@@ -79,6 +86,7 @@ export async function seedTestContests() {
       endDate: new Date(Date.now() + 3 * 60 * 1000), // 3 minutes from now
       votingStartDate: new Date(Date.now() + 3 * 60 * 1000), // Same as endDate
       votingEndDate: new Date(Date.now() + 3 * 60 * 1000 + 3 * 60 * 1000), // 3 minutes after voting start date
+      maxPhotosPerUser: 2, // Limit for last minute contest
       status: "open",
     });
 
@@ -95,6 +103,7 @@ export async function seedTestContests() {
       votingEndDate: new Date(
         Date.now() + 7 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000
       ), // 7 days after endDate
+      maxPhotosPerUser: null, // No limit for starting soon contest
       status: "upcoming",
     });
 
@@ -119,4 +128,24 @@ export async function seedTestContests() {
     console.error("Error seeding test contests:", error);
     throw error;
   }
+}
+
+// Check if this module is being run directly (not imported)
+if (import.meta.url === `file://${process.argv[1]}`) {
+  console.log("Starting to seed test contests...");
+  console.log("Database models:", Object.keys(models));
+  console.log("Contest model:", typeof Contest);
+  seedTestContests()
+    .then((contests) => {
+      console.log("Successfully seeded test contests");
+      console.log(
+        "Created contests:",
+        Object.keys(contests).map((key) => contests[key].title)
+      );
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error("Failed to seed test contests:", err);
+      process.exit(1);
+    });
 }
