@@ -7,6 +7,56 @@ export async function seedTestContests() {
   try {
     console.log("Beginning to create test contests...");
 
+    // Create basic contests (from defaultData.js)
+    console.log("Creating basic contests (Red and Blue)...");
+
+    // Red contest
+    const contest1StartDate = new Date();
+    const contest1EndDate = new Date(contest1StartDate);
+    contest1EndDate.setDate(contest1EndDate.getDate() + 14); // 2 weeks after start
+    const contest1VotingStartDate = new Date(contest1EndDate);
+    const contest1VotingEndDate = new Date(contest1VotingStartDate);
+    contest1VotingEndDate.setDate(contest1VotingEndDate.getDate() + 7); // 1 week after submission ends
+
+    const redContest = await Contest.create({
+      id: randomUUID(),
+      title: "Things That Are Red",
+      description:
+        "Submit your best photographs featuring the color red as the primary subject or dominant color in the composition.",
+      bannerImageUrl:
+        "https://images.pexels.com/photos/3652898/pexels-photo-3652898.jpeg",
+      startDate: contest1StartDate,
+      endDate: contest1EndDate,
+      votingStartDate: contest1VotingStartDate,
+      votingEndDate: contest1VotingEndDate,
+      maxPhotosPerUser: 5,
+      status: "open",
+    });
+
+    // Blue contest
+    const contest2StartDate = new Date();
+    contest2StartDate.setDate(contest2StartDate.getDate() + 21); // 3 weeks from now
+    const contest2EndDate = new Date(contest2StartDate);
+    contest2EndDate.setDate(contest2EndDate.getDate() + 14); // 2 weeks after start
+    const contest2VotingStartDate = new Date(contest2EndDate);
+    const contest2VotingEndDate = new Date(contest2VotingStartDate);
+    contest2VotingEndDate.setDate(contest2VotingEndDate.getDate() + 7); // 1 week after submission ends
+
+    const blueContest = await Contest.create({
+      id: randomUUID(),
+      title: "Things That Are Blue",
+      description:
+        "Submit your best photographs featuring the color blue as the primary subject or dominant color in the composition.",
+      bannerImageUrl:
+        "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&q=80&w=1386&ixlib=rb-4.0.3",
+      startDate: contest2StartDate,
+      endDate: contest2EndDate,
+      votingStartDate: contest2VotingStartDate,
+      votingEndDate: contest2VotingEndDate,
+      maxPhotosPerUser: null,
+      status: "upcoming",
+    });
+
     // Create past contest
     console.log("Creating past contest: Vintage Photography");
     const pastContest = await Contest.create({
@@ -108,6 +158,8 @@ export async function seedTestContests() {
     });
 
     console.log("Test contests created with IDs:", {
+      redContestId: redContest.id,
+      blueContestId: blueContest.id,
       pastContestId: pastContest.id,
       upcomingContestId: upcomingContest.id,
       activeContestId: activeContest.id,
@@ -117,6 +169,8 @@ export async function seedTestContests() {
     });
 
     return {
+      redContest,
+      blueContest,
       pastContest,
       upcomingContest,
       activeContest,

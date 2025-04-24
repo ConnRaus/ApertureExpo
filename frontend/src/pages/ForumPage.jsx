@@ -93,7 +93,7 @@ function ForumPage() {
   return (
     <div className={styles.forumContainer}>
       <div className={styles.forumHeader}>
-        <h1 className={styles.forumTitle}>Photography Forum</h1>
+        <h1>Photography Forum</h1>
         <div className={styles.forumAction}>
           <button
             className="sign-in-button forum-new-thread"
