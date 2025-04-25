@@ -585,3 +585,31 @@
     width: 200px;
   }
 }
+
+/* Photo author and result info */
+.photoAuthor {
+  font-size: 0.875rem;
+  color: rgb(156, 163, 175);
+  margin-bottom: 0.25rem;
+}
+
+.photoStats {
+  font-size: 0.875rem;
+  color: rgb(156, 163, 175);
+  margin-bottom: 0.25rem;
+}
+
+.photoResultsInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.photographerName {
+  font-size: 0.875rem;
+  color: rgb(156, 163, 175);
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}

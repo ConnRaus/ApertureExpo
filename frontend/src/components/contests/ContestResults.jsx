@@ -1,5 +1,6 @@
 import React from "react";
 import styles from "../../styles/components/Contest.module.css";
+import { Link } from "react-router-dom";
 
 export function ContestResults({ photos, contestId }) {
   // Sort photos by votes (totalScore or voteCount)
@@ -79,6 +80,15 @@ export function ContestResults({ photos, contestId }) {
               </div>
               <div className={styles.placeBadge}>{placeText}</div>
               <div className={styles.photoTitle}>{photo.title}</div>
+              <div className={styles.photographerName}>
+                by{" "}
+                <Link
+                  to={`/users/${photo.userId}`}
+                  className="text-indigo-300 hover:text-indigo-200 underline"
+                >
+                  {photo.User?.name || "Unknown"}
+                </Link>
+              </div>
               <div className={styles.voteCount}>
                 {photo.voteCount || 0} votes (
                 {photo.averageRating ? photo.averageRating.toFixed(1) : 0} avg)

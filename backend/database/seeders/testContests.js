@@ -148,9 +148,11 @@ export async function seedTestContests() {
       bannerImageUrl:
         "https://images.pexels.com/photos/2166711/pexels-photo-2166711.jpeg",
       startDate: new Date(Date.now() + 1 * 60 * 1000), // 1 minute from now
-      endDate: new Date(Date.now() + 60 * 60 * 1000), // 1 hour from now
-      votingStartDate: new Date(Date.now() + 60 * 60 * 1000), // Same as endDate
-      votingEndDate: new Date(Date.now() + 60 * 60 * 1000 + 1 * 60 * 1000), // Changed: only 1 minute after voting starts
+      endDate: new Date(Date.now() + 1 * 60 * 1000 + 1 * 60 * 1000), // Changed: 1 minute after start (2 minutes from now)
+      votingStartDate: new Date(Date.now() + 1 * 60 * 1000 + 1 * 60 * 1000), // Same as endDate (2 minutes from now)
+      votingEndDate: new Date(
+        Date.now() + 1 * 60 * 1000 + 1 * 60 * 1000 + 1 * 60 * 1000
+      ), // 1 minute after voting starts (3 minutes from now)
       maxPhotosPerUser: 5,
       status: "upcoming",
     });
