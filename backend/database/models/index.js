@@ -50,6 +50,12 @@ Photo.belongsTo(Contest, {
   as: "Contest",
 });
 
+// Add association between Photo and User
+Photo.belongsTo(User, {
+  foreignKey: "userId",
+  as: "User",
+});
+
 // Vote associations
 Photo.hasMany(Vote, {
   foreignKey: "photoId",

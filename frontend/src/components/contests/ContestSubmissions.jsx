@@ -39,7 +39,7 @@ function ContestPhotoCard({ photo, contestId, contestPhase, onClick }) {
                   to={`/users/${photo.userId}`}
                   className="text-indigo-300 hover:text-indigo-200 underline"
                 >
-                  {photo.User?.name || "Unknown"}
+                  {photo.User?.nickname || "Unknown"}
                 </Link>
               </div>
               <div className={styles.photoStats}>

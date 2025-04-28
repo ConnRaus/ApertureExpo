@@ -5,6 +5,7 @@ import Photo from "../database/models/Photo.js";
 import Vote from "../database/models/Vote.js";
 import { Op } from "sequelize";
 import sequelize from "../database/config/config.js";
+import User from "../database/models/User.js";
 
 const router = express.Router();
 
@@ -136,6 +137,11 @@ router.get("/contests/:id", async (req, res) => {
               where: { contestId: req.params.id },
               required: false,
             },
+            {
+              model: User,
+              as: "User",
+              attributes: ["id", "nickname"],
+            },
           ],
           nest: false,
         },
@@ -181,6 +187,13 @@ router.get("/contests/:id", async (req, res) => {
         "userId",
         "createdAt",
         "description",
+      ],
+      include: [
+        {
+          model: User,
+          as: "User",
+          attributes: ["id", "nickname"],
+        },
       ],
     });
 
