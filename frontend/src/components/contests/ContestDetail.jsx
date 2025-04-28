@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useContestService } from "../../hooks";
 import styles from "../../styles/components/Contest.module.css";
@@ -17,18 +17,80 @@ export function ContestDetail() {
   const [showUploadForm, setShowUploadForm] = useState(false);
   const contestService = useContestService();
   const { user, isLoaded: userLoaded } = useUser();
+  const previousPhaseRef = useRef(null);
+  const phaseTransitionTimersRef = useRef([]);
 
   useEffect(() => {
     fetchContestDetails();
 
-    // Set up periodic refresh every minute to check for contest phase changes
+    // Set up periodic refresh every 30 seconds as a fallback
     const refreshInterval = setInterval(() => {
-      fetchContestDetails(false); // Pass false to not show loading state during refresh
-    }, 60000); // Every minute
+      fetchContestDetails(false);
+    }, 30000);
 
-    // Clean up interval on unmount
-    return () => clearInterval(refreshInterval);
+    // Clean up interval and timers on unmount
+    return () => {
+      clearInterval(refreshInterval);
+      phaseTransitionTimersRef.current.forEach((timer) => clearTimeout(timer));
+    };
   }, [contestId]);
+
+  // Helper function to schedule precise refreshes at phase transition times
+  const schedulePhaseTransitionRefreshes = (contestData) => {
+    // Clear any existing timers
+    phaseTransitionTimersRef.current.forEach((timer) => clearTimeout(timer));
+    phaseTransitionTimersRef.current = [];
+
+    if (!contestData) return;
+
+    const now = new Date().getTime();
+    const transitions = [
+      {
+        time: new Date(contestData.startDate).getTime(),
+        label: "submission start",
+      },
+      {
+        time: new Date(contestData.endDate).getTime(),
+        label: "submission end",
+      },
+      {
+        time: new Date(contestData.votingStartDate).getTime(),
+        label: "voting start",
+      },
+      {
+        time: new Date(contestData.votingEndDate).getTime(),
+        label: "voting end",
+      },
+    ];
+
+    // Schedule a refresh for each upcoming transition
+    transitions.forEach((transition) => {
+      const timeUntilTransition = transition.time - now;
+
+      // Only schedule if the transition is in the future and within 24 hours
+      if (
+        timeUntilTransition > 0 &&
+        timeUntilTransition < 24 * 60 * 60 * 1000
+      ) {
+        console.log(
+          `Scheduling refresh for ${transition.label} in ${
+            timeUntilTransition / 1000
+          } seconds`
+        );
+
+        // Add 2 seconds buffer to ensure the backend has updated the phase
+        const timer = setTimeout(() => {
+          console.log(`Executing scheduled refresh for ${transition.label}`);
+          fetchContestDetails(false).then(() => {
+            // Force page reload 1 second after the fetch to ensure we get the new state
+            setTimeout(() => window.location.reload(), 1000);
+          });
+        }, timeUntilTransition + 2000);
+
+        phaseTransitionTimersRef.current.push(timer);
+      }
+    });
+  };
 
   const fetchContestDetails = async (showLoading = true) => {
     try {
@@ -37,6 +99,37 @@ export function ContestDetail() {
       }
 
       const data = await contestService.fetchContestDetails(contestId);
+
+      // Check for status/phase changes and force reload
+      if (contest && previousPhaseRef.current) {
+        const oldPhase = previousPhaseRef.current;
+        const newPhase = data.phase;
+
+        // Detect specific phase transitions that need immediate refresh
+        const needsRefresh =
+          (oldPhase === "upcoming" && newPhase === "submission") ||
+          (oldPhase === "submission" && newPhase === "processing") ||
+          (oldPhase === "submission" && newPhase === "voting") ||
+          (oldPhase === "processing" && newPhase === "voting") ||
+          (oldPhase === "voting" && newPhase === "ended");
+
+        if (needsRefresh) {
+          console.log(
+            `Contest phase changed from ${oldPhase} to ${newPhase}. Reloading page...`
+          );
+          window.location.reload();
+          return;
+        }
+      }
+
+      // Store the current phase for future comparison
+      if (data) {
+        previousPhaseRef.current = data.phase;
+
+        // Schedule precise refreshes at phase transition times
+        schedulePhaseTransitionRefreshes(data);
+      }
+
       setContest(data);
     } catch (error) {
       console.error("Failed to fetch contest details:", error);
