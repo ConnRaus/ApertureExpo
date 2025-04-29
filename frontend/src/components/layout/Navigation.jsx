@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   SignedIn,
   SignedOut,
@@ -14,6 +14,7 @@ function Navigation() {
   const { user } = useUser();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const clerk = useClerk();
+  const navigate = useNavigate();
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -58,21 +59,11 @@ function Navigation() {
 
       <div className={styles.navRight}>
         <SignedIn>
-          <div className={styles.desktopOnly}>
-            <Link to={`/users/${user?.id}`} className={styles.navLink}>
-              Your Profile
-            </Link>
-          </div>
           <UserButton>
-            {/*
-            DONT DELETE, THIS IS THE ONLY WORKING TEMPLATE BUTTON IVE MADE
             <UserButton.MenuItems>
               <UserButton.Action
-                label="Open chat"
-                onClick={() => {
-                  console.log("Chat action clicked!");
-                  alert("Chat initialized!");
-                }}
+                label="Your Profile"
+                onClick={() => navigate(`/users/${user?.id}`)}
                 labelIcon={
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -85,11 +76,12 @@ function Navigation() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
                   </svg>
                 }
               />
-            </UserButton.MenuItems> */}
+            </UserButton.MenuItems>
           </UserButton>
         </SignedIn>
         <SignedOut>
@@ -124,15 +116,6 @@ function Navigation() {
         >
           Forum
         </Link>
-        <SignedIn>
-          <Link
-            to={`/users/${user?.id}`}
-            className={styles.mobileNavLink}
-            onClick={toggleMobileMenu}
-          >
-            Your Profile
-          </Link>
-        </SignedIn>
       </div>
     </nav>
   );

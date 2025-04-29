@@ -1,4 +1,5 @@
 import React from "react";
+import { useClerk } from "@clerk/clerk-react";
 
 export function ProfileHeader({
   profile,
@@ -11,6 +12,7 @@ export function ProfileHeader({
 }) {
   // Ensure we have a valid banner URL
   const bannerUrl = bannerImage || defaultBanner;
+  const { openUserProfile } = useClerk();
 
   return (
     <div className="profile-header-container">
@@ -37,10 +39,20 @@ export function ProfileHeader({
               <img
                 src={profile.avatarUrl}
                 alt={profile?.nickname || `User ${userId}`}
-                className="w-24 h-24 rounded-full object-cover border-3 border-white shadow-lg"
+                className={`w-24 h-24 rounded-full object-cover border-3 border-white shadow-lg ${
+                  isOwner ? "cursor-pointer hover:opacity-90" : ""
+                }`}
+                onClick={isOwner ? () => openUserProfile() : undefined}
+                title={isOwner ? "Click to change profile picture" : undefined}
               />
             ) : (
-              <div className="w-24 h-24 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 text-xl border-3 border-white shadow-lg">
+              <div
+                className={`w-24 h-24 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 text-xl border-3 border-white shadow-lg ${
+                  isOwner ? "cursor-pointer hover:opacity-90" : ""
+                }`}
+                onClick={isOwner ? () => openUserProfile() : undefined}
+                title={isOwner ? "Click to add profile picture" : undefined}
+              >
                 {(profile?.nickname?.[0] || userId[0] || "U").toUpperCase()}
               </div>
             )}
