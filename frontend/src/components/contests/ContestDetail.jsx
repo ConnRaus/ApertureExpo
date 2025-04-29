@@ -72,12 +72,6 @@ export function ContestDetail() {
         timeUntilTransition > 0 &&
         timeUntilTransition < 24 * 60 * 60 * 1000
       ) {
-        console.log(
-          `Scheduling refresh for ${transition.label} in ${
-            timeUntilTransition / 1000
-          } seconds`
-        );
-
         // Add 2 seconds buffer to ensure the backend has updated the phase
         const timer = setTimeout(() => {
           console.log(`Executing scheduled refresh for ${transition.label}`);

@@ -169,7 +169,26 @@ export class ContestService {
           const { photo } = JSON.parse(xhr.responseText);
           resolve(photo);
         } else {
-          reject(new Error("Failed to upload photo"));
+          // Try to parse the error response to get the detailed error message
+          try {
+            const errorResponse = JSON.parse(xhr.responseText);
+
+            // For duplicate photo errors, create a more helpful message
+            if (
+              errorResponse.error &&
+              errorResponse.error.includes("duplicate")
+            ) {
+              const errorMessage =
+                "This photo already exists in your library. Please use the 'Choose Existing Photo' button instead.";
+              reject(new Error(errorMessage));
+            } else {
+              reject(
+                new Error(errorResponse.error || "Failed to upload photo")
+              );
+            }
+          } catch (parseError) {
+            reject(new Error("Failed to upload photo"));
+          }
         }
       });
 
