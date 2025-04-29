@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
+import { useSwipeable } from "react-swipeable";
 import { useContestService } from "../../hooks";
 import { LoadingSpinner } from "../common/CommonComponents";
 import styles from "../../styles/components/RecentWinners.module.css";
@@ -164,6 +165,14 @@ export function RecentWinners() {
     };
   }, [selectedPhoto, showNextPhoto, showPreviousPhoto, closePhotoModal]);
 
+  // Swipe handlers
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: (eventData) => showNextPhoto(eventData.event),
+    onSwipedRight: (eventData) => showPreviousPhoto(eventData.event),
+    preventDefaultTouchmoveEvent: true,
+    trackMouse: false,
+  });
+
   if (isLoading) {
     return <LoadingSpinner size="md" message="Loading recent winners..." />;
   }
@@ -223,33 +232,38 @@ export function RecentWinners() {
               <div
                 className={styles.modalContent}
                 onClick={(e) => e.stopPropagation()}
+                {...swipeHandlers}
               >
                 <span className={styles.closeButton} onClick={closePhotoModal}>
                   &times;
                 </span>
-                {winners.length > 1 && (
-                  <>
-                    <button
-                      className={`${styles.navButton} ${styles.prevButton}`}
-                      onClick={showPreviousPhoto}
-                      aria-label="Previous Winner"
-                    >
-                      &#10094;
-                    </button>
-                    <button
-                      className={`${styles.navButton} ${styles.nextButton}`}
-                      onClick={showNextPhoto}
-                      aria-label="Next Winner"
-                    >
-                      &#10095;
-                    </button>
-                  </>
-                )}
-                <img
-                  src={selectedPhoto.s3Url || selectedPhoto.thumbnailUrl}
-                  alt={selectedPhoto.title}
-                  className={styles.modalImage}
-                />
+                <div className={styles.modalImageWrapper}>
+                  {winners.length > 1 && (
+                    <>
+                      <button
+                        className={`${styles.navButton} ${styles.prevButton}`}
+                        onClick={showPreviousPhoto}
+                        aria-label="Previous Winner"
+                      >
+                        &#10094;
+                      </button>
+                      <button
+                        className={`${styles.navButton} ${styles.nextButton}`}
+                        onClick={showNextPhoto}
+                        aria-label="Next Winner"
+                      >
+                        &#10095;
+                      </button>
+                    </>
+                  )}
+                  <img
+                    src={selectedPhoto.s3Url || selectedPhoto.thumbnailUrl}
+                    alt={selectedPhoto.title}
+                    className={styles.modalImage}
+                    draggable="false"
+                    onContextMenu={(e) => e.preventDefault()}
+                  />
+                </div>
                 <div className={styles.modalInfo}>
                   <h3>{selectedPhoto.title}</h3>
                   <p>
