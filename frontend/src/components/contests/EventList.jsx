@@ -33,6 +33,23 @@ export function EventList({ showAllTypes = true }) {
     return () => clearInterval(refreshInterval);
   }, []);
 
+  // Create a URL-friendly slug from contest title
+  const createSlug = (title) => {
+    return encodeURIComponent(
+      title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "")
+    );
+  };
+
+  // Navigate to contest with slug + ID format
+  const navigateToContest = (contest) => {
+    const slug = createSlug(contest.title);
+    navigate(`/events/${slug}-${contest.id}`);
+  };
+
   const fetchContests = async (showLoading = true) => {
     if (showLoading) {
       setIsLoading(true);
@@ -114,7 +131,7 @@ export function EventList({ showAllTypes = true }) {
             <ContestCard
               key={contest.id}
               contest={contest}
-              onClick={() => navigate(`/events/${contest.id}`)}
+              onClick={() => navigateToContest(contest)}
             />
           ))}
         </div>
@@ -142,7 +159,7 @@ export function EventList({ showAllTypes = true }) {
             <ContestCard
               key={contest.id}
               contest={contest}
-              onClick={() => navigate(`/events/${contest.id}`)}
+              onClick={() => navigateToContest(contest)}
             />
           ))}
         </div>

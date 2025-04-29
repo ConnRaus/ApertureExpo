@@ -111,7 +111,11 @@ export function ContestSubmissions({
 
   return (
     <>
-      <h3 className="text-2xl font-semibold mb-6">
+      <h3
+        className={`text-2xl font-semibold ${
+          contestPhase === "ended" ? "mb-2" : "mb-4"
+        }`}
+      >
         {contestPhase === "ended" ? "All Submissions" : "Submissions"} (
         {photos.length})
       </h3>

@@ -9,12 +9,25 @@ import { UploadForm } from "../user/UploadForm";
 import { toast } from "react-toastify";
 import { useUser } from "@clerk/clerk-react";
 
-export function ContestDetail() {
-  const { contestId } = useParams();
+export function ContestDetail(props) {
+  // Accept contestId as prop or extract from URL params
+  let contestId = props.contestId;
+  if (!contestId) {
+    // If not passed as prop, get from URL params
+    const { slugAndId } = useParams();
+    // Extract the UUID from the slugAndId using regex
+    const uuidMatch = slugAndId.match(
+      /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    );
+    contestId = uuidMatch ? uuidMatch[0] : slugAndId;
+  }
+
   const [contest, setContest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showUploadForm, setShowUploadForm] = useState(false);
+  const [showUploadForm, setShowUploadForm] = useState(
+    props.showUploadForm || false
+  );
   const contestService = useContestService();
   const { user, isLoaded: userLoaded } = useUser();
   const previousPhaseRef = useRef(null);
@@ -266,7 +279,9 @@ export function ContestDetail() {
       <div className="mb-8">{renderPhaseSpecificContent()}</div>
 
       {contest.phase === "ended" && contest.Photos?.length > 0 && (
-        <ContestResults photos={contest.Photos} contestId={contestId} />
+        <div className="mb-8">
+          <ContestResults photos={contest.Photos} contestId={contestId} />
+        </div>
       )}
 
       <ContestSubmissions
