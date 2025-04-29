@@ -190,49 +190,145 @@ router.get("/contests/:contestId/top-photos", async (req, res) => {
       return res.status(404).json({ error: "Contest not found" });
     }
 
-    // Get all photos in the contest
-    const photos = await Photo.findAll({
+    // First try to find photos from the direct ContestId relationship
+    let contestPhotos = await Photo.findAll({
+      where: { ContestId: contestId },
+      attributes: ["id"],
+      raw: true,
+    });
+
+    // If no photos found with direct relationship, try the many-to-many relationship
+    if (contestPhotos.length === 0) {
+      const contestWithPhotos = await Contest.findByPk(contestId, {
+        include: [
+          {
+            model: Photo,
+            as: "Photos",
+            through: { attributes: [] },
+            attributes: ["id"],
+          },
+        ],
+      });
+
+      if (contestWithPhotos && contestWithPhotos.Photos) {
+        contestPhotos = contestWithPhotos.Photos.map((photo) => ({
+          id: photo.id,
+        }));
+      }
+    }
+
+    // If still no photos, return empty array
+    if (contestPhotos.length === 0) {
+      console.log(`No photos found for contest ${contestId}`);
+      return res.json([]);
+    }
+
+    console.log(
+      `Found ${contestPhotos.length} photos for contest ${contestId}`
+    );
+
+    // Get photo IDs
+    const photoIds = contestPhotos.map((photo) => photo.id);
+
+    // Get total votes and scores for these photos
+    const photoStats = await Vote.findAll({
+      where: {
+        photoId: { [Op.in]: photoIds },
+        contestId: contestId,
+      },
+      attributes: [
+        "photoId",
+        [sequelize.fn("COUNT", sequelize.col("id")), "voteCount"],
+        [sequelize.fn("SUM", sequelize.col("value")), "totalScore"],
+        [sequelize.fn("AVG", sequelize.col("value")), "averageRating"],
+      ],
+      group: ["photoId"],
+      order: [
+        [sequelize.literal("totalScore"), "DESC"],
+        [sequelize.literal("voteCount"), "DESC"],
+      ],
+      limit: parseInt(limit),
+      raw: true,
+    });
+
+    console.log(
+      `Found ${photoStats.length} photos with votes for contest ${contestId}`
+    );
+
+    // If no photos have votes, return all photos from the contest without vote data
+    if (photoStats.length === 0) {
+      const allPhotos = await Photo.findAll({
+        where: { id: { [Op.in]: photoIds } },
+        include: [
+          {
+            model: User,
+            as: "User",
+            attributes: ["id", "nickname"],
+          },
+        ],
+        attributes: ["id", "title", "thumbnailUrl", "s3Url", "userId"],
+        limit: parseInt(limit),
+      });
+
+      // Add default vote stats
+      const result = allPhotos.map((photo) => {
+        const photoData = photo.toJSON();
+        return {
+          ...photoData,
+          voteCount: 0,
+          totalScore: 0,
+          averageRating: 0,
+        };
+      });
+
+      console.log(
+        `Returning ${result.length} photos without votes for contest ${contestId}`
+      );
+      return res.json(result);
+    }
+
+    // Get full photo details for the top photos
+    const topPhotoIds = photoStats.map((stat) => stat.photoId);
+
+    const topPhotos = await Photo.findAll({
+      where: { id: { [Op.in]: topPhotoIds } },
       include: [
-        {
-          model: Vote,
-          as: "Votes",
-          where: { contestId },
-          required: false,
-          attributes: [],
-        },
         {
           model: User,
           as: "User",
           attributes: ["id", "nickname"],
         },
       ],
-      where: {
-        [Op.or]: [
-          { ContestId: contestId }, // Legacy relationship
-          {
-            "$Votes.contestId$": contestId, // Photos with votes in this contest
-          },
-        ],
-      },
-      attributes: [
-        "id",
-        "title",
-        "thumbnailUrl",
-        "s3Url",
-        "userId",
-        [sequelize.fn("COUNT", sequelize.col("Votes.id")), "voteCount"],
-        [sequelize.fn("AVG", sequelize.col("Votes.value")), "averageRating"],
-        [sequelize.fn("SUM", sequelize.col("Votes.value")), "totalScore"],
-      ],
-      group: ["Photo.id"],
-      order: [
-        [sequelize.literal("totalScore"), "DESC"],
-        [sequelize.literal("voteCount"), "DESC"],
-      ],
-      limit: parseInt(limit),
+      attributes: ["id", "title", "thumbnailUrl", "s3Url", "userId"],
     });
 
-    res.json(photos);
+    // Combine photo data with vote stats
+    const result = topPhotos.map((photo) => {
+      const photoData = photo.toJSON();
+      const stats = photoStats.find((stat) => stat.photoId === photo.id) || {
+        voteCount: 0,
+        totalScore: 0,
+        averageRating: 0,
+      };
+
+      return {
+        ...photoData,
+        voteCount: parseInt(stats.voteCount || 0),
+        totalScore: parseFloat(stats.totalScore || 0),
+        averageRating: parseFloat(stats.averageRating || 0),
+      };
+    });
+
+    // Sort by score and vote count (same order as the initial query)
+    result.sort((a, b) => {
+      if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+      return b.voteCount - a.voteCount;
+    });
+
+    console.log(
+      `Returning ${result.length} photos with votes for contest ${contestId}`
+    );
+    res.json(result);
   } catch (error) {
     console.error("Error getting top photos:", error);
     res.status(500).json({ error: "Failed to get top photos" });

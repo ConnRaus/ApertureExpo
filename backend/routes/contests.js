@@ -336,4 +336,160 @@ router.put("/contests/:id", requireAuth(), async (req, res) => {
   }
 });
 
+// Get top-voted photos in a contest
+router.get("/contests/:contestId/top-photos", async (req, res) => {
+  try {
+    const { contestId } = req.params;
+    const { limit = 10 } = req.query;
+
+    console.log(`Fetching top photos for contest ${contestId}`);
+
+    // Check if contest exists
+    const contest = await Contest.findByPk(contestId);
+    if (!contest) {
+      console.log(`Contest ${contestId} not found`);
+      return res.status(404).json({ error: "Contest not found" });
+    }
+
+    // Check contest status
+    console.log(
+      `Contest ${contestId} status: ${contest.status}, phase: ${contest.phase}`
+    );
+
+    // Try ALL methods to find photos for this contest
+    console.log("Looking for photos with direct ContestId relationship...");
+    let directPhotos = await Photo.findAll({
+      where: { ContestId: contestId },
+      attributes: ["id", "title"],
+      raw: true,
+    });
+    console.log(`Found ${directPhotos.length} direct photos`);
+
+    console.log("Looking for photos with many-to-many relationship...");
+    const contestWithPhotos = await Contest.findByPk(contestId, {
+      include: [
+        {
+          model: Photo,
+          as: "Photos",
+          through: { attributes: [] },
+          attributes: ["id", "title"],
+        },
+      ],
+    });
+
+    let manyToManyPhotos = [];
+    if (contestWithPhotos && contestWithPhotos.Photos) {
+      manyToManyPhotos = contestWithPhotos.Photos.map((photo) => ({
+        id: photo.id,
+        title: photo.title,
+      }));
+    }
+    console.log(`Found ${manyToManyPhotos.length} many-to-many photos`);
+
+    // Check if there's any overlap
+    const directIds = new Set(directPhotos.map((p) => p.id));
+    const manyToManyIds = new Set(manyToManyPhotos.map((p) => p.id));
+    const overlapCount = [...directIds].filter((id) =>
+      manyToManyIds.has(id)
+    ).length;
+    console.log(
+      `Overlap between direct and many-to-many: ${overlapCount} photos`
+    );
+
+    // Use both sets of photos
+    const allPhotoIds = [...new Set([...directIds, ...manyToManyIds])];
+    console.log(`Total unique photos found: ${allPhotoIds.length}`);
+
+    if (allPhotoIds.length === 0) {
+      console.log(`No photos found for contest ${contestId}`);
+      return res.json([]);
+    }
+
+    // Get votes for these photos
+    console.log(`Getting votes for ${allPhotoIds.length} photos...`);
+    const votes = await Vote.findAll({
+      where: {
+        photoId: { [Op.in]: allPhotoIds },
+        contestId: contestId,
+      },
+      attributes: ["photoId", "value"],
+      raw: true,
+    });
+    console.log(
+      `Found ${votes.length} votes for photos in contest ${contestId}`
+    );
+
+    // Get actual photos
+    const photos = await Photo.findAll({
+      where: { id: { [Op.in]: allPhotoIds } },
+      include: [
+        {
+          model: User,
+          as: "User",
+          attributes: ["id", "nickname"],
+        },
+      ],
+      attributes: ["id", "title", "thumbnailUrl", "s3Url", "userId"],
+    });
+    console.log(`Retrieved full details for ${photos.length} photos`);
+
+    // Calculate stats per photo
+    const photoStats = {};
+    allPhotoIds.forEach((photoId) => {
+      photoStats[photoId] = {
+        voteCount: 0,
+        totalScore: 0,
+        averageRating: 0,
+      };
+    });
+
+    // Populate stats from votes
+    votes.forEach((vote) => {
+      const stats = photoStats[vote.photoId];
+      if (stats) {
+        stats.voteCount++;
+        stats.totalScore += vote.value;
+        stats.averageRating = stats.totalScore / stats.voteCount;
+      }
+    });
+
+    // Combine photo data with vote stats
+    const result = photos.map((photo) => {
+      const photoData = photo.toJSON();
+      const stats = photoStats[photo.id] || {
+        voteCount: 0,
+        totalScore: 0,
+        averageRating: 0,
+      };
+
+      return {
+        ...photoData,
+        voteCount: parseInt(stats.voteCount || 0),
+        totalScore: parseFloat(stats.totalScore || 0),
+        averageRating: parseFloat(stats.averageRating || 0),
+      };
+    });
+
+    // Sort by score and vote count
+    result.sort((a, b) => {
+      if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+      return b.voteCount - a.voteCount;
+    });
+
+    // Return only the requested number of results
+    const limitedResult = result.slice(0, parseInt(limit));
+    console.log(
+      `Returning ${limitedResult.length} photos for contest ${contestId}`
+    );
+
+    res.json(limitedResult);
+  } catch (error) {
+    console.error(
+      `Error getting top photos for contest ${req.params.contestId}:`,
+      error
+    );
+    res.status(500).json({ error: "Failed to get top photos" });
+  }
+});
+
 export default router;

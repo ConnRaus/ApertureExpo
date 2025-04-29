@@ -1,0 +1,225 @@
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { useContestService } from "../../hooks";
+import { LoadingSpinner } from "../common/CommonComponents";
+import styles from "../../styles/components/RecentWinners.module.css";
+
+export function RecentWinners() {
+  const [winners, setWinners] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const contestService = useContestService();
+
+  useEffect(() => {
+    const fetchRecentWinners = async () => {
+      try {
+        setIsLoading(true);
+        // Get completed contests
+        const allContests = await contestService.fetchContests();
+        const completedContests = allContests.filter(
+          (contest) =>
+            contest.phase === "ended" || contest.status === "completed"
+        );
+
+        console.log(`Found ${completedContests.length} completed contests`);
+        if (completedContests.length === 0) {
+          setWinners([]);
+          setIsLoading(false);
+          return;
+        }
+
+        // Sort by most recently ended
+        completedContests.sort(
+          (a, b) => new Date(b.votingEndDate) - new Date(a.votingEndDate)
+        );
+
+        // Take the 3 most recent contests
+        const recentContests = completedContests.slice(0, 3);
+
+        if (recentContests.length === 0) {
+          setWinners([]);
+          setIsLoading(false);
+          return;
+        }
+
+        // Get top 3 photos from each contest
+        const winnerPromises = recentContests.map(async (contest) => {
+          try {
+            const topPhotos = await contestService.fetchTopPhotos(
+              contest.id,
+              3
+            );
+
+            return {
+              contest,
+              winners: Array.isArray(topPhotos) ? topPhotos : [],
+            };
+          } catch (error) {
+            console.error(
+              `Error fetching winners for contest ${contest.id}:`,
+              error
+            );
+            return {
+              contest,
+              winners: [],
+            };
+          }
+        });
+
+        const contestWinners = await Promise.all(winnerPromises);
+
+        // We'll show contests even if photos have 0 votes
+        const validWinners = contestWinners.filter(
+          (cw) => cw.winners && cw.winners.length > 0
+        );
+
+        // Create a flattened list of all winning photos with contest info
+        const allWinningPhotos = [];
+        validWinners.forEach((cw) => {
+          cw.winners.forEach((photo, index) => {
+            allWinningPhotos.push({
+              ...photo,
+              contestTitle: cw.contest.title,
+              contestId: cw.contest.id,
+              rank: index + 1,
+            });
+          });
+        });
+
+        setWinners(allWinningPhotos);
+      } catch (error) {
+        console.error("Error fetching recent winners:", error);
+        setError("Failed to load recent winners");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRecentWinners();
+  }, []);
+
+  // Create a URL-friendly slug from contest title
+  const createSlug = (title) => {
+    return encodeURIComponent(
+      title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "")
+    );
+  };
+
+  const openPhotoModal = (photo) => {
+    setSelectedPhoto(photo);
+  };
+
+  const closePhotoModal = () => {
+    setSelectedPhoto(null);
+  };
+
+  if (isLoading) {
+    return <LoadingSpinner size="md" message="Loading recent winners..." />;
+  }
+
+  if (error) {
+    return <div className="error-message">{error}</div>;
+  }
+
+  // Always show the section header, even if there are no winners yet
+  return (
+    <div className={styles.recentWinners}>
+      {winners.length > 0 ? (
+        <>
+          <div className={styles.scrollContainer}>
+            {winners.map((photo) => (
+              <div
+                key={photo.id}
+                className={styles.winnerCard}
+                onClick={() => openPhotoModal(photo)}
+              >
+                <div className={styles.rank}>#{photo.rank}</div>
+                <img
+                  src={photo.thumbnailUrl}
+                  alt={photo.title}
+                  className={styles.thumbnail}
+                />
+                <div className={styles.photoInfo}>
+                  <h4 className={styles.photoTitle}>{photo.title}</h4>
+                  <p className={styles.photographer}>
+                    by{" "}
+                    <Link
+                      to={`/users/${photo.userId}`}
+                      className={styles.userLink}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {photo.User?.nickname || "Anonymous"}
+                    </Link>
+                  </p>
+                  <p className={styles.contestInfo}>
+                    <Link
+                      to={`/events/${createSlug(photo.contestTitle)}-${
+                        photo.contestId
+                      }`}
+                      className={styles.contestLink}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {photo.contestTitle}
+                    </Link>
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {selectedPhoto && (
+            <div className={styles.modal} onClick={closePhotoModal}>
+              <div
+                className={styles.modalContent}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <span className={styles.closeButton} onClick={closePhotoModal}>
+                  &times;
+                </span>
+                <img
+                  src={selectedPhoto.s3Url || selectedPhoto.thumbnailUrl}
+                  alt={selectedPhoto.title}
+                  className={styles.modalImage}
+                />
+                <div className={styles.modalInfo}>
+                  <h3>{selectedPhoto.title}</h3>
+                  <p>
+                    by{" "}
+                    <Link to={`/users/${selectedPhoto.userId}`}>
+                      {selectedPhoto.User?.nickname || "Anonymous"}
+                    </Link>
+                  </p>
+                  <p>
+                    From contest:{" "}
+                    <Link
+                      to={`/events/${createSlug(selectedPhoto.contestTitle)}-${
+                        selectedPhoto.contestId
+                      }`}
+                    >
+                      {selectedPhoto.contestTitle}
+                    </Link>
+                  </p>
+                  {selectedPhoto.totalScore > 0 && (
+                    <p>Score: {Number(selectedPhoto.totalScore).toFixed(1)}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className={styles.noWinners}>
+          <p>
+            No contest winners to display yet. Check back after contests have
+            completed!
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}

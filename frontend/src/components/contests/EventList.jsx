@@ -97,7 +97,7 @@ export function EventList({ showAllTypes = true }) {
   // Only show loading state if shouldShowLoading is true
   if (shouldShowLoading) {
     return (
-      <div className="mt-8">
+      <div className="4">
         <LoadingSpinner size="lg" message="Loading contests..." />
       </div>
     );
@@ -105,13 +105,13 @@ export function EventList({ showAllTypes = true }) {
 
   // If we're loading but not showing the loading state yet, render nothing or a minimal placeholder
   if (isLoading) {
-    return <div className="mt-8"></div>; // Empty container to maintain layout
+    return <div className="mt-4"></div>; // Empty container to maintain layout
   }
 
   // Check if there are no contests at all
   if (contests.length === 0) {
     return (
-      <div className="mt-8">
+      <div className="mt-4">
         <p>No contests available at the moment. Check back later!</p>
       </div>
     );
@@ -146,14 +146,14 @@ export function EventList({ showAllTypes = true }) {
 
     if (displayContests.length === 0) {
       return (
-        <div className="mt-8">
+        <div className="mt-4">
           <p>No active contests at the moment. Check back later!</p>
         </div>
       );
     }
 
     return (
-      <div className="mt-8">
+      <div className="mt-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
           {displayContests.map((contest) => (
             <ContestCard
@@ -169,7 +169,7 @@ export function EventList({ showAllTypes = true }) {
 
   // Otherwise show all sections
   return (
-    <div className="mt-8">
+    <div className="mt-4">
       {renderContestSection(
         "Voting Open",
         votingContests,

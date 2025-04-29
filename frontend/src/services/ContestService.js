@@ -29,6 +29,21 @@ export class ContestService {
     return response.json();
   }
 
+  async fetchTopPhotos(contestId, limit = 3) {
+    const token = await this.getToken();
+    const response = await fetch(
+      `${API_URL}/contests/${contestId}/top-photos?limit=${limit}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      }
+    );
+    if (!response.ok) throw new Error("Failed to fetch top photos");
+    return response.json();
+  }
+
   async submitPhoto(contestId, photoId) {
     const token = await this.getToken();
     const response = await fetch(`${API_URL}/photos/${photoId}/submit`, {
