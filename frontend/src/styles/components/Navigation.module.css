@@ -13,7 +13,7 @@
   position: relative;
   flex-wrap: wrap;
   min-height: 64px; /* Set a fixed minimum height */
-  z-index: 9998; /* High z-index but below the menu */
+  z-index: 50; /* Lowered z-index */
 }
 
 .navLeft,
@@ -139,7 +139,7 @@
   border-radius: 0 0 0.5rem 0.5rem;
   border: 1px solid rgba(55, 65, 81, 0.5);
   border-top: none;
-  z-index: 9999;
+  z-index: 60; /* Lowered z-index (above header, below modal) */
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
   opacity: 0;
   pointer-events: none;
