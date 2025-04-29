@@ -41,6 +41,13 @@ router.get("/contests", async (req, res) => {
           as: "Photos",
           through: { attributes: [] },
           attributes: ["id", "title", "s3Url", "thumbnailUrl", "userId"],
+          include: [
+            {
+              model: User,
+              as: "User",
+              attributes: ["id", "nickname"],
+            },
+          ],
         },
       ],
       order: [["startDate", "ASC"]],
@@ -75,6 +82,13 @@ router.get("/contests", async (req, res) => {
             ContestId: contest.id,
           },
           attributes: ["id", "title", "s3Url", "thumbnailUrl", "userId"],
+          include: [
+            {
+              model: User,
+              as: "User",
+              attributes: ["id", "nickname"],
+            },
+          ],
         });
 
         // Create a Set of photo IDs from the many-to-many relationship

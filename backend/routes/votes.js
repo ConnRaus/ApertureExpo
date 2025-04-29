@@ -5,6 +5,7 @@ import Photo from "../database/models/Photo.js";
 import Contest from "../database/models/Contest.js";
 import { Op } from "sequelize";
 import sequelize from "../database/config/config.js";
+import User from "../database/models/User.js";
 
 const router = express.Router();
 
@@ -198,6 +199,11 @@ router.get("/contests/:contestId/top-photos", async (req, res) => {
           where: { contestId },
           required: false,
           attributes: [],
+        },
+        {
+          model: User,
+          as: "User",
+          attributes: ["id", "nickname"],
         },
       ],
       where: {

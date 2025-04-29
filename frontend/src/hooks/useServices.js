@@ -1,11 +1,9 @@
 import { useRef } from "react";
 import { useAuth } from "@clerk/clerk-react";
-import {
-  PhotoService,
-  UserService,
-  ContestService,
-  VoteService,
-} from "../services/api";
+import { PhotoService } from "../services/PhotoService";
+import { UserService } from "../services/UserService";
+import { ContestService } from "../services/ContestService";
+import { VoteService } from "../services/VoteService";
 import { ForumService } from "../services/forumService";
 
 export function usePhotoService() {

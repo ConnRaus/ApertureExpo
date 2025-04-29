@@ -17,6 +17,7 @@ import { tmpdir } from "os";
 import path from "path";
 import crypto from "crypto";
 import sharp from "sharp";
+import User from "../database/models/User.js";
 
 const imageHashAsync = promisify(imageHash.imageHash);
 const router = express.Router();
@@ -200,7 +201,14 @@ router.get("/photos", requireAuth(), async (req, res) => {
   try {
     const includeContests = req.query.include === "contests";
 
-    const include = [];
+    const include = [
+      {
+        model: User,
+        as: "User",
+        attributes: ["id", "nickname"],
+      },
+    ];
+
     if (includeContests) {
       include.push({
         model: Contest,
