@@ -1,17 +1,20 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   SignedIn,
   SignedOut,
   SignInButton,
   UserButton,
   useUser,
+  useClerk,
 } from "@clerk/clerk-react";
 import styles from "../../styles/components/Navigation.module.css";
 
 function Navigation() {
   const { user } = useUser();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const clerk = useClerk();
+  const navigate = useNavigate();
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -56,12 +59,33 @@ function Navigation() {
 
       <div className={styles.navRight}>
         <SignedIn>
-          <div className={styles.desktopOnly}>
-            <Link to={`/users/${user?.id}`} className={styles.navLink}>
-              Your Profile
-            </Link>
-          </div>
-          <UserButton />
+          <UserButton>
+            <UserButton.MenuItems>
+              <UserButton.Action
+                label="Your Profile"
+                onClick={() => navigate(`/users/${user?.id}`)}
+                labelIcon={
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                }
+              />
+              <UserButton.Appearance />
+              <UserButton.SessionList />
+              <UserButton.SignOut />
+            </UserButton.MenuItems>
+          </UserButton>
         </SignedIn>
         <SignedOut>
           <SignInButton mode="modal">
@@ -95,15 +119,6 @@ function Navigation() {
         >
           Forum
         </Link>
-        <SignedIn>
-          <Link
-            to={`/users/${user?.id}`}
-            className={styles.mobileNavLink}
-            onClick={toggleMobileMenu}
-          >
-            Your Profile
-          </Link>
-        </SignedIn>
       </div>
     </nav>
   );

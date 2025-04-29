@@ -51,6 +51,11 @@ Photo.init(
       type: DataTypes.JSONB,
       allowNull: true,
     },
+    imageHash: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: "Perceptual hash of the image for duplicate detection",
+    },
     ContestId: {
       type: DataTypes.UUID,
       allowNull: true,
@@ -70,6 +75,12 @@ Photo.init(
       },
       {
         fields: ["ContestId"],
+      },
+      {
+        fields: ["imageHash"],
+      },
+      {
+        fields: ["userId", "imageHash"],
       },
     ],
   }

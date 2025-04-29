@@ -250,6 +250,7 @@ export function PublicUserGallery({ userId, isOwner }) {
         handleBannerUpload={handleBannerUpload}
         setShowPhotoSelector={setShowPhotoSelector}
         handleProfileUpdate={handleProfileUpdate}
+        profile={profile}
       />
 
       <PhotoLightbox

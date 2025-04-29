@@ -1,4 +1,8 @@
-import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  DeleteObjectCommand,
+  GetObjectCommand,
+} from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import dotenv from "dotenv";
 import sharp from "sharp";
@@ -261,5 +265,38 @@ export const deleteFromS3 = async (photoUrl) => {
   } catch (error) {
     console.error("Error deleting from S3:", error);
     throw new Error(`S3 Delete failed: ${error.message}`);
+  }
+};
+
+// New function to calculate image hash from an existing S3 URL
+export const getHashFromS3 = async (s3Url) => {
+  try {
+    // Extract the key from the URL
+    const key = s3Url.split(".com/")[1];
+
+    if (!key) {
+      throw new Error("Invalid S3 URL format");
+    }
+
+    // Get the object from S3
+    const getObjectCommand = new GetObjectCommand({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: key,
+    });
+
+    const response = await s3Client.send(getObjectCommand);
+
+    // Convert the stream to a buffer
+    const chunks = [];
+    for await (const chunk of response.Body) {
+      chunks.push(chunk);
+    }
+    const buffer = Buffer.concat(chunks);
+
+    // Use image-hash to calculate the hash (this part should be implemented where this function is used)
+    return buffer;
+  } catch (error) {
+    console.error("Error getting image from S3:", error);
+    throw new Error(`Failed to get image for hashing: ${error.message}`);
   }
 };

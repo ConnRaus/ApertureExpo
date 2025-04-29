@@ -36,8 +36,6 @@ Contest.init(
       allowNull: false,
       validate: {
         isDate: true,
-        // Temporarily removed isAfter validation to allow seeding test contests
-        // isAfter: new Date().toISOString(),
       },
     },
     endDate: {
@@ -52,15 +50,65 @@ Contest.init(
         },
       },
     },
-    status: {
-      type: DataTypes.ENUM("draft", "active", "completed"),
-      defaultValue: "draft",
+    votingStartDate: {
+      type: DataTypes.DATE,
+      allowNull: false,
       validate: {
-        isIn: [["draft", "active", "completed"]],
+        isDate: true,
+        isAfterSubmission(value) {
+          if (value < this.endDate) {
+            throw new Error(
+              "Voting start date must be after or equal to submission end date"
+            );
+          }
+        },
       },
-      // Note: In our API, we compute "upcoming", "active", and "ended"
-      // statuses based on start/end dates, which is different from
-      // this database enum that only supports "draft", "active", "completed"
+    },
+    votingEndDate: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      validate: {
+        isDate: true,
+        isAfterVotingStart(value) {
+          if (value <= this.votingStartDate) {
+            throw new Error("Voting end date must be after voting start date");
+          }
+        },
+      },
+    },
+    status: {
+      type: DataTypes.ENUM("upcoming", "open", "voting", "completed"),
+      defaultValue: "upcoming",
+      validate: {
+        isIn: [["upcoming", "open", "voting", "completed"]],
+      },
+    },
+    phase: {
+      type: DataTypes.VIRTUAL,
+      get() {
+        const now = new Date();
+        const startDate = this.startDate;
+        const endDate = this.endDate;
+        const votingStartDate = this.votingStartDate;
+        const votingEndDate = this.votingEndDate;
+
+        if (now < startDate) {
+          return "upcoming";
+        } else if (now >= startDate && now <= endDate) {
+          return "submission";
+        } else if (now > endDate && now < votingStartDate) {
+          return "processing";
+        } else if (now >= votingStartDate && now <= votingEndDate) {
+          return "voting";
+        } else {
+          return "ended";
+        }
+      },
+    },
+    maxPhotosPerUser: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: null,
     },
   },
   {
@@ -73,6 +121,9 @@ Contest.init(
       },
       {
         fields: ["startDate", "endDate"],
+      },
+      {
+        fields: ["votingStartDate", "votingEndDate"],
       },
     ],
   }

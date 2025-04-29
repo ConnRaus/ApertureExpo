@@ -21,7 +21,7 @@ function App() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/events" element={<EventsPage />} />
-              <Route path="/events/:contestId" element={<EventDetailPage />} />
+              <Route path="/events/:slugAndId" element={<EventDetailPage />} />
               <Route path="/users/:userId" element={<UserProfilePage />} />
               <Route
                 path="/profile"

@@ -1,5 +1,4 @@
 import models, { sequelize } from "./models/index.js";
-import { seedDefaultData } from "./seeders/defaultData.js";
 
 export async function initializeDatabase() {
   try {
@@ -11,8 +10,6 @@ export async function initializeDatabase() {
     await sequelize.sync({ alter: true });
     console.log("Database models synchronized.");
 
-    // Seed default data
-    await seedDefaultData();
     console.log("Database initialization completed.");
 
     return { models, sequelize };

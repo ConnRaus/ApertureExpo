@@ -11,37 +11,82 @@ export function EventList({ showAllTypes = true }) {
   const navigate = useNavigate();
   const contestService = useContestService();
 
-  // Separate contests by status
+  // Separate contests by phase
   const [activeContests, setActiveContests] = useState([]);
   const [upcomingContests, setUpcomingContests] = useState([]);
+  const [votingContests, setVotingContests] = useState([]);
   const [endedContests, setEndedContests] = useState([]);
 
   // Use our delayed loading hook to prevent flashing on fast connections
   const shouldShowLoading = useDelayedLoading(isLoading);
 
+  // Initial fetch when component mounts
   useEffect(() => {
     fetchContests();
+
+    // Set up periodic refresh every minute to check for phase changes
+    const refreshInterval = setInterval(() => {
+      fetchContests(false); // Pass false to not show loading state during refresh
+    }, 60000); // Every minute
+
+    // Clean up interval on unmount
+    return () => clearInterval(refreshInterval);
   }, []);
 
-  const fetchContests = async () => {
-    setIsLoading(true);
+  // Create a URL-friendly slug from contest title
+  const createSlug = (title) => {
+    return encodeURIComponent(
+      title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "")
+    );
+  };
+
+  // Navigate to contest with slug + ID format
+  const navigateToContest = (contest) => {
+    const slug = createSlug(contest.title);
+    navigate(`/events/${slug}-${contest.id}`);
+  };
+
+  const fetchContests = async (showLoading = true) => {
+    if (showLoading) {
+      setIsLoading(true);
+    }
+
     try {
       const data = await contestService.fetchContests();
       setContests(data || []);
 
-      // Group contests by status
-      const active = data.filter((contest) => contest.status === "active");
-      const upcoming = data.filter((contest) => contest.status === "upcoming");
-      const ended = data.filter((contest) => contest.status === "ended");
+      // Group contests by phase
+      const active = data.filter(
+        (contest) => contest.phase === "submission" || contest.status === "open"
+      );
+      const upcoming = data.filter(
+        (contest) =>
+          contest.phase === "upcoming" || contest.status === "upcoming"
+      );
+      const voting = data.filter(
+        (contest) => contest.phase === "voting" || contest.status === "voting"
+      );
+      const ended = data.filter(
+        (contest) =>
+          ["processing", "ended"].includes(contest.phase) ||
+          contest.status === "completed"
+      );
 
       setActiveContests(active);
       setUpcomingContests(upcoming);
+      setVotingContests(voting);
       setEndedContests(ended);
     } catch (error) {
       console.error("Error fetching contests:", error);
       setError("Failed to load contests");
     } finally {
-      setIsLoading(false);
+      if (showLoading) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -52,7 +97,7 @@ export function EventList({ showAllTypes = true }) {
   // Only show loading state if shouldShowLoading is true
   if (shouldShowLoading) {
     return (
-      <div className="mt-8">
+      <div className="4">
         <LoadingSpinner size="lg" message="Loading contests..." />
       </div>
     );
@@ -60,13 +105,13 @@ export function EventList({ showAllTypes = true }) {
 
   // If we're loading but not showing the loading state yet, render nothing or a minimal placeholder
   if (isLoading) {
-    return <div className="mt-8"></div>; // Empty container to maintain layout
+    return <div className="mt-4"></div>; // Empty container to maintain layout
   }
 
   // Check if there are no contests at all
   if (contests.length === 0) {
     return (
-      <div className="mt-8">
+      <div className="mt-4">
         <p>No contests available at the moment. Check back later!</p>
       </div>
     );
@@ -86,7 +131,7 @@ export function EventList({ showAllTypes = true }) {
             <ContestCard
               key={contest.id}
               contest={contest}
-              onClick={() => navigate(`/events/${contest.id}`)}
+              onClick={() => navigateToContest(contest)}
             />
           ))}
         </div>
@@ -96,22 +141,25 @@ export function EventList({ showAllTypes = true }) {
 
   // If we're only showing active contests (e.g., on the home page)
   if (!showAllTypes) {
-    if (activeContests.length === 0) {
+    // For homepage, show both active and voting contests
+    const displayContests = [...activeContests, ...votingContests];
+
+    if (displayContests.length === 0) {
       return (
-        <div className="mt-8">
+        <div className="mt-4">
           <p>No active contests at the moment. Check back later!</p>
         </div>
       );
     }
 
     return (
-      <div className="mt-8">
+      <div className="mt-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
-          {activeContests.map((contest) => (
+          {displayContests.map((contest) => (
             <ContestCard
               key={contest.id}
               contest={contest}
-              onClick={() => navigate(`/events/${contest.id}`)}
+              onClick={() => navigateToContest(contest)}
             />
           ))}
         </div>
@@ -121,9 +169,14 @@ export function EventList({ showAllTypes = true }) {
 
   // Otherwise show all sections
   return (
-    <div className="mt-8">
+    <div className="mt-4">
       {renderContestSection(
-        "Active Contests",
+        "Voting Open",
+        votingContests,
+        "No contests currently in voting phase."
+      )}
+      {renderContestSection(
+        "Active Submissions",
         activeContests,
         "No active contests at the moment."
       )}

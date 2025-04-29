@@ -5,80 +5,122 @@ function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="mt-auto py-8 px-4">
+    <footer className="mt-auto py-6 px-4 bg-gray-800/80">
       <div className="max-w-7xl mx-auto">
-        <div className="border-t border-gray-700/50 pt-8">
+        <div className="border-t border-gray-700/30 pt-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* About Section */}
             <div>
-              <h3 className="text-lg font-semibold text-white mb-4">
+              <h3 className="text-base font-semibold text-gray-200 mb-3">
                 About Photo Contests
               </h3>
               <p className="text-gray-400 text-sm leading-relaxed">
-                Join our community of photographers, share your work, and
-                participate in exciting photo contests. Showcase your talent and
-                get inspired by others.
+                Join our growing community of photographers, share your creative
+                work, and participate in exciting photo contests. Showcase your
+                talent, get inspired by others.
               </p>
             </div>
 
             {/* Quick Links */}
             <div>
-              <h3 className="text-lg font-semibold text-white mb-4">
+              <h3 className="text-base font-semibold text-gray-200 mb-3">
                 Quick Links
               </h3>
               <ul className="space-y-2">
                 <li>
                   <Link
                     to="/"
-                    className="text-gray-400 hover:text-white transition-colors text-sm"
+                    className="text-gray-400 hover:text-indigo-400 transition-colors text-sm flex items-center"
                   >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 mr-2"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                      />
+                    </svg>
                     Home
                   </Link>
                 </li>
                 <li>
                   <Link
                     to="/events"
-                    className="text-gray-400 hover:text-white transition-colors text-sm"
+                    className="text-gray-400 hover:text-indigo-400 transition-colors text-sm flex items-center"
                   >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 mr-2"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
+                    </svg>
                     Contests
                   </Link>
                 </li>
                 <li>
-                  <a
-                    href="https://github.com/ConnRaus/photo-contests"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-white transition-colors text-sm"
+                  <Link
+                    to="/forum"
+                    className="text-gray-400 hover:text-indigo-400 transition-colors text-sm flex items-center"
                   >
-                    GitHub Repository
-                  </a>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 mr-2"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"
+                      />
+                    </svg>
+                    Forum
+                  </Link>
                 </li>
               </ul>
             </div>
 
             {/* Contact/Social */}
             <div>
-              <h3 className="text-lg font-semibold text-white mb-4">Connect</h3>
+              <h3 className="text-base font-semibold text-gray-200 mb-3">
+                Connect
+              </h3>
               <div className="space-y-2">
                 <p className="text-gray-400 text-sm">
                   Have questions or suggestions?{" "}
                   <a
-                    href="mailto:contact@photocontests.app"
+                    href="mailto:connor.rauscher@gmail.com"
                     className="text-indigo-400 hover:text-indigo-300 transition-colors"
                   >
                     Contact us
                   </a>
                 </p>
-                <div className="flex space-x-4 mt-4">
+                <div className="flex space-x-4 mt-2">
                   <a
-                    href="https://github.com/ConnRaus/photo-contest-app"
+                    href="https://github.com/ConnRaus"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-white transition-colors"
+                    className="text-gray-400 hover:text-indigo-400 transition-colors"
                     title="GitHub"
                   >
                     <svg
-                      className="w-6 h-6"
+                      className="w-5 h-5"
                       fill="currentColor"
                       viewBox="0 0 24 24"
                       aria-hidden="true"
@@ -96,9 +138,10 @@ function Footer() {
           </div>
 
           {/* Copyright */}
-          <div className="mt-8 pt-8 border-t border-gray-700/50 text-center">
-            <p className="text-gray-400 text-sm">
-              © {currentYear} Photo Contests. All rights reserved.
+          <div className="mt-6 pt-4 border-t border-gray-700/20 text-center">
+            <p className="text-gray-500 text-sm">
+              © {currentYear} Photo Contests by Connor Rauscher. All rights
+              reserved.
             </p>
           </div>
         </div>

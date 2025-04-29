@@ -1,121 +1,205 @@
 import models from "../models/index.js";
-import sequelize from "../config/config.js";
-import crypto from "crypto";
+import { randomUUID } from "node:crypto";
 
-const { Contest } = models;
+const { Contest, sequelize } = models;
 
 export async function seedTestContests() {
   try {
-    // Get the current timestamp
-    const now = new Date();
+    console.log("Beginning to create test contests...");
 
-    // 1. Past contest (ended)
-    const pastContestId = crypto.randomUUID();
-    await sequelize.query(`
-      INSERT INTO "Contests" (
-        "id", "title", "description", "bannerImageUrl", 
-        "startDate", "endDate", "status", "createdAt", "updatedAt"
-      ) VALUES (
-        '${pastContestId}',
-        'Vintage Photography',
-        'A look back at classic photography techniques and styles. Share your best vintage-style photos!',
-        'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80',
-        '${new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString()}',
-        '${new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()}',
-        'completed',
-        '${now.toISOString()}',
-        '${now.toISOString()}'
-      )
-    `);
+    // Create basic contests (from defaultData.js)
+    console.log("Creating basic contests (Red and Blue)...");
 
-    // 2. Upcoming contest (future - 14 days)
-    const upcomingContestId = crypto.randomUUID();
+    // Red contest
+    const contest1StartDate = new Date();
+    const contest1EndDate = new Date(contest1StartDate);
+    contest1EndDate.setDate(contest1EndDate.getDate() + 14); // 2 weeks after start
+    const contest1VotingStartDate = new Date(contest1EndDate);
+    const contest1VotingEndDate = new Date(contest1VotingStartDate);
+    contest1VotingEndDate.setDate(contest1VotingEndDate.getDate() + 7); // 1 week after submission ends
+
+    const redContest = await Contest.create({
+      id: randomUUID(),
+      title: "Things That Are Red",
+      description:
+        "Submit your best photographs featuring the color red as the primary subject or dominant color in the composition.",
+      bannerImageUrl:
+        "https://images.pexels.com/photos/3652898/pexels-photo-3652898.jpeg",
+      startDate: contest1StartDate,
+      endDate: contest1EndDate,
+      votingStartDate: contest1VotingStartDate,
+      votingEndDate: contest1VotingEndDate,
+      maxPhotosPerUser: 3,
+      status: "open",
+    });
+
+    // Blue contest
+    const contest2StartDate = new Date();
+    contest2StartDate.setDate(contest2StartDate.getDate() + 21); // 3 weeks from now
+    const contest2EndDate = new Date(contest2StartDate);
+    contest2EndDate.setDate(contest2EndDate.getDate() + 14); // 2 weeks after start
+    const contest2VotingStartDate = new Date(contest2EndDate);
+    const contest2VotingEndDate = new Date(contest2VotingStartDate);
+    contest2VotingEndDate.setDate(contest2VotingEndDate.getDate() + 7); // 1 week after submission ends
+
+    const blueContest = await Contest.create({
+      id: randomUUID(),
+      title: "Things That Are Blue",
+      description:
+        "Submit your best photographs featuring the color blue as the primary subject or dominant color in the composition.",
+      bannerImageUrl:
+        "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&q=80&w=1386&ixlib=rb-4.0.3",
+      startDate: contest2StartDate,
+      endDate: contest2EndDate,
+      votingStartDate: contest2VotingStartDate,
+      votingEndDate: contest2VotingEndDate,
+      maxPhotosPerUser: 2,
+      status: "upcoming",
+    });
+
+    // Create past contest
+    console.log("Creating past contest: Vintage Photography");
+    const pastContest = await Contest.create({
+      id: randomUUID(),
+      title: "Vintage Photography",
+      description:
+        "Submit your best vintage-style photographs or photos of vintage items.",
+      bannerImageUrl:
+        "https://images.pexels.com/photos/1261731/pexels-photo-1261731.jpeg",
+      startDate: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), // 14 days ago
+      endDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+      votingStartDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Same as endDate
+      votingEndDate: new Date(Date.now()), // 7 days after endDate (today)
+      maxPhotosPerUser: 5,
+      status: "completed",
+    });
+
+    // Create upcoming contest
     const upcomingContest = await Contest.create({
-      id: upcomingContestId,
+      id: randomUUID(),
       title: "Urban Architecture",
       description:
-        "Showcase the best architectural photography from your city. Modern buildings, historic structures, or unique urban details.",
+        "Capture stunning architectural details or entire structures in urban environments.",
       bannerImageUrl:
-        "https://images.unsplash.com/photo-1517713982677-4b66332f98de?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80",
-      startDate: new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000), // 14 days from now
-      endDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-      status: "draft", // This will be overridden by our date-based calculation
+        "https://images.pexels.com/photos/1105766/pexels-photo-1105766.jpeg",
+      startDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
+      endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days from now
+      votingStartDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // Same as endDate
+      votingEndDate: new Date(Date.now() + 17 * 24 * 60 * 60 * 1000), // 7 days after endDate
+      maxPhotosPerUser: 4,
+      status: "upcoming",
     });
 
-    // 3. Active contest with 12 hours remaining
-    const shortContestId = crypto.randomUUID();
-    const shortContest = await Contest.create({
-      id: shortContestId,
+    // Create active contest
+    const activeContest = await Contest.create({
+      id: randomUUID(),
       title: "12-Hour Flash Contest",
       description:
-        "A quick contest that will end in just 12 hours! Capture something spontaneous and share it now.",
+        "A quick contest to test your creativity under time pressure. Submit your best work created in the last 12 hours.",
       bannerImageUrl:
-        "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80",
-      startDate: new Date(now.getTime() - 12 * 60 * 60 * 1000), // 12 hours ago
-      endDate: new Date(now.getTime() + 12 * 60 * 60 * 1000), // 12 hours from now
-      status: "active",
+        "https://images.pexels.com/photos/3617500/pexels-photo-3617500.jpeg",
+      startDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+      endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
+      votingStartDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // Same as endDate
+      votingEndDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 7 days after endDate
+      maxPhotosPerUser: 2,
+      status: "open",
     });
 
-    // 4. Active contest with 1 hour remaining
-    const veryShortContestId = crypto.randomUUID();
-    const veryShortContest = await Contest.create({
-      id: veryShortContestId,
+    // Create 1-hour challenge
+    const oneHourContest = await Contest.create({
+      id: randomUUID(),
       title: "1-Hour Challenge",
       description:
-        "You only have one hour to participate! Show us what you can do in this extremely short challenge.",
-      bannerImageUrl: "https://wallpapershome.com/images/pages/pic_h/12465.jpg",
-      startDate: new Date(now.getTime() - 60 * 60 * 1000), // 1 hour ago
-      endDate: new Date(now.getTime() + 60 * 60 * 1000), // 1 hour from now
-      status: "active",
+        "Take and submit your best shot within a 1-hour timeframe. No editing allowed!",
+      bannerImageUrl:
+        "https://images.pexels.com/photos/3075988/pexels-photo-3075988.jpeg",
+      startDate: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
+      endDate: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes from now
+      votingStartDate: new Date(Date.now() + 30 * 60 * 1000), // Same as endDate
+      votingEndDate: new Date(
+        Date.now() + 7 * 24 * 60 * 60 * 1000 + 30 * 60 * 1000
+      ), // 7 days after endDate
+      maxPhotosPerUser: 1,
+      status: "open",
     });
 
-    // 5. Active contest with 1 minute remaining
-    const expiringContestId = crypto.randomUUID();
-    const expiringContest = await Contest.create({
-      id: expiringContestId,
+    // Create last minute contest
+    const lastMinuteContest = await Contest.create({
+      id: randomUUID(),
       title: "Last Minute Contest",
       description:
-        "This contest is about to end! Just one minute remaining to submit your entry.",
+        "Submit your best last-minute photo for this quick challenge.",
       bannerImageUrl:
-        "https://images.unsplash.com/photo-1472162314594-eca3c3d90df1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80",
-      startDate: new Date(now.getTime() - 60 * 60 * 1000), // 1 hour ago
-      endDate: new Date(now.getTime() + 60 * 1000), // 1 minute from now
-      status: "active",
+        "https://images.pexels.com/photos/1028600/pexels-photo-1028600.jpeg",
+      startDate: new Date(Date.now() - 12 * 60 * 60 * 1000), // 12 hours ago
+      endDate: new Date(Date.now() + 3 * 60 * 1000), // 3 minutes from now
+      votingStartDate: new Date(Date.now() + 3 * 60 * 1000), // Same as endDate
+      votingEndDate: new Date(Date.now() + 3 * 60 * 1000 + 3 * 60 * 1000), // 3 minutes after voting start date
+      maxPhotosPerUser: 3,
+      status: "open",
     });
 
-    // 6. Contest starting in 1 minute
-    const startingSoonContestId = crypto.randomUUID();
+    // Create contest starting in 1 minute
     const startingSoonContest = await Contest.create({
-      id: startingSoonContestId,
+      id: randomUUID(),
       title: "Starting in 1 Minute",
-      description:
-        "This contest is about to begin! Just one minute until submissions open.",
+      description: "Get ready for this quick contest starting very soon!",
       bannerImageUrl:
-        "https://images.unsplash.com/photo-1502920514313-52581002a659?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80",
-      startDate: new Date(now.getTime() + 60 * 1000), // 1 minute from now
-      endDate: new Date(now.getTime() + 60 * 60 * 1000), // 1 hour from now
-      status: "draft", // Use "draft" instead of "upcoming"
+        "https://images.pexels.com/photos/2166711/pexels-photo-2166711.jpeg",
+      startDate: new Date(Date.now() + 1 * 60 * 1000), // 1 minute from now
+      endDate: new Date(Date.now() + 1 * 60 * 1000 + 1 * 60 * 1000), // Changed: 1 minute after start (2 minutes from now)
+      votingStartDate: new Date(Date.now() + 1 * 60 * 1000 + 1 * 60 * 1000), // Same as endDate (2 minutes from now)
+      votingEndDate: new Date(
+        Date.now() + 1 * 60 * 1000 + 1 * 60 * 1000 + 1 * 60 * 1000
+      ), // 1 minute after voting starts (3 minutes from now)
+      maxPhotosPerUser: 5,
+      status: "upcoming",
     });
 
-    console.log("Test contests created successfully:", {
-      past: pastContestId,
-      upcoming: upcomingContestId,
-      shortContest: shortContestId,
-      veryShortContest: veryShortContestId,
-      expiringContest: expiringContestId,
-      startingSoonContest: startingSoonContestId,
+    console.log("Test contests created with IDs:", {
+      redContestId: redContest.id,
+      blueContestId: blueContest.id,
+      pastContestId: pastContest.id,
+      upcomingContestId: upcomingContest.id,
+      activeContestId: activeContest.id,
+      oneHourContestId: oneHourContest.id,
+      lastMinuteContestId: lastMinuteContest.id,
+      startingSoonContestId: startingSoonContest.id,
     });
 
     return {
-      pastContestId,
+      redContest,
+      blueContest,
+      pastContest,
       upcomingContest,
-      shortContest,
-      veryShortContest,
-      expiringContest,
+      activeContest,
+      oneHourContest,
+      lastMinuteContest,
       startingSoonContest,
     };
   } catch (error) {
-    console.error("Error creating test contests:", error);
+    console.error("Error seeding test contests:", error);
     throw error;
   }
+}
+
+// Check if this module is being run directly (not imported)
+if (import.meta.url === `file://${process.argv[1]}`) {
+  console.log("Starting to seed test contests...");
+  console.log("Database models:", Object.keys(models));
+  console.log("Contest model:", typeof Contest);
+  seedTestContests()
+    .then((contests) => {
+      console.log("Successfully seeded test contests");
+      console.log(
+        "Created contests:",
+        Object.keys(contests).map((key) => contests[key].title)
+      );
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error("Failed to seed test contests:", err);
+      process.exit(1);
+    });
 }
