@@ -81,6 +81,9 @@ function Navigation() {
                   </svg>
                 }
               />
+              <UserButton.Appearance />
+              <UserButton.SessionList />
+              <UserButton.SignOut />
             </UserButton.MenuItems>
           </UserButton>
         </SignedIn>

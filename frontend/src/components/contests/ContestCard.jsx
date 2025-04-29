@@ -13,7 +13,7 @@ export function ContestCard({ contest, onClick }) {
   // Use phase which is calculated on the fly in the backend
   switch (contest.phase) {
     case "submission":
-      statusText = "Active";
+      statusText = "Active Submissions";
       statusClass = styles.statusActive;
       break;
     case "upcoming":
@@ -36,7 +36,7 @@ export function ContestCard({ contest, onClick }) {
       // Fall back to status if phase is not available
       switch (contest.status) {
         case "open":
-          statusText = "Active";
+          statusText = "Active Submissions";
           statusClass = styles.statusActive;
           break;
         case "upcoming":

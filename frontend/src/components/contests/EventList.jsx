@@ -154,14 +154,14 @@ export function EventList({ showAllTypes = true }) {
   return (
     <div className="mt-8">
       {renderContestSection(
-        "Active Contests",
-        activeContests,
-        "No active contests at the moment."
-      )}
-      {renderContestSection(
         "Voting Open",
         votingContests,
         "No contests currently in voting phase."
+      )}
+      {renderContestSection(
+        "Active Submissions",
+        activeContests,
+        "No active contests at the moment."
       )}
       {renderContestSection(
         "Coming Soon",
