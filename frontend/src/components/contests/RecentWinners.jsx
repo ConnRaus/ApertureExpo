@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useContestService } from "../../hooks";
 import { LoadingSpinner } from "../common/CommonComponents";
@@ -9,6 +9,7 @@ export function RecentWinners() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [currentIndex, setCurrentIndex] = useState(null);
   const contestService = useContestService();
 
   useEffect(() => {
@@ -110,13 +111,58 @@ export function RecentWinners() {
     );
   };
 
-  const openPhotoModal = (photo) => {
+  const openPhotoModal = (photo, index) => {
     setSelectedPhoto(photo);
+    setCurrentIndex(index);
   };
 
-  const closePhotoModal = () => {
+  const closePhotoModal = useCallback(() => {
     setSelectedPhoto(null);
-  };
+    setCurrentIndex(null);
+  }, []);
+
+  const showNextPhoto = useCallback(
+    (e) => {
+      e.stopPropagation();
+      if (winners.length === 0) return;
+      const nextIndex = (currentIndex + 1) % winners.length;
+      setSelectedPhoto(winners[nextIndex]);
+      setCurrentIndex(nextIndex);
+    },
+    [currentIndex, winners]
+  );
+
+  const showPreviousPhoto = useCallback(
+    (e) => {
+      e.stopPropagation();
+      if (winners.length === 0) return;
+      const prevIndex = (currentIndex - 1 + winners.length) % winners.length;
+      setSelectedPhoto(winners[prevIndex]);
+      setCurrentIndex(prevIndex);
+    },
+    [currentIndex, winners]
+  );
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (selectedPhoto) {
+        if (event.key === "ArrowRight") {
+          showNextPhoto(event);
+        }
+        if (event.key === "ArrowLeft") {
+          showPreviousPhoto(event);
+        }
+        if (event.key === "Escape") {
+          closePhotoModal();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedPhoto, showNextPhoto, showPreviousPhoto, closePhotoModal]);
 
   if (isLoading) {
     return <LoadingSpinner size="md" message="Loading recent winners..." />;
@@ -132,11 +178,11 @@ export function RecentWinners() {
       {winners.length > 0 ? (
         <>
           <div className={styles.scrollContainer}>
-            {winners.map((photo) => (
+            {winners.map((photo, index) => (
               <div
                 key={photo.id}
                 className={styles.winnerCard}
-                onClick={() => openPhotoModal(photo)}
+                onClick={() => openPhotoModal(photo, index)}
               >
                 <div className={styles.rank}>#{photo.rank}</div>
                 <img
@@ -181,6 +227,24 @@ export function RecentWinners() {
                 <span className={styles.closeButton} onClick={closePhotoModal}>
                   &times;
                 </span>
+                {winners.length > 1 && (
+                  <>
+                    <button
+                      className={`${styles.navButton} ${styles.prevButton}`}
+                      onClick={showPreviousPhoto}
+                      aria-label="Previous Winner"
+                    >
+                      &#10094;
+                    </button>
+                    <button
+                      className={`${styles.navButton} ${styles.nextButton}`}
+                      onClick={showNextPhoto}
+                      aria-label="Next Winner"
+                    >
+                      &#10095;
+                    </button>
+                  </>
+                )}
                 <img
                   src={selectedPhoto.s3Url || selectedPhoto.thumbnailUrl}
                   alt={selectedPhoto.title}
