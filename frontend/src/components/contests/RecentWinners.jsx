@@ -79,13 +79,31 @@ export function RecentWinners() {
         // Create a flattened list of all winning photos with contest info
         const allWinningPhotos = [];
         validWinners.forEach((cw) => {
-          cw.winners.forEach((photo, index) => {
+          // Explicitly sort the winners array by totalScore descending
+          const sortedWinners = [...cw.winners].sort((a, b) => {
+            const scoreA = a.totalScore ?? -Infinity;
+            const scoreB = b.totalScore ?? -Infinity;
+            return scoreB - scoreA;
+          });
+
+          let currentRank = 0;
+          let lastScore = Infinity; // Start higher than any possible score
+          // Iterate through the sorted winners to assign ranks, handling ties
+          sortedWinners.forEach((photo, index) => {
+            // Only increment rank if score is lower than the previous photo's score
+            // Check against null/undefined scores as well
+            const currentScore = photo.totalScore ?? -Infinity;
+            if (currentScore < lastScore) {
+              currentRank = index + 1; // Use index+1 for rank when score decreases
+            }
+
             allWinningPhotos.push({
               ...photo,
               contestTitle: cw.contest.title,
               contestId: cw.contest.id,
-              rank: index + 1,
+              rank: currentRank, // Assign the calculated rank (handles ties)
             });
+            lastScore = currentScore; // Update last score for the next iteration
           });
         });
 

@@ -333,7 +333,7 @@
 /* Results display for ended contests */
 .resultsContainer {
   margin-top: 2rem;
-  padding: 1rem 1.5rem;
+  padding: 0.5rem 1rem;
   background-color: rgba(31, 41, 55, 0.7);
   border-radius: 0.5rem;
   border: 1px solid rgba(75, 85, 99, 0.4);
@@ -343,57 +343,63 @@
   font-size: 1.5rem;
   font-weight: 600;
   color: white;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   text-align: center;
 }
 
 .podiumContainer {
   display: flex;
   justify-content: center;
-  gap: 1rem;
-  margin: 1.5rem 0;
+  gap: 1.5rem;
+  margin: 1rem 0 1.5rem;
   align-items: flex-end;
+  flex-wrap: wrap;
 }
 
 .podiumPlace {
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 280px;
+  text-align: center;
 }
 
 .firstPlace {
-  order: 2;
+  /* width: 220px; */
 }
 
 .secondPlace {
-  order: 1;
+  /* width: 180px; */
 }
 
 .thirdPlace {
-  order: 3;
+  /* width: 160px; */
 }
 
 .podiumImage {
+  /* height: 200px; */
   width: 100%;
-  height: auto;
   border-radius: 0.5rem;
-  border: 2px solid;
+  border: 3px solid;
   overflow: hidden;
   transition: transform 0.3s;
+  max-width: 100%;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
 }
 
 .firstPlace .podiumImage {
-  width: 180px;
+  height: 250px;
   border-color: gold;
 }
 
 .secondPlace .podiumImage {
-  width: 140px;
+  height: 220px;
   border-color: silver;
 }
 
 .thirdPlace .podiumImage {
-  width: 120px;
+  height: 190px;
   border-color: #cd7f32; /* bronze */
 }
 
@@ -403,11 +409,12 @@
 
 .placeBadge {
   margin-top: 0.5rem;
-  padding: 0.25rem 0.75rem;
+  padding: 0.3rem 1rem;
   border-radius: 9999px;
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 600;
   color: rgb(31, 41, 55);
+  margin-bottom: 0.5rem;
 }
 
 .firstPlace .placeBadge {
@@ -423,7 +430,7 @@
 }
 
 .voteCount {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: rgb(156, 163, 175);
   margin-top: 0.25rem;
 }
@@ -570,19 +577,28 @@
   .podiumContainer {
     flex-direction: column;
     align-items: center;
-    gap: 1.5rem;
+    gap: 2rem;
   }
 
-  .firstPlace,
-  .secondPlace,
-  .thirdPlace {
-    order: initial;
-  }
-
+  /* Remove specific heights on mobile, use auto/max-height */
   .firstPlace .podiumImage,
   .secondPlace .podiumImage,
   .thirdPlace .podiumImage {
-    width: 200px;
+    height: auto;
+    max-height: 250px;
+  }
+
+  .podiumPlace {
+    width: 80%;
+    max-width: 320px;
+  }
+
+  /* Remove specific widths for mobile */
+  .firstPlace,
+  .secondPlace,
+  .thirdPlace {
+    width: 80%; /* Use parent width settings */
+    max-width: 320px; /* Match parent */
   }
 }
 
