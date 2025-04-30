@@ -3,7 +3,7 @@ import express from "express";
 import { clerkMiddleware, requireAuth } from "@clerk/express";
 import dotenv from "dotenv";
 import cors from "cors";
-import { initializeDatabase } from "./database/index.js";
+import initializeDatabase from "./database/index.js";
 import photoRoutes from "./routes/photos.js";
 import contestRoutes from "./routes/contests.js";
 import userRoutes from "./routes/users.js";

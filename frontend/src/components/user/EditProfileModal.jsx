@@ -126,13 +126,13 @@ export function EditProfileModal({
                     <input
                       type="text"
                       value={nickname}
-                      onChange={(e) => setNickname(e.target.value.slice(0, 50))}
+                      onChange={(e) => setNickname(e.target.value.slice(0, 25))}
                       placeholder="Enter nickname"
                       className={formStyles.input}
-                      maxLength={50}
+                      maxLength={25}
                     />
                     <span className="absolute right-2 bottom-2 text-xs text-gray-500">
-                      {nickname.length}/50
+                      {nickname.length}/25
                     </span>
                   </div>
                 </div>

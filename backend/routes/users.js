@@ -60,7 +60,7 @@ router.get("/:userId", async (req, res) => {
       userData.avatarUrl = clerkUser.imageUrl || null;
     } catch (err) {
       // If we can't get Clerk data, just continue without the avatar
-      console.log(`Could not fetch Clerk data for user ${userId}`);
+      // console.log(`Could not fetch Clerk data for user ${userId}`);
     }
 
     res.json(userData);
@@ -104,7 +104,7 @@ router.put("/me", async (req, res) => {
       updatedUser.avatarUrl = clerkUser.imageUrl || null;
     } catch (err) {
       // If we can't get Clerk data, just continue
-      console.log(`Could not fetch Clerk data for user ${userId}`);
+      // console.log(`Could not fetch Clerk data for user ${userId}`);
     }
 
     res.json(updatedUser);
@@ -147,11 +147,8 @@ router.get("/:userId/profile", requireAuth(), async (req, res) => {
       // Add avatar URL to the profile
       userProfile.avatarUrl = clerkUser.imageUrl || null;
     } catch (clerkError) {
-      console.error(
-        `Could not fetch Clerk data for user ${user.id}:`,
-        clerkError
-      );
       // Continue without avatar if Clerk fetch fails
+      // console.error(`Could not fetch Clerk data for user ${user.id}:`, clerkError);
       userProfile.avatarUrl = null;
     }
 
@@ -215,7 +212,8 @@ router.put("/:userId/profile", requireAuth(), async (req, res) => {
       const clerkUser = await clerkClient.users.getUser(updatedUser.id);
       userResponse.avatarUrl = clerkUser.imageUrl || null;
     } catch (clerkError) {
-      console.error(`Could not fetch Clerk data:`, clerkError);
+      // If we can't get Clerk data, just continue
+      // console.error(`Could not fetch Clerk data:`, clerkError);
       userResponse.avatarUrl = null;
     }
 
@@ -260,8 +258,8 @@ router.post(
           try {
             await deleteFromS3(user.bannerImage);
           } catch (deleteError) {
-            console.error("Error deleting old banner:", deleteError);
             // Continue with upload even if delete fails
+            // console.error("Error deleting old banner:", deleteError);
           }
         }
       }
@@ -301,5 +299,85 @@ router.post(
     }
   }
 );
+
+// Public route to get user profile info by ID
+router.get("/users/:userId", async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    // Try getting user from our database first
+    const dbUser = await User.findByPk(userId);
+
+    let clerkUser = null;
+    try {
+      clerkUser = await clerkClient.users.getUser(userId);
+    } catch (clerkError) {
+      // Only log if the DB user wasn't found either
+      if (!dbUser) {
+        // console.log(`Could not fetch Clerk data for user ${userId}`);
+      }
+      // Don't throw an error, just proceed without Clerk data
+    }
+
+    if (!dbUser && !clerkUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Prioritize DB data, fill in from Clerk if missing
+    const profileData = {
+      id: userId,
+      nickname:
+        dbUser?.nickname || clerkUser?.username || `User ${userId.slice(0, 6)}`,
+      bio: dbUser?.bio || "",
+      bannerImage: dbUser?.bannerImage || "",
+      avatarUrl: clerkUser?.imageUrl || dbUser?.avatarUrl || null, // Use Clerk image first
+    };
+
+    res.json(profileData);
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    res.status(500).json({ error: "Failed to fetch user profile" });
+  }
+});
+
+// Route to get the current authenticated user's details
+router.get("/users/me", requireAuth(), async (req, res) => {
+  try {
+    const userId = req.auth.userId;
+    const dbUser = await User.findByPk(userId);
+
+    let clerkUser = null;
+    try {
+      clerkUser = await clerkClient.users.getUser(userId);
+    } catch (clerkError) {
+      // console.log(`Could not fetch Clerk data for user ${userId}`);
+      // Don't fail the request if Clerk fetch fails, use DB data
+    }
+
+    if (!dbUser) {
+      // This should ideally not happen if ensureUserExists middleware is working
+      console.error(`DB User not found for authenticated user: ${userId}`);
+      return res.status(404).json({ error: "User profile not found in DB" });
+    }
+
+    const profileData = {
+      id: userId,
+      nickname: dbUser.nickname,
+      bio: dbUser.bio,
+      bannerImage: dbUser.bannerImage,
+      avatarUrl: clerkUser?.imageUrl || dbUser.avatarUrl || null, // Use Clerk image first
+    };
+
+    res.json(profileData);
+  } catch (error) {
+    console.error("Error fetching current user profile:", error);
+    res.status(500).json({ error: "Failed to fetch user profile" });
+  }
+});
+
+// Update user profile (nickname, bio, bannerImage)
+router.put("/users/me", requireAuth(), async (req, res) => {
+  // ... (keep logs inside this route if needed) ...
+});
 
 export default router;

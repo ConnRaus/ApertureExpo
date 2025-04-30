@@ -16,7 +16,7 @@ User.init(
       type: DataTypes.STRING,
       allowNull: true,
       validate: {
-        len: [0, 50],
+        len: [0, 25],
       },
     },
     bio: {

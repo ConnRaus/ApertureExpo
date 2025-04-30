@@ -22,13 +22,13 @@ Photo.init(
       allowNull: false,
       validate: {
         notEmpty: true,
-        len: [1, 100],
+        len: [1, 25],
       },
     },
     description: {
       type: DataTypes.TEXT,
       validate: {
-        len: [0, 500],
+        len: [0, 150],
       },
     },
     s3Url: {

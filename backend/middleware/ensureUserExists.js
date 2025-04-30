@@ -69,9 +69,9 @@ export const ensureUserExists = async (req, res, next) => {
             bannerImage: "", // Keep banner image empty, don't use profile image
           });
 
-          console.log(
-            `Created new user record for: ${userId} with name: ${nickname}`
-          );
+          // console.log(
+          //   `Created new user record for: ${userId} with name: ${nickname}`
+          // );
         } catch (createError) {
           // If error is due to duplicate key, the user was created in another request
           // Try to fetch the user one more time
@@ -83,7 +83,7 @@ export const ensureUserExists = async (req, res, next) => {
               throw createError;
             }
 
-            console.log(`User ${userId} already exists, using existing record`);
+            // console.log(`User ${userId} already exists, using existing record`);
           } else {
             // For any other error, pass it along
             throw createError;

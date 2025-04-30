@@ -5,10 +5,10 @@ const { Contest, sequelize } = models;
 
 export async function seedTestContests() {
   try {
-    console.log("Beginning to create test contests...");
+    // console.log("Beginning to create test contests...");
 
     // Create basic contests (from defaultData.js)
-    console.log("Creating basic contests (Red and Blue)...");
+    // console.log("Creating basic contests (Red and Blue)...");
 
     // Red contest
     const contest1StartDate = new Date();
@@ -58,7 +58,7 @@ export async function seedTestContests() {
     });
 
     // Create past contest
-    console.log("Creating past contest: Vintage Photography");
+    // console.log("Creating past contest: Vintage Photography");
     const pastContest = await Contest.create({
       id: randomUUID(),
       title: "Vintage Photography",
@@ -157,16 +157,16 @@ export async function seedTestContests() {
       status: "upcoming",
     });
 
-    console.log("Test contests created with IDs:", {
-      redContestId: redContest.id,
-      blueContestId: blueContest.id,
-      pastContestId: pastContest.id,
-      upcomingContestId: upcomingContest.id,
-      activeContestId: activeContest.id,
-      oneHourContestId: oneHourContest.id,
-      lastMinuteContestId: lastMinuteContest.id,
-      startingSoonContestId: startingSoonContest.id,
-    });
+    // console.log("Test contests created with IDs:", {
+    //   redContestId: redContest.id,
+    //   blueContestId: blueContest.id,
+    //   pastContestId: pastContest.id,
+    //   upcomingContestId: upcomingContest.id,
+    //   activeContestId: activeContest.id,
+    //   oneHourContestId: oneHourContest.id,
+    //   lastMinuteContestId: lastMinuteContest.id,
+    //   startingSoonContestId: startingSoonContest.id,
+    // });
 
     return {
       redContest,
@@ -186,16 +186,16 @@ export async function seedTestContests() {
 
 // Check if this module is being run directly (not imported)
 if (import.meta.url === `file://${process.argv[1]}`) {
-  console.log("Starting to seed test contests...");
-  console.log("Database models:", Object.keys(models));
-  console.log("Contest model:", typeof Contest);
+  // console.log("Starting to seed test contests...");
+  // console.log("Database models:", Object.keys(models));
+  // console.log("Contest model:", typeof Contest);
   seedTestContests()
     .then((contests) => {
-      console.log("Successfully seeded test contests");
-      console.log(
-        "Created contests:",
-        Object.keys(contests).map((key) => contests[key].title)
-      );
+      // console.log("Successfully seeded test contests");
+      // console.log(
+      //   "Created contests:",
+      //   Object.keys(contests).map((key) => contests[key].title)
+      // );
       process.exit(0);
     })
     .catch((err) => {
@@ -203,3 +203,22 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       process.exit(1);
     });
 }
+
+// Function to execute seeding (called from database/index.js)
+const seedDatabase = async () => {
+  // console.log("Starting to seed test contests...");
+  try {
+    // Check which models are available
+    // console.log("Database models:", Object.keys(models));
+    // console.log("Contest model:", typeof Contest);
+
+    await seedTestContests();
+    // console.log("Successfully seeded test contests");
+  } catch (error) {
+    console.error("Failed to seed database:", error);
+  }
+};
+
+export { seedTestContests }; // Export the specific function if needed elsewhere
+
+export default seedDatabase; // Default export for database index

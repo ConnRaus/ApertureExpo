@@ -335,4 +335,138 @@ router.get("/contests/:contestId/top-photos", async (req, res) => {
   }
 });
 
+// Get vote status for a user on photos in a contest
+router.get(
+  "/contests/:contestId/photos/vote-status",
+  requireAuth(),
+  async (req, res) => {
+    // ... (no obvious logs here)
+  }
+);
+
+// Get votes for a single photo in a contest
+router.get("/contests/:contestId/photos/:photoId/votes", async (req, res) => {
+  // ... (no obvious logs here)
+});
+
+// Get all photos in a contest, including vote counts and user vote status
+router.get("/contests/:contestId/photos-with-votes", async (req, res) => {
+  const { contestId } = req.params;
+  const userId = req.auth?.userId; // Use optional chaining
+
+  try {
+    const photos = await Photo.findAll({
+      where: { ContestId: contestId },
+      include: [
+        {
+          model: User,
+          as: "User",
+          attributes: ["id", "nickname"],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+
+    if (photos.length === 0) {
+      return res.json([]);
+    }
+
+    // console.log(
+    //   `Found ${photos.length} photos for contest ${contestId}`
+    // );
+
+    const photoIds = photos.map((p) => p.id);
+    const votes = await Vote.findAll({
+      where: { photoId: { [Op.in]: photoIds } },
+      attributes: [
+        "photoId",
+        [sequelize.fn("SUM", sequelize.col("value")), "totalScore"],
+      ],
+      group: ["photoId"],
+      raw: true,
+    });
+
+    const userVotes = {};
+    if (userId) {
+      const userVoteData = await Vote.findAll({
+        where: {
+          photoId: { [Op.in]: photoIds },
+          userId: userId,
+        },
+        attributes: ["photoId", "value"],
+        raw: true,
+      });
+      userVoteData.forEach((v) => {
+        userVotes[v.photoId] = v.value;
+      });
+    }
+
+    const voteMap = votes.reduce((acc, v) => {
+      acc[v.photoId] = parseInt(v.totalScore);
+      return acc;
+    }, {});
+
+    const results = photos.map((photo) => ({
+      ...photo.toJSON(),
+      totalScore: voteMap[photo.id] || 0,
+      userVote: userVotes[photo.id] || 0, // 0 indicates no vote
+    }));
+
+    // console.log(`Returning ${results.length} photos with vote status`);
+    res.json(results);
+  } catch (error) {
+    console.error("Error fetching photos with votes:", error);
+    res.status(500).json({ error: "Failed to fetch photos" });
+  }
+});
+
+// Submit or update a vote for a photo in a contest
+router.post(
+  "/contests/:contestId/photos/:photoId/vote",
+  requireAuth(),
+  async (req, res) => {
+    const { contestId, photoId } = req.params;
+    const userId = req.auth.userId;
+    const { value } = req.body; // Expecting +1 or -1
+
+    if (![1, -1].includes(value)) {
+      return res.status(400).json({ error: "Invalid vote value" });
+    }
+
+    try {
+      // TODO: Check if contest is in voting phase
+
+      let vote = await Vote.findOne({
+        where: { userId, photoId, contestId },
+      });
+
+      if (vote) {
+        if (vote.value === value) {
+          // User is removing their vote (clicking the same button again)
+          await vote.destroy();
+          vote = null; // Indicate vote was removed
+        } else {
+          // User is changing their vote
+          vote.value = value;
+          await vote.save();
+        }
+      } else {
+        // console.log(`User ${userId} voting for photo ${photoId} first time`);
+        vote = await Vote.create({
+          userId,
+          photoId,
+          contestId,
+          value,
+        });
+      }
+
+      // console.log(`Vote recorded/updated: ${vote?.id}, Value: ${vote?.value}`);
+      res.status(201).json({ success: true, vote });
+    } catch (error) {
+      console.error("Error submitting vote:", error);
+      res.status(500).json({ error: "Failed to submit vote" });
+    }
+  }
+);
+
 export default router;

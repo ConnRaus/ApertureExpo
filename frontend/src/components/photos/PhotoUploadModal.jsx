@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -15,8 +15,8 @@ export function PhotoUploadModal({
 
   // Use refs to prevent re-renders
   const fileRef = useRef(null);
-  const titleRef = useRef(null);
-  const descriptionRef = useRef(null);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [photoSelected, setPhotoSelected] = useState(false);
@@ -25,6 +25,30 @@ export function PhotoUploadModal({
   const [showError, setShowError] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const contestService = useContestService();
+
+  // Effect to reset form state when modal opens/closes
+  useEffect(() => {
+    if (isOpen) {
+      setTitle("");
+      setDescription("");
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      setPhotoSelected(false);
+      setShowError(false);
+      setUploading(false);
+      setUploadProgress(0);
+      // Reset file input visually if possible
+      if (fileRef.current) {
+        fileRef.current.value = "";
+      }
+    } else {
+      // Optional: Clean up preview URL when modal closes to free memory
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl); // Only if previewUrl is an Object URL
+        setPreviewUrl(null);
+      }
+    }
+  }, [isOpen]);
 
   // List of accepted image MIME types and extensions
   const ACCEPTED_TYPES = {
@@ -85,15 +109,14 @@ export function PhotoUploadModal({
   const handleUpload = (e) => {
     e.preventDefault();
 
-    // Only check previewUrl and selectedFile state
     if (!previewUrl || !selectedFile) {
       setShowError(true);
       toast.error("Please select a photo to upload");
       return;
     }
 
-    // Check if title is filled out
-    if (!titleRef.current?.value) {
+    // Check title state
+    if (!title) {
       toast.error("Please enter a title for your photo");
       return;
     }
@@ -109,8 +132,8 @@ export function PhotoUploadModal({
 
       const formData = new FormData();
       formData.append("photo", selectedFile);
-      formData.append("title", titleRef.current.value);
-      formData.append("description", descriptionRef.current.value);
+      formData.append("title", title);
+      formData.append("description", description);
 
       await contestService.uploadNewPhoto(contestId, formData, (progress) => {
         setUploadProgress(progress);
@@ -247,119 +270,128 @@ export function PhotoUploadModal({
 
           <form onSubmit={handleUpload} className={formStyles.form} noValidate>
             <div className={formStyles.formGroup}>
-              <input
-                type="file"
-                onChange={handleFileChange}
-                accept="image/*"
-                className="hidden"
-                id="photoUpload"
-              />
-
+              <label
+                htmlFor="photoUpload"
+                className={`${formStyles.label} cursor-pointer block mb-2`}
+              >
+                Select Photo
+              </label>
               <div
-                className={`mb-4 border-2 border-dashed rounded-xl overflow-hidden transition-colors duration-200 ${
+                className={`border-2 border-dashed rounded-lg p-6 text-center ${
+                  showError ? "border-red-500" : "border-gray-600"
+                } ${
                   isDragging
-                    ? "border-indigo-500 bg-indigo-500/10"
-                    : "border-gray-600 hover:border-gray-500"
-                }`}
+                    ? "border-indigo-500 bg-gray-700/50"
+                    : "border-gray-600 hover:border-gray-500 bg-gray-700/20"
+                } transition-colors`}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
               >
+                <input
+                  type="file"
+                  accept="image/*"
+                  id="photoUpload"
+                  ref={fileRef}
+                  onChange={handleFileChange}
+                  className="hidden"
+                  disabled={uploading}
+                />
                 {previewUrl ? (
                   <div className="relative">
                     <img
                       src={previewUrl}
                       alt="Preview"
-                      className="w-full h-64 object-cover"
+                      className="max-h-60 mx-auto mb-4 rounded-lg object-contain"
                     />
-                    <label
-                      htmlFor="photoUpload"
-                      className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer bg-black/40 opacity-0 hover:opacity-100 transition-opacity duration-200"
+                    <button
+                      type="button"
+                      onClick={() =>
+                        document.getElementById("photoUpload").click()
+                      }
+                      className="absolute bottom-2 right-2 text-sm px-2 py-1 bg-gray-600/70 text-white rounded hover:bg-gray-500/70"
+                      disabled={uploading}
                     >
-                      <p className="text-lg mb-2 text-white">Change Photo</p>
-                    </label>
+                      Change Photo
+                    </button>
                   </div>
                 ) : (
-                  <label
-                    htmlFor="photoUpload"
-                    className="flex flex-col items-center justify-center cursor-pointer p-8 text-center"
-                  >
-                    <svg
-                      className={`w-12 h-12 mb-4 transition-colors duration-200 ${
-                        isDragging ? "text-indigo-400" : "text-gray-400"
-                      }`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
-                    </svg>
-                    <p className="text-lg mb-2">Drop your photo here</p>
-                    <p className="text-sm text-gray-400">
-                      or click to select a file
+                  <label htmlFor="photoUpload" className="cursor-pointer">
+                    <p className="text-gray-400">
+                      {isDragging
+                        ? "Drop photo here"
+                        : "Drag & drop or click to select"}
                     </p>
                   </label>
                 )}
-                {showError && (
-                  <p className="text-center mt-4 text-red-400 text-sm">
-                    Please select a photo to upload
-                  </p>
-                )}
               </div>
+              {showError && (
+                <p className="text-red-500 text-sm mt-1">
+                  Please select a photo.
+                </p>
+              )}
+            </div>
 
-              <label className={formStyles.label}>Title</label>
-              <input
-                type="text"
-                ref={titleRef}
-                className={formStyles.input}
-                required
-                maxLength={100}
-                placeholder="Enter photo title"
-              />
-
-              <label className={formStyles.label} htmlFor="description">
-                Description
+            <div className={formStyles.formGroup}>
+              <label htmlFor="photoTitle" className={formStyles.label}>
+                Title
               </label>
-              <textarea
-                ref={descriptionRef}
-                id="description"
-                className={formStyles.textarea}
-                maxLength={500}
-                placeholder="Enter photo description (optional)"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  id="photoTitle"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value.slice(0, 25))}
+                  placeholder="Enter photo title"
+                  className={formStyles.input}
+                  maxLength={25}
+                  disabled={uploading}
+                />
+                <span className="absolute right-2 bottom-2 text-xs text-gray-500">
+                  {title.length}/25
+                </span>
+              </div>
+            </div>
 
-              {uploadProgress > 0 && uploadProgress < 100 && (
-                <div className="w-full bg-gray-200 rounded-full h-2.5 my-4">
+            <div className={formStyles.formGroup}>
+              <label htmlFor="photoDescription" className={formStyles.label}>
+                Description (optional)
+              </label>
+              <div className="relative">
+                <textarea
+                  id="photoDescription"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value.slice(0, 150))}
+                  placeholder="Enter photo description"
+                  className={formStyles.textarea}
+                  maxLength={150}
+                  disabled={uploading}
+                />
+                <span className="absolute right-2 bottom-2 text-xs text-gray-500">
+                  {description.length}/150
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              {uploading && (
+                <div className="w-full bg-gray-600 rounded-full h-2.5 mb-4">
                   <div
-                    className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                    className="bg-indigo-600 h-2.5 rounded-full transition-all duration-300 ease-out"
                     style={{ width: `${uploadProgress}%` }}
                   ></div>
                 </div>
               )}
-
-              <div className="flex gap-3 mt-4">
-                <button
-                  type="submit"
-                  disabled={uploading}
-                  className={`${formStyles.button} ${formStyles.primaryButton} flex-1`}
-                >
-                  {uploading ? "Uploading..." : "Upload Photo"}
-                </button>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className={`${formStyles.button} ${formStyles.secondaryButton}`}
-                  disabled={uploading}
-                >
-                  Cancel
-                </button>
-              </div>
+              <button
+                type="submit"
+                className={`${formStyles.button} ${formStyles.primaryButton} w-full`}
+                disabled={uploading || !photoSelected}
+              >
+                {uploading
+                  ? `Uploading... ${Math.round(uploadProgress)}%`
+                  : "Upload Photo"}
+              </button>
             </div>
           </form>
         </div>
