@@ -97,7 +97,7 @@ export function EventList({ showAllTypes = true }) {
   // Only show loading state if shouldShowLoading is true
   if (shouldShowLoading) {
     return (
-      <div className="4">
+      <div className="mt-2">
         <LoadingSpinner size="lg" message="Loading contests..." />
       </div>
     );
@@ -105,13 +105,13 @@ export function EventList({ showAllTypes = true }) {
 
   // If we're loading but not showing the loading state yet, render nothing or a minimal placeholder
   if (isLoading) {
-    return <div className="mt-4"></div>; // Empty container to maintain layout
+    return <div className="mt-2"></div>;
   }
 
   // Check if there are no contests at all
   if (contests.length === 0) {
     return (
-      <div className="mt-4">
+      <div className="mt-2">
         <p>No contests available at the moment. Check back later!</p>
       </div>
     );
@@ -124,9 +124,9 @@ export function EventList({ showAllTypes = true }) {
     }
 
     return (
-      <div className="mb-10">
-        <h2 className="text-xl font-bold mb-4">{title}</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
+      <div className="mb-6">
+        <h2 className="text-xl font-bold mb-2">{title}</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 auto-rows-fr">
           {contestList.map((contest) => (
             <ContestCard
               key={contest.id}
@@ -146,15 +146,15 @@ export function EventList({ showAllTypes = true }) {
 
     if (displayContests.length === 0) {
       return (
-        <div className="mt-4">
+        <div className="mt-2">
           <p>No active contests at the moment. Check back later!</p>
         </div>
       );
     }
 
     return (
-      <div className="mt-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
+      <div className="mt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 auto-rows-fr">
           {displayContests.map((contest) => (
             <ContestCard
               key={contest.id}
@@ -169,7 +169,7 @@ export function EventList({ showAllTypes = true }) {
 
   // Otherwise show all sections
   return (
-    <div className="mt-4">
+    <div className="mt-2">
       {renderContestSection(
         "Voting Open",
         votingContests,

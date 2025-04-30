@@ -6,7 +6,7 @@
   max-width: 56rem; /* max-w-4xl */
   margin-left: auto;
   margin-right: auto;
-  margin-bottom: 3rem; /* mb-12 */
+  margin-bottom: 1.5rem; /* Reduced from 3rem */
   text-align: center;
 }
 
@@ -22,7 +22,7 @@
     rgb(129, 140, 248),
     rgb(192, 132, 252)
   );
-  margin-bottom: 1.5rem; /* mb-6 */
+  margin-bottom: 1rem; /* Reduced from 1.5rem */
 }
 
 .welcomeSection h2 {
@@ -30,7 +30,7 @@
   line-height: 2rem;
   font-weight: 600;
   color: rgb(229, 231, 235);
-  margin-bottom: 1rem; /* mb-4 */
+  margin-bottom: 0.5rem; /* Reduced from 1rem */
 }
 
 .welcomeSection p {

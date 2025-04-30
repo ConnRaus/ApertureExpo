@@ -32,14 +32,17 @@ export function ProfileHeader({
         )}
         <div className="profile-banner-overlay" />
       </div>
+      {/* Profile content absolutely positioned over banner */}
       <div className="profile-content">
+        {/* Inner container using flex for columns */}
         <div className="profile-info">
-          <div className="flex items-center gap-6">
+          {/* Left Column: Avatar */}
+          <div className="profile-avatar-container">
             {profile?.avatarUrl ? (
               <img
                 src={profile.avatarUrl}
                 alt={profile?.nickname || `User ${userId}`}
-                className={`w-24 h-24 rounded-full object-cover border-3 border-white shadow-lg ${
+                className={`w-20 h-20 rounded-full object-cover border-3 border-white shadow-lg ${
                   isOwner ? "cursor-pointer hover:opacity-90" : ""
                 }`}
                 onClick={isOwner ? () => openUserProfile() : undefined}
@@ -47,7 +50,7 @@ export function ProfileHeader({
               />
             ) : (
               <div
-                className={`w-24 h-24 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 text-xl border-3 border-white shadow-lg ${
+                className={`w-20 h-20 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 text-xl border-3 border-white shadow-lg ${
                   isOwner ? "cursor-pointer hover:opacity-90" : ""
                 }`}
                 onClick={isOwner ? () => openUserProfile() : undefined}
@@ -56,7 +59,11 @@ export function ProfileHeader({
                 {(profile?.nickname?.[0] || userId[0] || "U").toUpperCase()}
               </div>
             )}
-            <div className="flex flex-col justify-center -mt-1">
+          </div>
+
+          {/* Right Column: Name, Stats, Bio */}
+          <div className="profile-text-container">
+            <div className="flex flex-col justify-center">
               <h1 className="profile-name mb-0">
                 {profile?.nickname || `User ${userId}`}
               </h1>
@@ -64,8 +71,9 @@ export function ProfileHeader({
                 <span>{photosCount} Photos</span>
               </div>
             </div>
+            {/* Bio moved inside the right column, uses profile-bio class for constraints */}
+            {profile?.bio && <p className="profile-bio">{profile.bio}</p>}
           </div>
-          {profile?.bio && <p className="profile-bio mt-5">{profile.bio}</p>}
         </div>
       </div>
     </div>

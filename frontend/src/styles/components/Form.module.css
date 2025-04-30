@@ -7,7 +7,6 @@
   border-radius: 0.5rem;
   color: rgb(229, 231, 235);
   transition: all 0.2s;
-  backdrop-filter: blur(4px);
 }
 
 .input::placeholder,

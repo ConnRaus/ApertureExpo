@@ -60,10 +60,10 @@
 }
 
 .contestInfo {
-  padding: 1rem;
+  padding: 0.75rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.25rem;
   flex-grow: 1;
   min-height: 8rem;
 }
@@ -106,7 +106,7 @@
 
 .submissionCount {
   margin-top: auto;
-  padding-top: 0.75rem;
+  padding-top: 0.5rem;
   color: rgb(129, 140, 248);
   font-weight: 500;
   font-size: 0.875rem;
