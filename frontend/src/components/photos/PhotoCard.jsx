@@ -163,7 +163,7 @@ export function PhotoCard({
           <>
             <h3>{photo.title}</h3>
             {photo.description && (
-              <p className="photo-description line-clamp-3">
+              <p className="photo-description line-clamp-1">
                 {photo.description}
               </p>
             )}

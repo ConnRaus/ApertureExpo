@@ -191,6 +191,15 @@
     text-overflow: ellipsis;
   }
 
+  .line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+  }
+
   .upload-date {
     color: rgb(107, 114, 128);
     font-size: 0.75rem;
