@@ -12,7 +12,7 @@ function Footer() {
             {/* About Section */}
             <div>
               <h3 className="text-base font-semibold text-gray-200 mb-3">
-                About Photo Contests
+                About Aperture Expo
               </h3>
               <p className="text-gray-400 text-sm leading-relaxed">
                 Join our growing community of photographers, share your creative
@@ -140,7 +140,7 @@ function Footer() {
           {/* Copyright */}
           <div className="mt-6 pt-4 border-t border-gray-700/20 text-center">
             <p className="text-gray-500 text-sm">
-              © {currentYear} Photo Contests by Connor Rauscher. All rights
+              © {currentYear} Aperture Expo by Connor Rauscher. All rights
               reserved.
             </p>
           </div>

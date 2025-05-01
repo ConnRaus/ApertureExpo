@@ -1,4 +1,4 @@
-# Photo Contest App
+# Aperture Expo
 
 A web application for hosting and participating in photo contests. Users can create contests, submit photos, and vote on submissions. Built with React, Node.js, and PostgreSQL.
 

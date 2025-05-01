@@ -7,8 +7,8 @@ function HomePage() {
   return (
     <div className={styles.homePage}>
       <div className={styles.welcomeSection}>
-        <h1>Photo Contest App</h1>
-        <h2>Welcome to Photo Contests</h2>
+        <h1>Aperture Expo</h1>
+        <h2>Welcome to Aperture Expo!</h2>
         <p>
           Join exciting photo contests and showcase your photography skills!
         </p>
