@@ -118,12 +118,32 @@ router.put("/me", async (req, res) => {
 router.get("/:userId/photos", async (req, res) => {
   try {
     const { userId } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 25; // 25 photos per page
+    const offset = (page - 1) * limit;
+
+    // First get total count
+    const totalPhotos = await Photo.count({
+      where: { userId },
+    });
+
+    // Then get paginated photos
     const photos = await Photo.findAll({
       where: { userId },
       order: [["createdAt", "DESC"]],
+      limit,
+      offset,
     });
 
-    res.json(photos);
+    res.json({
+      photos,
+      pagination: {
+        page,
+        limit,
+        totalPhotos,
+        totalPages: Math.ceil(totalPhotos / limit),
+      },
+    });
   } catch (error) {
     console.error("Error fetching user photos:", error);
     res.status(500).json({ error: "Failed to fetch photos" });
@@ -133,6 +153,10 @@ router.get("/:userId/photos", async (req, res) => {
 // Get user profile
 router.get("/:userId/profile", requireAuth(), async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 25; // 25 photos per page
+    const offset = (page - 1) * limit;
+
     let user = await User.findByPk(req.params.userId);
 
     if (!user) {
@@ -152,9 +176,17 @@ router.get("/:userId/profile", requireAuth(), async (req, res) => {
       userProfile.avatarUrl = null;
     }
 
+    // Get total photo count for pagination
+    const totalPhotos = await Photo.count({
+      where: { userId: req.params.userId },
+    });
+
+    // Get paginated photos
     const photos = await Photo.findAll({
       where: { userId: req.params.userId },
       order: [["createdAt", "DESC"]],
+      limit,
+      offset,
       include: [
         {
           model: Contest,
@@ -166,6 +198,12 @@ router.get("/:userId/profile", requireAuth(), async (req, res) => {
     res.json({
       profile: userProfile,
       photos: photos || [],
+      pagination: {
+        page,
+        limit,
+        totalPhotos,
+        totalPages: Math.ceil(totalPhotos / limit),
+      },
     });
   } catch (error) {
     console.error("Error fetching user profile:", error);

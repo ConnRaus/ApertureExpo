@@ -127,6 +127,11 @@ router.get("/contests", async (req, res) => {
 // Get contest by ID
 router.get("/contests/:id", async (req, res) => {
   try {
+    // Get pagination parameters from query string
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 25; // 25 photos per page
+    const offset = (page - 1) * limit;
+
     const contest = await Contest.findByPk(req.params.id, {
       include: [
         {
@@ -223,11 +228,40 @@ router.get("/contests/:id", async (req, res) => {
       }
     });
 
+    // Create a combined list of all unique photo IDs for this contest
+    const allPhotoIds = new Set(contestData.Photos.map((p) => p.id));
+    legacyPhotos.forEach((p) => allPhotoIds.add(p.id));
+    const finalPhotoIds = Array.from(allPhotoIds);
+
+    // Filter the contestData.Photos to include only those in finalPhotoIds (removes potential duplicates before counting)
+    contestData.Photos = contestData.Photos.filter((p) =>
+      allPhotoIds.has(p.id)
+    );
+
+    // Count total photos *after* merging and deduplication
+    const totalPhotos = finalPhotoIds.length;
+
+    // --- Sort photos by createdAt DESC by default ---
+    contestData.Photos.sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+    // --- End default sorting ---
+
+    // --- Get user-specific submission count if authenticated ---
+    let userSubmissionCount = 0;
+    if (req.auth?.userId) {
+      // Count photos in the final list that belong to the current user
+      userSubmissionCount = contestData.Photos.filter(
+        (p) => p.userId === req.auth.userId
+      ).length;
+    }
+    // --- End user-specific submission count ---
+
     // If we're in the voting phase, get vote counts for each photo
     if (contestData.phase === "voting" || contestData.phase === "ended") {
       try {
         // Instead of using raw SQL, use Sequelize for better table name handling
-        const photoIdArray = [...photoIds];
+        const photoIdArray = [...finalPhotoIds];
 
         // Get all votes for these photos in this contest
         const votes = await Vote.findAll({
@@ -302,9 +336,23 @@ router.get("/contests/:id", async (req, res) => {
       }
     }
 
-    contestData.submissionCount = contestData.Photos.length;
+    contestData.submissionCount = totalPhotos;
+    contestData.userSubmissionCount = userSubmissionCount;
 
-    res.json(contestData);
+    // Apply pagination to photos array *after* all processing and sorting
+    const paginatedPhotos = contestData.Photos.slice(offset, offset + limit);
+
+    // Return pagination metadata along with contest data
+    res.json({
+      ...contestData,
+      Photos: paginatedPhotos,
+      pagination: {
+        page,
+        limit,
+        totalPhotos,
+        totalPages: Math.ceil(totalPhotos / limit),
+      },
+    });
   } catch (error) {
     console.error("Error fetching contest:", error);
     res.status(500).json({ error: "Failed to fetch contest" });
@@ -346,73 +394,45 @@ router.put("/contests/:id", requireAuth(), async (req, res) => {
 router.get("/contests/:contestId/top-photos", async (req, res) => {
   try {
     const { contestId } = req.params;
-    const { limit = 10 } = req.query;
+    // We ignore the requested limit for now, as we need to handle ties correctly.
+    // We might fetch more than 3 initially to find the 3rd place score.
 
-    // console.log(`Fetching top photos for contest ${contestId}`);
-
-    // Check if contest exists
     const contest = await Contest.findByPk(contestId);
     if (!contest) {
-      // console.log(`Contest ${contestId} not found`);
       return res.status(404).json({ error: "Contest not found" });
     }
 
-    // Check contest status
-    // console.log(
-    //   `Contest ${contestId} status: ${contest.status}, phase: ${contest.phase}`
-    // );
-
-    // Try ALL methods to find photos for this contest
-    // console.log("Looking for photos with direct ContestId relationship...");
+    // --- Find all photos associated with the contest ---
     let directPhotos = await Photo.findAll({
       where: { ContestId: contestId },
-      attributes: ["id", "title"],
+      attributes: ["id"],
       raw: true,
     });
-    // console.log(`Found ${directPhotos.length} direct photos`);
-
-    // console.log("Looking for photos with many-to-many relationship...");
     const contestWithPhotos = await Contest.findByPk(contestId, {
       include: [
         {
           model: Photo,
           as: "Photos",
           through: { attributes: [] },
-          attributes: ["id", "title"],
+          attributes: ["id"],
         },
       ],
     });
-
-    let manyToManyPhotos = [];
-    if (contestWithPhotos && contestWithPhotos.Photos) {
-      manyToManyPhotos = contestWithPhotos.Photos.map((photo) => ({
-        id: photo.id,
-        title: photo.title,
-      }));
-    }
-    // console.log(`Found ${manyToManyPhotos.length} many-to-many photos`);
-
-    // Check if there's any overlap
-    const directIds = new Set(directPhotos.map((p) => p.id));
-    const manyToManyIds = new Set(manyToManyPhotos.map((p) => p.id));
-    const overlapCount = [...directIds].filter((id) =>
-      manyToManyIds.has(id)
-    ).length;
-    // console.log(
-    //   `Overlap between direct and many-to-many: ${overlapCount} photos`
-    // );
-
-    // Use both sets of photos
-    const allPhotoIds = [...new Set([...directIds, ...manyToManyIds])];
-    // console.log(`Total unique photos found: ${allPhotoIds.length}`);
+    let manyToManyPhotos =
+      contestWithPhotos?.Photos?.map((p) => ({ id: p.id })) || [];
+    const allPhotoIds = [
+      ...new Set([
+        ...directPhotos.map((p) => p.id),
+        ...manyToManyPhotos.map((p) => p.id),
+      ]),
+    ];
 
     if (allPhotoIds.length === 0) {
-      // console.log(`No photos found for contest ${contestId}`);
       return res.json([]);
     }
+    // --- End find all photos ---
 
-    // Get votes for these photos
-    // console.log(`Getting votes for ${allPhotoIds.length} photos...`);
+    // Get votes for ALL these photos
     const votes = await Vote.findAll({
       where: {
         photoId: { [Op.in]: allPhotoIds },
@@ -421,53 +441,47 @@ router.get("/contests/:contestId/top-photos", async (req, res) => {
       attributes: ["photoId", "value"],
       raw: true,
     });
-    // console.log(
-    //   `Found ${votes.length} votes for photos in contest ${contestId}`
-    // );
 
-    // Get actual photos
+    // Get full photo details for ALL photos
     const photos = await Photo.findAll({
       where: { id: { [Op.in]: allPhotoIds } },
-      include: [
-        {
-          model: User,
-          as: "User",
-          attributes: ["id", "nickname"],
-        },
-      ],
+      include: [{ model: User, as: "User", attributes: ["id", "nickname"] }],
       attributes: ["id", "title", "thumbnailUrl", "s3Url", "userId"],
     });
-    // console.log(`Retrieved full details for ${photos.length} photos`);
 
-    // Calculate stats per photo
-    const photoStats = {};
+    // Calculate stats for ALL photos
+    const photoStatsMap = new Map();
     allPhotoIds.forEach((photoId) => {
-      photoStats[photoId] = {
+      photoStatsMap.set(photoId, {
         voteCount: 0,
         totalScore: 0,
         averageRating: 0,
-      };
+      });
     });
 
-    // Populate stats from votes
     votes.forEach((vote) => {
-      const stats = photoStats[vote.photoId];
+      const stats = photoStatsMap.get(vote.photoId);
       if (stats) {
         stats.voteCount++;
         stats.totalScore += vote.value;
+      }
+    });
+
+    // Calculate average rating after counting votes
+    photoStatsMap.forEach((stats) => {
+      if (stats.voteCount > 0) {
         stats.averageRating = stats.totalScore / stats.voteCount;
       }
     });
 
-    // Combine photo data with vote stats
-    const result = photos.map((photo) => {
+    // Combine photo data with vote stats for ALL photos
+    const allPhotosWithStats = photos.map((photo) => {
       const photoData = photo.toJSON();
-      const stats = photoStats[photo.id] || {
+      const stats = photoStatsMap.get(photo.id) || {
         voteCount: 0,
         totalScore: 0,
         averageRating: 0,
       };
-
       return {
         ...photoData,
         voteCount: parseInt(stats.voteCount || 0),
@@ -476,21 +490,36 @@ router.get("/contests/:contestId/top-photos", async (req, res) => {
       };
     });
 
-    // Sort by score and vote count
-    result.sort((a, b) => {
+    // Sort ALL photos by score and vote count
+    allPhotosWithStats.sort((a, b) => {
       if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
-      return b.voteCount - a.voteCount;
+      return b.voteCount - a.voteCount; // Secondary sort by vote count
     });
 
-    // Return only the requested number of results
-    const limitedResult = result.slice(0, parseInt(limit));
-    // console.log(
-    //   `Returning ${limitedResult.length} photos for contest ${contestId}`
-    // );
+    // Assign ranks correctly, handling ties
+    let currentRank = 0;
+    let lastScore = -Infinity; // Use -Infinity to handle potential zero/negative scores correctly
+    let photosProcessedForRank = 0;
+    const rankedPhotos = allPhotosWithStats.map((photo) => {
+      photosProcessedForRank++;
+      if (photo.totalScore < lastScore) {
+        // Only update rank if the score is lower than the previous photo's score
+        currentRank = photosProcessedForRank;
+      } else if (lastScore === -Infinity) {
+        // First photo always gets rank 1
+        currentRank = 1;
+      }
+      // If score is same as last, currentRank remains unchanged
 
-    res.json(limitedResult);
+      lastScore = photo.totalScore;
+      return { ...photo, rank: currentRank };
+    });
+
+    // Filter to include only photos with rank 1, 2, or 3
+    const finalWinners = rankedPhotos.filter((p) => p.rank <= 3);
+
+    res.json(finalWinners);
   } catch (error) {
-    // Keep error log
     console.error(
       `Error getting top photos for contest ${req.params.contestId}:`,
       error
