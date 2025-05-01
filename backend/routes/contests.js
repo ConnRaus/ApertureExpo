@@ -286,9 +286,15 @@ router.get("/contests/:id", async (req, res) => {
         const totalVotes = votes.length;
         contestData.totalVotes = totalVotes;
 
-        // Sort photos by votes
+        // Sort photos based on phase
         contestData.Photos.sort((a, b) => {
-          return (b.totalScore || 0) - (a.totalScore || 0);
+          if (contestData.phase === "voting") {
+            // During voting, sort by lowest score first
+            return (a.totalScore || 0) - (b.totalScore || 0);
+          } else {
+            // After voting (ended phase), sort by highest score first
+            return (b.totalScore || 0) - (a.totalScore || 0);
+          }
         });
       } catch (error) {
         console.error("Error processing votes:", error);
