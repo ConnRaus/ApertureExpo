@@ -5,15 +5,22 @@ export class UserService {
     this.getToken = getToken;
   }
 
-  async fetchUserProfile(userId) {
+  async fetchUserProfile(userId, page = 1, limit = 24) {
     const token = await this.getToken();
-    const response = await fetch(`${API_URL}/users/${userId}/profile`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
-    });
-    if (!response.ok) throw new Error("Failed to fetch user profile");
+    const response = await fetch(
+      `${API_URL}/users/${userId}/profile?page=${page}&limit=${limit}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch user profile");
+    }
+
     return response.json();
   }
 

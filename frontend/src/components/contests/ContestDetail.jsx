@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { useContestService } from "../../hooks";
 import styles from "../../styles/components/Contest.module.css";
 import { ContestHeader } from "./ContestHeader";
@@ -22,7 +22,12 @@ export function ContestDetail(props) {
     contestId = uuidMatch ? uuidMatch[0] : slugAndId;
   }
 
+  // Get page from URL query params
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentPage = parseInt(searchParams.get("page") || "1");
+
   const [contest, setContest] = useState(null);
+  const [winners, setWinners] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showUploadForm, setShowUploadForm] = useState(
@@ -34,11 +39,11 @@ export function ContestDetail(props) {
   const phaseTransitionTimersRef = useRef([]);
 
   useEffect(() => {
-    fetchContestDetails();
+    fetchContestDetails(true, currentPage);
 
     // Set up periodic refresh every 30 seconds as a fallback
     const refreshInterval = setInterval(() => {
-      fetchContestDetails(false);
+      fetchContestDetails(false, currentPage);
     }, 30000);
 
     // Clean up interval and timers on unmount
@@ -46,7 +51,14 @@ export function ContestDetail(props) {
       clearInterval(refreshInterval);
       phaseTransitionTimersRef.current.forEach((timer) => clearTimeout(timer));
     };
-  }, [contestId]);
+  }, [contestId, currentPage]);
+
+  // Effect to fetch winners separately when contest ends
+  useEffect(() => {
+    if (contest?.phase === "ended") {
+      fetchWinners();
+    }
+  }, [contest?.phase, contestId]);
 
   // Helper function to schedule precise refreshes at phase transition times
   const schedulePhaseTransitionRefreshes = (contestData) => {
@@ -88,7 +100,7 @@ export function ContestDetail(props) {
         // Add 2 seconds buffer to ensure the backend has updated the phase
         const timer = setTimeout(() => {
           console.log(`Executing scheduled refresh for ${transition.label}`);
-          fetchContestDetails(false).then(() => {
+          fetchContestDetails(false, currentPage).then(() => {
             // Force page reload 1 second after the fetch to ensure we get the new state
             setTimeout(() => window.location.reload(), 1000);
           });
@@ -99,13 +111,13 @@ export function ContestDetail(props) {
     });
   };
 
-  const fetchContestDetails = async (showLoading = true) => {
+  const fetchContestDetails = async (showLoading = true, page = 1) => {
     try {
       if (showLoading) {
         setLoading(true);
       }
 
-      const data = await contestService.fetchContestDetails(contestId);
+      const data = await contestService.fetchContestDetails(contestId, page);
 
       // Check for status/phase changes and force reload
       if (contest && previousPhaseRef.current) {
@@ -149,9 +161,26 @@ export function ContestDetail(props) {
     }
   };
 
-  // Calculate user's submission count
-  const userSubmissionCount =
-    contest?.Photos?.filter((photo) => photo.userId === user?.id).length || 0;
+  // Fetch top photos for the results podium
+  const fetchWinners = async () => {
+    try {
+      // Fetch top 5 to better handle ties for 3rd place later
+      const topPhotos = await contestService.fetchTopPhotos(contestId, 5);
+      setWinners(topPhotos || []);
+    } catch (error) {
+      console.error("Failed to fetch contest winners:", error);
+      // Don't necessarily show error toast here, main content still loads
+      setWinners([]); // Ensure winners is an empty array on error
+    }
+  };
+
+  // Handle page change for submissions pagination
+  const handlePageChange = (page) => {
+    setSearchParams({ page: page.toString() });
+  };
+
+  // Calculate user's submission count (using the count provided by the API)
+  const userSubmissionCount = contest?.userSubmissionCount ?? 0;
 
   // Check if user has reached the submission limit
   const maxPhotosPerUser = contest?.maxPhotosPerUser;
@@ -278,9 +307,9 @@ export function ContestDetail(props) {
 
       <div className="mb-8">{renderPhaseSpecificContent()}</div>
 
-      {contest.phase === "ended" && contest.Photos?.length > 0 && (
+      {contest.phase === "ended" && winners.length > 0 && (
         <div className="mb-8">
-          <ContestResults photos={contest.Photos} contestId={contestId} />
+          <ContestResults photos={winners} contestId={contestId} />
         </div>
       )}
 
@@ -288,6 +317,8 @@ export function ContestDetail(props) {
         photos={contest.Photos || []}
         contestId={contestId}
         contestPhase={contest.phase}
+        pagination={contest.pagination}
+        onPageChange={handlePageChange}
       />
     </div>
   );

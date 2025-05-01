@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styles from "../../styles/components/Contest.module.css";
 import { PhotoLightbox } from "../photos/PhotoLightbox";
 import { PhotoVoteButton } from "./PhotoVoteButton";
 import { Link } from "react-router-dom";
+import { Pagination } from "../common/Pagination";
 
 function ContestPhotoCard({ photo, contestId, contestPhase, onClick }) {
   const handleImageError = (e) => {
@@ -65,48 +66,34 @@ export function ContestSubmissions({
   photos = [],
   contestId,
   contestPhase = "submission",
+  pagination = null,
+  onPageChange,
 }) {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(-1);
 
-  if (photos.length === 0) {
+  if (!photos || photos.length === 0) {
     return <p>No submissions yet. Be the first to submit!</p>;
   }
 
-  // If the contest is in voting or ended phase, sort photos by votes (if available)
+  // Photos are now assumed to be pre-sorted by the backend based on phase.
+  // We only need to handle assigning rank for display in the 'ended' phase.
   let displayPhotos = [...photos];
-  if (
-    (contestPhase === "voting" || contestPhase === "ended") &&
-    displayPhotos[0]?.totalScore !== undefined
-  ) {
-    displayPhotos.sort((a, b) => {
-      // Sort by total score or vote count if available
-      return (
-        (b.totalScore || 0) - (a.totalScore || 0) ||
-        (b.voteCount || 0) - (a.voteCount || 0)
-      );
+  if (contestPhase === "ended" && displayPhotos[0]?.totalScore !== undefined) {
+    // Add rank property for display
+    let rank = 0;
+    let lastScore = Infinity;
+    let photosProcessedForRank = 0;
+    displayPhotos = displayPhotos.map((photo) => {
+      photosProcessedForRank++;
+      const currentScore = photo.totalScore ?? -Infinity;
+      if (currentScore < lastScore) {
+        rank = photosProcessedForRank;
+      } else if (lastScore === -Infinity) {
+        rank = 1;
+      }
+      lastScore = currentScore;
+      return { ...photo, rank };
     });
-
-    // Add tied status to photos with the same score
-    if (contestPhase === "ended") {
-      let rank = 1;
-      let prevScore = null;
-      let tieCount = 0;
-
-      displayPhotos.forEach((photo, index) => {
-        const currentScore = photo.totalScore || 0;
-
-        if (index > 0 && currentScore === prevScore) {
-          photo.rank = rank - tieCount;
-          tieCount++;
-        } else {
-          rank = index + 1;
-          photo.rank = rank;
-          tieCount = 1;
-        }
-
-        prevScore = currentScore;
-      });
-    }
   }
 
   return (
@@ -117,7 +104,7 @@ export function ContestSubmissions({
         }`}
       >
         {contestPhase === "ended" ? "All Submissions" : "Submissions"} (
-        {photos.length})
+        {pagination?.totalPhotos || photos.length})
       </h3>
 
       <div className={styles.submissionsGrid}>
@@ -131,6 +118,15 @@ export function ContestSubmissions({
           />
         ))}
       </div>
+
+      {/* Show pagination if pagination data is available */}
+      {pagination && (
+        <Pagination
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          onPageChange={onPageChange}
+        />
+      )}
 
       <PhotoLightbox
         photos={displayPhotos}

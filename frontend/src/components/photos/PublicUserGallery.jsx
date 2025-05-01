@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@clerk/clerk-react";
+import { useSearchParams } from "react-router-dom";
 import { PhotoGrid } from "./PhotoGrid";
 import { PhotoLightbox } from "./PhotoLightbox";
 import { EditProfileModal } from "../user/EditProfileModal";
 import { PhotoSelector } from "./PhotoSelector";
 import { ProfileHeader } from "../user/ProfileHeader";
+import { Pagination } from "../common/Pagination";
 import {
   usePhotoService,
   useUserService,
@@ -13,7 +15,12 @@ import {
 import { LoadingSpinner } from "../common/CommonComponents";
 
 export function PublicUserGallery({ userId, isOwner }) {
+  // Get page from URL query params
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentPage = parseInt(searchParams.get("page") || "1");
+
   const [photos, setPhotos] = useState([]);
+  const [pagination, setPagination] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(-1);
@@ -33,8 +40,8 @@ export function PublicUserGallery({ userId, isOwner }) {
   const photoService = usePhotoService();
 
   useEffect(() => {
-    fetchUserProfile();
-  }, [userId]);
+    fetchUserProfile(currentPage);
+  }, [userId, currentPage]);
 
   useEffect(() => {
     return () => {
@@ -44,11 +51,12 @@ export function PublicUserGallery({ userId, isOwner }) {
     };
   }, [tempBannerImage]);
 
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = async (page = 1) => {
     setIsLoading(true);
     try {
-      const data = await userService.fetchUserProfile(userId);
+      const data = await userService.fetchUserProfile(userId, page);
       setPhotos(data.photos || []);
+      setPagination(data.pagination || null);
       setProfile(data.profile);
       setNickname(data.profile.nickname || "");
       setBio(data.profile.bio || "");
@@ -201,6 +209,11 @@ export function PublicUserGallery({ userId, isOwner }) {
     setIsEditing(false);
   };
 
+  // Handle page change
+  const handlePageChange = (page) => {
+    setSearchParams({ page: page.toString() });
+  };
+
   if (error) {
     return <div className="error-message">{error}</div>;
   }
@@ -217,13 +230,15 @@ export function PublicUserGallery({ userId, isOwner }) {
     return <div></div>;
   }
 
+  const photosCount = pagination?.totalPhotos || photos.length;
+
   return (
     <div className="public-user-gallery">
       <ProfileHeader
         profile={profile}
         userId={userId}
         bannerImage={bannerImage}
-        photosCount={photos.length}
+        photosCount={photosCount}
         isOwner={isOwner}
         onEditClick={() => setIsEditing(true)}
       />
@@ -237,6 +252,15 @@ export function PublicUserGallery({ userId, isOwner }) {
         onEdit={handleEdit}
         hideProfileLink={true}
       />
+
+      {/* Show pagination if pagination data is available */}
+      {pagination && pagination.totalPages > 1 && (
+        <Pagination
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          onPageChange={handlePageChange}
+        />
+      )}
 
       <EditProfileModal
         isEditing={isEditing}

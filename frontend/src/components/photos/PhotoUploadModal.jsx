@@ -277,17 +277,23 @@ export function PhotoUploadModal({
                 Select Photo
               </label>
               <div
-                className={`border-2 border-dashed rounded-lg p-6 text-center ${
+                className={`border-2 border-dashed rounded-lg text-center ${
                   showError ? "border-red-500" : "border-gray-600"
                 } ${
                   isDragging
                     ? "border-indigo-500 bg-gray-700/50"
                     : "border-gray-600 hover:border-gray-500 bg-gray-700/20"
-                } transition-colors`}
+                } transition-colors relative cursor-pointer min-h-[15rem] flex items-center justify-center`}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
+                // Make the whole div clickable if no preview
+                onClick={() => {
+                  if (!previewUrl && !uploading) {
+                    document.getElementById("photoUpload").click();
+                  }
+                }}
               >
                 <input
                   type="file"
@@ -299,31 +305,29 @@ export function PhotoUploadModal({
                   disabled={uploading}
                 />
                 {previewUrl ? (
-                  <div className="relative">
+                  <div
+                    className="absolute inset-0 w-full h-full rounded-lg bg-gray-900 overflow-hidden cursor-pointer group"
+                    onClick={(e) => {
+                      if (!uploading) {
+                        e.stopPropagation(); // Prevent triggering parent div's onClick if needed
+                        document.getElementById("photoUpload").click();
+                      }
+                    }}
+                    title="Click to change photo"
+                  >
                     <img
                       src={previewUrl}
                       alt="Preview"
-                      className="max-h-60 mx-auto mb-4 rounded-lg object-contain"
+                      className="w-full h-full object-cover transition-opacity duration-200 group-hover:opacity-75"
                     />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        document.getElementById("photoUpload").click()
-                      }
-                      className="absolute bottom-2 right-2 text-sm px-2 py-1 bg-gray-600/70 text-white rounded hover:bg-gray-500/70"
-                      disabled={uploading}
-                    >
-                      Change Photo
-                    </button>
                   </div>
                 ) : (
-                  <label htmlFor="photoUpload" className="cursor-pointer">
-                    <p className="text-gray-400">
-                      {isDragging
-                        ? "Drop photo here"
-                        : "Drag & drop or click to select"}
-                    </p>
-                  </label>
+                  // Label removed, text centered directly in the div
+                  <p className="text-gray-400 p-6">
+                    {isDragging
+                      ? "Drop photo here"
+                      : "Drag & drop or click to select"}
+                  </p>
                 )}
               </div>
               {showError && (

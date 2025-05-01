@@ -17,14 +17,17 @@ export class ContestService {
     return response.json();
   }
 
-  async fetchContestDetails(contestId) {
+  async fetchContestDetails(contestId, page = 1) {
     const token = await this.getToken();
-    const response = await fetch(`${API_URL}/contests/${contestId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
-    });
+    const response = await fetch(
+      `${API_URL}/contests/${contestId}?page=${page}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      }
+    );
     if (!response.ok) throw new Error("Failed to fetch contest details");
     return response.json();
   }
