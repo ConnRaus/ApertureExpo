@@ -1,5 +1,6 @@
 import { Sequelize } from "sequelize";
 import dotenv from "dotenv";
+import { URL } from "url"; // Import URL parser
 
 dotenv.config(); // Load .env file for local development
 
@@ -8,23 +9,32 @@ let sequelize;
 
 // Production environment (like Render) typically uses DATABASE_URL
 if (process.env.DATABASE_URL && env === "production") {
-  sequelize = new Sequelize(process.env.DATABASE_URL, {
-    dialect: "postgres",
-    protocol: "postgres",
-    dialectOptions: {
-      ssl: {
-        require: true,
-        rejectUnauthorized: false, // Required for Supabase/some cloud providers
+  const dbUrl = new URL(process.env.DATABASE_URL);
+
+  sequelize = new Sequelize(
+    dbUrl.pathname.slice(1), // database name (remove leading '/')
+    dbUrl.username, // username
+    dbUrl.password, // password
+    {
+      host: dbUrl.hostname, // host
+      port: dbUrl.port, // port
+      dialect: "postgres",
+      protocol: "postgres", // Keep protocol info if needed, though dialect implies it
+      dialectOptions: {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false, // Required for Supabase/some cloud providers
+        },
       },
-    },
-    logging: false,
-    pool: {
-      max: 10,
-      min: 2,
-      acquire: 30000,
-      idle: 10000,
-    },
-  });
+      logging: false,
+      pool: {
+        max: 10,
+        min: 2,
+        acquire: 30000,
+        idle: 10000,
+      },
+    }
+  );
 } else {
   // Fallback for development (using individual vars likely from .env or docker-compose)
   // or if DATABASE_URL isn't set in production for some reason
