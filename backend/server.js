@@ -68,6 +68,26 @@ app.use("/users", requireAuth(), userRoutes);
 // Forum routes with user existence check
 app.use("/forum", requireAuth(), ensureUserExists, forumRoutes);
 
+// --- Global Error Handler ---
+// Must come after all routes and other middleware
+app.use((err, req, res, next) => {
+  console.error("\n--- Unhandled Error ---");
+  console.error("Timestamp:", new Date().toISOString());
+  console.error("Request URL:", req.originalUrl);
+  console.error("Request Method:", req.method);
+  console.error("Error Stack:", err.stack);
+  // Send generic error response
+  res.status(err.status || 500).json({
+    error: {
+      message: err.message || "Internal Server Error",
+      // Optionally include stack in development
+      ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
+    },
+  });
+  console.error("--- End Unhandled Error ---\n");
+});
+// --- End Global Error Handler ---
+
 // Initialize database and start server
 async function startServer() {
   try {
