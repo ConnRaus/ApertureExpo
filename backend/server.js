@@ -10,6 +10,7 @@ import userRoutes from "./routes/users.js";
 import voteRoutes from "./routes/votes.js";
 import forumRoutes from "./routes/forum.js";
 import { ensureUserExists } from "./middleware/ensureUserExists.js";
+import sequelize from "./database/config/config.js";
 
 dotenv.config();
 
@@ -18,16 +19,42 @@ const port = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// --- CORS Configuration ---
+// Read allowed origins from ENV variable, split by comma, trim whitespace
+const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter((origin) => origin); // Filter out empty strings
+
+// Add localhost default if in development and not already present
+if (
+  process.env.NODE_ENV !== "production" &&
+  !allowedOrigins.includes("http://localhost:5173")
+) {
+  allowedOrigins.push("http://localhost:5173");
+}
+
+console.log("Allowed CORS Origins:", allowedOrigins); // Log for debugging
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGINS?.split(",") || [
-      "http://localhost",
-      "http://localhost:80",
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      // Allow if origin is in the allowed list
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        const msg = `CORS policy does not allow access from the specified Origin: ${origin}`;
+        return callback(new Error(msg), false);
+      }
+    },
+    credentials: true, // Allow cookies/authorization headers
   })
 );
+// --- End CORS Configuration ---
 
 // Clerk middleware setup
 app.use(clerkMiddleware());
@@ -56,3 +83,5 @@ async function startServer() {
 }
 
 startServer();
+
+export default app;
