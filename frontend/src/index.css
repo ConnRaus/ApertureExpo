@@ -746,44 +746,4 @@
   }
 }
 
-/* Dark mode overrides */
-@media (prefers-color-scheme: light) {
-  body {
-    background-image: linear-gradient(
-      to bottom,
-      rgb(243, 244, 246),
-      rgb(255, 255, 255)
-    );
-    color: rgb(17, 24, 39);
-  }
-
-  .nav-header,
-  .photo-card,
-  .upload-form,
-  .contest-card,
-  .profile-header {
-    background-color: rgba(255, 255, 255, 0.9);
-    border-color: rgba(229, 231, 235, 0.5);
-  }
-
-  .photo-info h3 {
-    color: rgb(17, 24, 39);
-  }
-
-  .photo-info p {
-    color: rgb(75, 85, 99);
-  }
-
-  .form-group label {
-    color: rgb(55, 65, 81);
-  }
-
-  .form-group input[type="text"],
-  .form-group input[type="file"],
-  .form-group select,
-  .form-group textarea {
-    background-color: rgb(249, 250, 251);
-    border-color: rgb(209, 213, 219);
-    color: rgb(17, 24, 39);
-  }
-}
+/* Add other global styles or utility classes here */

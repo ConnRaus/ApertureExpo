@@ -84,29 +84,6 @@ label:has(+ textarea) {
   background-color: rgb(75, 85, 99);
 }
 
-/* Light mode overrides */
-@media (prefers-color-scheme: light) {
-  .input,
-  .textarea {
-    background-color: rgb(249, 250, 251);
-    border-color: rgb(209, 213, 219);
-    color: rgb(17, 24, 39);
-  }
-
-  .input:hover,
-  .textarea:hover {
-    border-color: rgb(156, 163, 175);
-  }
-
-  .input:focus,
-  .textarea:focus {
-    border-color: transparent;
-    box-shadow: 0 0 0 2px rgb(79, 70, 229);
-    position: relative;
-    z-index: 1;
-  }
-
-  .label {
-    color: rgb(55, 65, 81);
-  }
+.submitButton:hover {
+  background-color: rgb(79 70 229 / 1);
 }
