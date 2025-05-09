@@ -9,6 +9,7 @@ import contestRoutes from "./routes/contests.js";
 import userRoutes from "./routes/users.js";
 import voteRoutes from "./routes/votes.js";
 import forumRoutes from "./routes/forum.js";
+import adminRoutes from "./routes/admin.js";
 import { ensureUserExists } from "./middleware/ensureUserExists.js";
 import sequelize from "./database/config/config.js";
 
@@ -23,17 +24,21 @@ app.use(express.urlencoded({ extended: true }));
 
 // --- CORS Configuration ---
 // Read allowed origins from ENV variable, split by comma, trim whitespace
-const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || "")
+const allowedOriginsFromEnv = (process.env.CORS_ALLOWED_ORIGINS || "")
   .split(",")
   .map((origin) => origin.trim())
   .filter((origin) => origin); // Filter out empty strings
 
-// Add localhost default if in development and not already present
-if (
-  process.env.NODE_ENV !== "production" &&
-  !allowedOrigins.includes("http://localhost:5173")
-) {
-  allowedOrigins.push("http://localhost:5173");
+let allowedOrigins = [...allowedOriginsFromEnv];
+
+// Add localhost defaults if in development
+if (process.env.NODE_ENV !== "production") {
+  const devOrigins = ["http://localhost:5173", "http://localhost"];
+  devOrigins.forEach((devOrigin) => {
+    if (!allowedOrigins.includes(devOrigin)) {
+      allowedOrigins.push(devOrigin);
+    }
+  });
 }
 
 console.log("Allowed CORS Origins:", allowedOrigins); // Log for debugging
@@ -58,6 +63,9 @@ app.use(
 
 // Clerk middleware setup
 app.use(clerkMiddleware());
+
+// Admin routes - these routes check for admin access
+app.use("/admin", adminRoutes);
 
 // Routes with authentication
 app.use("/", requireAuth(), ensureUserExists, photoRoutes);

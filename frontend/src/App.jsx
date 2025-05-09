@@ -10,6 +10,7 @@ import ProfilePage from "./pages/ProfilePage";
 import UserProfilePage from "./pages/UserProfilePage";
 import ForumPage from "./pages/ForumPage";
 import ThreadDetailPage from "./pages/ThreadDetailPage";
+import AdminPage from "./pages/AdminPage";
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
                 path="/forum/threads/:threadId"
                 element={<ThreadDetailPage />}
               />
+              <Route path="/admin" element={<AdminPage />} />
             </Routes>
           </SignedIn>
           <SignedOut>
