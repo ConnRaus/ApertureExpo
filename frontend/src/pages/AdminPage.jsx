@@ -46,9 +46,23 @@ const AdminPage = () => {
       // Try to access an admin endpoint - if it succeeds, the user is an admin
       await AdminService.getContests();
       setIsAdmin(true);
+      setError(null);
     } catch (err) {
-      // If we get a 403 Forbidden, the user is not an admin
-      setIsAdmin(false);
+      // Check for network errors vs authorization errors
+      if (err.code === "ERR_NETWORK" || err.message === "Network Error") {
+        setError("Unable to connect to the server. Please try again later.");
+        console.error("Network error during admin check");
+      } else if (err.response && err.response.status === 403) {
+        // If we get a 403 Forbidden, the user is not an admin
+        setIsAdmin(false);
+        setError(null);
+      } else {
+        // For other errors, show a generic message
+        setError(
+          "An error occurred while checking admin access. Please try again."
+        );
+        console.error("Error during admin check");
+      }
     } finally {
       setAdminCheckDone(true);
       setLoading(false);
