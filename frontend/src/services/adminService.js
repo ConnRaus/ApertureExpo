@@ -1,5 +1,6 @@
 import axios from "axios";
 
+// Make sure we get the correct API URL, with a fallback for development
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 /**
@@ -41,16 +42,25 @@ const processContestDates = (contestData) => {
   return processed;
 };
 
+// Create axios instance with specific config
+const apiClient = axios.create({
+  baseURL: API_URL,
+  withCredentials: true, // Important for auth cookies
+  headers: {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  },
+});
+
 export const AdminService = {
   // Fetch all contests for admin view
   getContests: async () => {
     try {
-      const response = await axios.get(`${API_URL}/admin/contests`, {
-        withCredentials: true,
-      });
+      const response = await apiClient.get(`/admin/contests`);
       return response.data;
     } catch (error) {
-      console.error("Error fetching contests for admin:", error);
+      // Log error but remove details in production
+      console.error("Error fetching contests for admin");
       throw error;
     }
   },
@@ -58,15 +68,11 @@ export const AdminService = {
   // Get a single contest by ID
   getContest: async (contestId) => {
     try {
-      const response = await axios.get(
-        `${API_URL}/admin/contests/${contestId}`,
-        {
-          withCredentials: true,
-        }
-      );
+      const response = await apiClient.get(`/admin/contests/${contestId}`);
       return response.data;
     } catch (error) {
-      console.error("Error fetching contest for admin:", error);
+      // Log error but remove details in production
+      console.error("Error fetching contest for admin");
       throw error;
     }
   },
@@ -77,16 +83,11 @@ export const AdminService = {
       // Process dates to preserve local time exactly
       const processedData = processContestDates(contestData);
 
-      const response = await axios.post(
-        `${API_URL}/admin/contests`,
-        processedData,
-        {
-          withCredentials: true,
-        }
-      );
+      const response = await apiClient.post(`/admin/contests`, processedData);
       return response.data;
     } catch (error) {
-      console.error("Error creating contest:", error);
+      // Log error but remove details in production
+      console.error("Error creating contest");
       throw error;
     }
   },
@@ -97,14 +98,14 @@ export const AdminService = {
       // Process dates to preserve local time exactly
       const processedData = processContestDates(contestData);
 
-      const response = await axios.put(
-        `${API_URL}/admin/contests/${contestId}`,
-        processedData,
-        { withCredentials: true }
+      const response = await apiClient.put(
+        `/admin/contests/${contestId}`,
+        processedData
       );
       return response.data;
     } catch (error) {
-      console.error("Error updating contest:", error);
+      // Log error but remove details in production
+      console.error("Error updating contest");
       throw error;
     }
   },
@@ -112,12 +113,11 @@ export const AdminService = {
   // Delete a contest
   deleteContest: async (contestId) => {
     try {
-      await axios.delete(`${API_URL}/admin/contests/${contestId}`, {
-        withCredentials: true,
-      });
+      await apiClient.delete(`/admin/contests/${contestId}`);
       return true;
     } catch (error) {
-      console.error("Error deleting contest:", error);
+      // Log error but remove details in production
+      console.error("Error deleting contest");
       throw error;
     }
   },
