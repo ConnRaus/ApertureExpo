@@ -23,6 +23,8 @@ const AdminPage = () => {
   const [sameAsEndDate, setSameAsEndDate] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminCheckDone, setAdminCheckDone] = useState(false);
+  const [diagnosticInfo, setDiagnosticInfo] = useState(null);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
 
   // Get user's current time zone
   const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -269,6 +271,28 @@ const AdminPage = () => {
     return date.toLocaleString("en-US", options);
   };
 
+  const runDiagnostics = async () => {
+    try {
+      setLoading(true);
+      const statusCheck = await AdminService.checkApiStatus();
+      setDiagnosticInfo({
+        apiStatus: statusCheck,
+        userTimeZone,
+        apiUrl: import.meta.env.VITE_API_URL || "Not set in .env",
+        userEmail: user?.primaryEmailAddress?.emailAddress || "Not signed in",
+        clerkId: user?.id || "Unknown",
+      });
+    } catch (err) {
+      setDiagnosticInfo({
+        error: err.message,
+        userTimeZone,
+        apiUrl: import.meta.env.VITE_API_URL || "Not set in .env",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!isLoaded) {
     return <div className="container mt-4">Loading user data...</div>;
   }
@@ -302,12 +326,65 @@ const AdminPage = () => {
                   You don't have permission to access the admin dashboard. This
                   area is restricted to site administrators only.
                 </p>
-                <a
-                  href="/"
-                  className={`btn ${styles.button} ${styles.buttonPrimary}`}
-                >
-                  Return to Homepage
-                </a>
+                <div className="d-flex flex-column gap-2 align-items-center">
+                  <a
+                    href="/"
+                    className={`btn ${styles.button} ${styles.buttonPrimary}`}
+                  >
+                    Return to Homepage
+                  </a>
+                  <button
+                    onClick={() => {
+                      setShowDiagnostics(!showDiagnostics);
+                      if (!diagnosticInfo) runDiagnostics();
+                    }}
+                    className={`btn ${styles.button} ${styles.buttonOutlineSecondary} mt-2`}
+                  >
+                    {showDiagnostics ? "Hide Diagnostics" : "Show Diagnostics"}
+                  </button>
+                </div>
+
+                {showDiagnostics && (
+                  <div className="mt-4 p-3 border rounded text-start">
+                    <h6 className="mb-3">Diagnostic Information</h6>
+                    {loading ? (
+                      <p>Loading diagnostic data...</p>
+                    ) : diagnosticInfo ? (
+                      <div className="small">
+                        <p>
+                          <strong>Time Zone:</strong>{" "}
+                          {diagnosticInfo.userTimeZone}
+                        </p>
+                        <p>
+                          <strong>API URL:</strong> {diagnosticInfo.apiUrl}
+                        </p>
+                        <p>
+                          <strong>User Email:</strong>{" "}
+                          {diagnosticInfo.userEmail}
+                        </p>
+                        <p>
+                          <strong>Clerk ID:</strong> {diagnosticInfo.clerkId}
+                        </p>
+                        <p>
+                          <strong>API Status:</strong>{" "}
+                          {diagnosticInfo.apiStatus?.success
+                            ? "Connected"
+                            : "Error"}
+                        </p>
+                        {!diagnosticInfo.apiStatus?.success && (
+                          <p className="text-danger">
+                            <strong>Error:</strong>{" "}
+                            {diagnosticInfo.apiStatus?.error} <br />
+                            <strong>Code:</strong>{" "}
+                            {diagnosticInfo.apiStatus?.code}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p>No diagnostic data available</p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

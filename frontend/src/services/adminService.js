@@ -3,6 +3,9 @@ import axios from "axios";
 // Make sure we get the correct API URL, with a fallback for development
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
+// Ensure the API URL doesn't have a trailing slash to avoid redirect issues
+const normalizedApiUrl = API_URL.endsWith("/") ? API_URL.slice(0, -1) : API_URL;
+
 /**
  * Process all dates in contest data to ensure they're preserved exactly as entered
  * by adding explicit timezone offset information
@@ -44,19 +47,47 @@ const processContestDates = (contestData) => {
 
 // Create axios instance with specific config
 const apiClient = axios.create({
-  baseURL: API_URL,
+  baseURL: normalizedApiUrl,
   withCredentials: true, // Important for auth cookies
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
   },
+  // Prevent redirect loops
+  maxRedirects: 0,
 });
 
 export const AdminService = {
+  // Test API connectivity - useful for debugging
+  checkApiStatus: async () => {
+    try {
+      // Try to connect to a simple endpoint that doesn't require auth
+      const response = await axios.get(`${normalizedApiUrl}/api/status`, {
+        timeout: 5000, // 5 second timeout
+        maxRedirects: 0,
+      });
+      return {
+        success: true,
+        status: response.status,
+        data: response.data,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        code: error.code,
+        status: error.response?.status,
+      };
+    }
+  },
+
   // Fetch all contests for admin view
   getContests: async () => {
     try {
-      const response = await apiClient.get(`/admin/contests`);
+      // Use absolute path to avoid any path construction issues
+      const response = await apiClient.get(
+        `${normalizedApiUrl}/admin/contests`
+      );
       return response.data;
     } catch (error) {
       // Log error but remove details in production
@@ -68,7 +99,9 @@ export const AdminService = {
   // Get a single contest by ID
   getContest: async (contestId) => {
     try {
-      const response = await apiClient.get(`/admin/contests/${contestId}`);
+      const response = await apiClient.get(
+        `${normalizedApiUrl}/admin/contests/${contestId}`
+      );
       return response.data;
     } catch (error) {
       // Log error but remove details in production
@@ -83,7 +116,10 @@ export const AdminService = {
       // Process dates to preserve local time exactly
       const processedData = processContestDates(contestData);
 
-      const response = await apiClient.post(`/admin/contests`, processedData);
+      const response = await apiClient.post(
+        `${normalizedApiUrl}/admin/contests`,
+        processedData
+      );
       return response.data;
     } catch (error) {
       // Log error but remove details in production
@@ -99,7 +135,7 @@ export const AdminService = {
       const processedData = processContestDates(contestData);
 
       const response = await apiClient.put(
-        `/admin/contests/${contestId}`,
+        `${normalizedApiUrl}/admin/contests/${contestId}`,
         processedData
       );
       return response.data;
@@ -113,7 +149,7 @@ export const AdminService = {
   // Delete a contest
   deleteContest: async (contestId) => {
     try {
-      await apiClient.delete(`/admin/contests/${contestId}`);
+      await apiClient.delete(`${normalizedApiUrl}/admin/contests/${contestId}`);
       return true;
     } catch (error) {
       // Log error but remove details in production
