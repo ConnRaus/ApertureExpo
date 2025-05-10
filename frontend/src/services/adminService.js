@@ -35,15 +35,6 @@ const processContestDates = (contestData) => {
 
       // Convert to ISO string which will include timezone information
       processed[field] = date.toISOString();
-
-      console.log(`Processed ${field}:`, {
-        original: localDateString,
-        processed: processed[field],
-        localTime: date.toLocaleString("en-US", {
-          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          timeZoneName: "short",
-        }),
-      });
     }
   });
 
@@ -105,11 +96,8 @@ export const AdminService = {
   // Create a new contest
   createContest: async (contestData) => {
     try {
-      console.log("Original contest data:", contestData);
-
       // Process dates to preserve local time exactly
       const processedData = processContestDates(contestData);
-      console.log("Processed contest data:", processedData);
 
       const authConfig = await getAuthHeaders();
       const response = await axios.post(
@@ -127,11 +115,8 @@ export const AdminService = {
   // Update an existing contest
   updateContest: async (contestId, contestData) => {
     try {
-      console.log("Original update data:", contestData);
-
       // Process dates to preserve local time exactly
       const processedData = processContestDates(contestData);
-      console.log("Processed update data:", processedData);
 
       const authConfig = await getAuthHeaders();
       const response = await axios.put(
