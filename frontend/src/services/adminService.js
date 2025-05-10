@@ -35,19 +35,51 @@ const processContestDates = (contestData) => {
 
       // Convert to ISO string which will include timezone information
       processed[field] = date.toISOString();
+
+      console.log(`Processed ${field}:`, {
+        original: localDateString,
+        processed: processed[field],
+        localTime: date.toLocaleString("en-US", {
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          timeZoneName: "short",
+        }),
+      });
     }
   });
 
   return processed;
 };
 
+// Get the Clerk session token
+const getAuthHeaders = async () => {
+  try {
+    // When in browser environment
+    if (typeof window !== "undefined") {
+      // This checks if the Clerk global object is available
+      if (window.Clerk && window.Clerk.session) {
+        const token = await window.Clerk.session.getToken();
+        return {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        };
+      }
+    }
+    // Fallback to just cookies if we can't get the token
+    return { withCredentials: true };
+  } catch (error) {
+    console.error("Error getting auth token:", error);
+    return { withCredentials: true };
+  }
+};
+
 export const AdminService = {
   // Fetch all contests for admin view
   getContests: async () => {
     try {
-      const response = await axios.get(`${API_URL}/admin/contests`, {
-        withCredentials: true,
-      });
+      const authConfig = await getAuthHeaders();
+      const response = await axios.get(`${API_URL}/admin/contests`, authConfig);
       return response.data;
     } catch (error) {
       console.error("Error fetching contests for admin:", error);
@@ -58,11 +90,10 @@ export const AdminService = {
   // Get a single contest by ID
   getContest: async (contestId) => {
     try {
+      const authConfig = await getAuthHeaders();
       const response = await axios.get(
         `${API_URL}/admin/contests/${contestId}`,
-        {
-          withCredentials: true,
-        }
+        authConfig
       );
       return response.data;
     } catch (error) {
@@ -74,15 +105,17 @@ export const AdminService = {
   // Create a new contest
   createContest: async (contestData) => {
     try {
+      console.log("Original contest data:", contestData);
+
       // Process dates to preserve local time exactly
       const processedData = processContestDates(contestData);
+      console.log("Processed contest data:", processedData);
 
+      const authConfig = await getAuthHeaders();
       const response = await axios.post(
         `${API_URL}/admin/contests`,
         processedData,
-        {
-          withCredentials: true,
-        }
+        authConfig
       );
       return response.data;
     } catch (error) {
@@ -94,13 +127,17 @@ export const AdminService = {
   // Update an existing contest
   updateContest: async (contestId, contestData) => {
     try {
+      console.log("Original update data:", contestData);
+
       // Process dates to preserve local time exactly
       const processedData = processContestDates(contestData);
+      console.log("Processed update data:", processedData);
 
+      const authConfig = await getAuthHeaders();
       const response = await axios.put(
         `${API_URL}/admin/contests/${contestId}`,
         processedData,
-        { withCredentials: true }
+        authConfig
       );
       return response.data;
     } catch (error) {
@@ -112,9 +149,8 @@ export const AdminService = {
   // Delete a contest
   deleteContest: async (contestId) => {
     try {
-      await axios.delete(`${API_URL}/admin/contests/${contestId}`, {
-        withCredentials: true,
-      });
+      const authConfig = await getAuthHeaders();
+      await axios.delete(`${API_URL}/admin/contests/${contestId}`, authConfig);
       return true;
     } catch (error) {
       console.error("Error deleting contest:", error);

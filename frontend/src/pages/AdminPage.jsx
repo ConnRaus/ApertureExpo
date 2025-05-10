@@ -43,6 +43,18 @@ const AdminPage = () => {
 
   const checkIfAdmin = async () => {
     try {
+      // Make sure we wait for the Clerk session to be fully initialized
+      if (window.Clerk && !window.Clerk.session) {
+        await new Promise((resolve) => {
+          const checkSession = setInterval(() => {
+            if (window.Clerk.session) {
+              clearInterval(checkSession);
+              resolve();
+            }
+          }, 100);
+        });
+      }
+
       // Try to access an admin endpoint - if it succeeds, the user is an admin
       await AdminService.getContests();
       setIsAdmin(true);

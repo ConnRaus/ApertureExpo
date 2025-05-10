@@ -57,6 +57,8 @@ app.use(
       }
     },
     credentials: true, // Allow cookies/authorization headers
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 // --- End CORS Configuration ---
