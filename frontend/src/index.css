@@ -3,11 +3,12 @@
 /* Custom styles that extend Tailwind */
 @layer base {
   :root {
-    color-scheme: light dark;
+    color-scheme: dark;
   }
 
   html {
     height: 100%;
+    background-color: rgb(17, 24, 39);
     background-image: linear-gradient(
       to bottom,
       rgb(17, 24, 39),
