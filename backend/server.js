@@ -11,7 +11,6 @@ import voteRoutes from "./routes/votes.js";
 import forumRoutes from "./routes/forum.js";
 import adminRoutes from "./routes/admin.js";
 import { ensureUserExists } from "./middleware/ensureUserExists.js";
-import sequelize from "./database/config/config.js";
 
 dotenv.config();
 

@@ -1,11 +1,216 @@
 import models from "../models/index.js";
 import { randomUUID } from "node:crypto";
 
-const { Contest, sequelize } = models;
+const { Contest, Photo, PhotoContest, Vote, User, sequelize } = models;
+
+// Create test users if they don't exist
+async function ensureTestUsers() {
+  console.log("Ensuring test users exist...");
+
+  const testUsers = [
+    {
+      id: "test-user-1",
+      nickname: "TestUser1",
+      bio: "I'm a test user who loves photography.",
+    },
+    {
+      id: "test-user-2",
+      nickname: "TestUser2",
+      bio: "Photography enthusiast and vintage camera collector.",
+    },
+    {
+      id: "test-user-3",
+      nickname: "TestUser3",
+      bio: "Professional photographer specializing in street photography.",
+    },
+  ];
+
+  for (const user of testUsers) {
+    await User.upsert(user);
+  }
+
+  console.log("Test users created/updated successfully");
+  return testUsers.map((user) => user.id);
+}
+
+// Seed test photos for a contest
+async function seedPhotosForContest(contest, userIds) {
+  try {
+    console.log(`Seeding photos for ${contest.title}...`);
+
+    // Use fallback user IDs if none provided
+    const users = userIds || ["test-user-1", "test-user-2", "test-user-3"];
+
+    // Vintage photos for the past contest
+    if (contest.title === "Vintage Photography") {
+      // First, create the photos
+      const vintagePhotos = [
+        {
+          id: randomUUID(),
+          userId: users[0],
+          title: "Old Film Camera",
+          description: "A vintage Leica camera from the 1950s",
+          s3Url:
+            "https://images.pexels.com/photos/1983037/pexels-photo-1983037.jpeg",
+          thumbnailUrl:
+            "https://images.pexels.com/photos/1983037/pexels-photo-1983037.jpeg?auto=compress&cs=tinysrgb&w=400",
+          metadata: { width: 3456, height: 5184, mimeType: "image/jpeg" },
+          imageHash: "vintage-1",
+        },
+        {
+          id: randomUUID(),
+          userId: users[1],
+          title: "Typewriter",
+          description: "Classic typewriter on wooden desk",
+          s3Url:
+            "https://images.pexels.com/photos/1809340/pexels-photo-1809340.jpeg",
+          thumbnailUrl:
+            "https://images.pexels.com/photos/1809340/pexels-photo-1809340.jpeg?auto=compress&cs=tinysrgb&w=400",
+          metadata: { width: 4016, height: 6016, mimeType: "image/jpeg" },
+          imageHash: "vintage-2",
+        },
+        {
+          id: randomUUID(),
+          userId: users[0],
+          title: "Vinyl Records",
+          description: "Collection of vintage vinyl records",
+          s3Url:
+            "https://images.pexels.com/photos/1626481/pexels-photo-1626481.jpeg",
+          thumbnailUrl:
+            "https://images.pexels.com/photos/1626481/pexels-photo-1626481.jpeg?auto=compress&cs=tinysrgb&w=400",
+          metadata: { width: 5472, height: 3648, mimeType: "image/jpeg" },
+          imageHash: "vintage-3",
+        },
+        {
+          id: randomUUID(),
+          userId: users[2],
+          title: "Classic Car",
+          description: "Vintage automobile from the 1960s",
+          s3Url:
+            "https://static01.nyt.com/images/2022/11/23/business/23wheels-concours-top/merlin_214812261_9deba3ce-a3d3-4b44-b652-e16406fc4988-videoSixteenByNineJumbo1600.jpg",
+          thumbnailUrl:
+            "https://static01.nyt.com/images/2022/11/23/business/23wheels-concours-top/merlin_214812261_9deba3ce-a3d3-4b44-b652-e16406fc4988-videoSixteenByNineJumbo1600.jpg",
+          metadata: { width: 4608, height: 3072, mimeType: "image/jpeg" },
+          imageHash: "vintage-4",
+        },
+        {
+          id: randomUUID(),
+          userId: users[1],
+          title: "Retro Radio",
+          description: "Old-fashioned radio from the 1940s",
+          s3Url:
+            "https://images.thdstatic.com/productImages/b4f7e688-352a-41a7-8b04-2859351c6c15/svn/brown-lukyamzn-portable-audio-video-ph03027b013-64_600.jpg",
+          thumbnailUrl:
+            "https://images.thdstatic.com/productImages/b4f7e688-352a-41a7-8b04-2859351c6c15/svn/brown-lukyamzn-portable-audio-video-ph03027b013-64_600.jpg",
+          metadata: { width: 4000, height: 6000, mimeType: "image/jpeg" },
+          imageHash: "vintage-5",
+        },
+      ];
+
+      // Create photos one by one to avoid foreign key issues
+      const createdPhotos = [];
+      for (const photo of vintagePhotos) {
+        const createdPhoto = await Photo.create(photo);
+        createdPhotos.push(createdPhoto);
+
+        // Create the PhotoContest association
+        await PhotoContest.create({
+          id: randomUUID(),
+          photoId: createdPhoto.id,
+          contestId: contest.id,
+          submittedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
+        });
+      }
+
+      // Add votes to determine winners
+      const votes = [
+        // First photo gets most votes (1st place)
+        {
+          id: randomUUID(),
+          userId: users[1],
+          photoId: createdPhotos[0].id,
+          contestId: contest.id,
+          value: 5,
+          votedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+        },
+        {
+          id: randomUUID(),
+          userId: users[2],
+          photoId: createdPhotos[0].id,
+          contestId: contest.id,
+          value: 5,
+          votedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+        },
+
+        // Second photo gets second most votes (2nd place)
+        {
+          id: randomUUID(),
+          userId: users[0],
+          photoId: createdPhotos[1].id,
+          contestId: contest.id,
+          value: 4,
+          votedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+        },
+        {
+          id: randomUUID(),
+          userId: users[2],
+          photoId: createdPhotos[1].id,
+          contestId: contest.id,
+          value: 4,
+          votedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+        },
+
+        // Third photo gets third most votes (3rd place)
+        {
+          id: randomUUID(),
+          userId: users[1],
+          photoId: createdPhotos[2].id,
+          contestId: contest.id,
+          value: 3,
+          votedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+        },
+
+        // Other photos get fewer votes
+        {
+          id: randomUUID(),
+          userId: users[0],
+          photoId: createdPhotos[3].id,
+          contestId: contest.id,
+          value: 2,
+          votedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+        },
+        {
+          id: randomUUID(),
+          userId: users[0],
+          photoId: createdPhotos[4].id,
+          contestId: contest.id,
+          value: 1,
+          votedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+        },
+      ];
+
+      // Create votes
+      await Vote.bulkCreate(votes);
+
+      console.log(
+        `Created ${createdPhotos.length} photos for ${contest.title}`
+      );
+      return createdPhotos;
+    }
+
+    return [];
+  } catch (error) {
+    console.error(`Error seeding photos for ${contest.title}:`, error);
+    throw error;
+  }
+}
 
 export async function seedTestContests() {
   try {
     console.log("Beginning to create test contests...");
+
+    // Ensure test users exist before creating contests
+    const userIds = await ensureTestUsers();
 
     // Create basic contests (from defaultData.js)
     console.log("Creating basic contests (Red and Blue)...");
@@ -166,6 +371,10 @@ export async function seedTestContests() {
       lastMinuteContestId: lastMinuteContest.id,
       startingSoonContestId: startingSoonContest.id,
     });
+
+    // Add test photos to the past contest (Vintage Photography)
+    console.log("Adding test photos to Vintage Photography contest...");
+    await seedPhotosForContest(pastContest, userIds);
 
     return {
       redContest,
