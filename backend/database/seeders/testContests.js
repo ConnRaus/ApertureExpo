@@ -1,7 +1,7 @@
 import models from "../models/index.js";
 import { randomUUID } from "node:crypto";
 
-const { Contest, Photo, PhotoContest, Vote, User, sequelize } = models;
+const { Contest, Photo, PhotoContest, Vote, User } = models;
 
 // Create test users if they don't exist
 async function ensureTestUsers() {
