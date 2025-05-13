@@ -745,6 +745,16 @@
       font-size: 0.75rem;
     }
   }
+
+  /* Always show buttons on mobile */
+  @media (max-width: 768px) {
+    .photo-card .absolute.opacity-0.group-hover\:opacity-100 {
+      opacity: 1 !important;
+      background-color: rgba(0, 0, 0, 0.5);
+      border-radius: 0.5rem;
+      padding: 0.25rem;
+    }
+  }
 }
 
 /* Add other global styles or utility classes here */
