@@ -19,6 +19,18 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       redirectUrl: "/",
       openInNewTab: false,
     }}
+    appearance={{
+      baseTheme: undefined,
+      variables: {
+        colorPrimary: "#4F46E5",
+      },
+    }}
+    options={{
+      // Enable cross-origin requests
+      crossOrigin: true,
+      // Allow cookies to be sent with requests
+      withCredentials: true,
+    }}
   >
     <App />
   </ClerkProvider>

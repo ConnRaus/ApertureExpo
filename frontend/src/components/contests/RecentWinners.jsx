@@ -191,6 +191,20 @@ export function RecentWinners() {
     trackMouse: false,
   });
 
+  // Get rank display (medal emoji for top 3, number for others)
+  const getRankDisplay = (rank) => {
+    switch (rank) {
+      case 1:
+        return "🥇";
+      case 2:
+        return "🥈";
+      case 3:
+        return "🥉";
+      default:
+        return `#${rank}`;
+    }
+  };
+
   if (isLoading) {
     return <LoadingSpinner size="md" message="Loading recent winners..." />;
   }
@@ -211,7 +225,7 @@ export function RecentWinners() {
                 className={styles.winnerCard}
                 onClick={() => openPhotoModal(photo, index)}
               >
-                <div className={styles.rank}>#{photo.rank}</div>
+                <div className={styles.rank}>{getRankDisplay(photo.rank)}</div>
                 <img
                   src={photo.thumbnailUrl}
                   alt={photo.title}

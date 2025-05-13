@@ -11,7 +11,6 @@ import voteRoutes from "./routes/votes.js";
 import forumRoutes from "./routes/forum.js";
 import adminRoutes from "./routes/admin.js";
 import { ensureUserExists } from "./middleware/ensureUserExists.js";
-import sequelize from "./database/config/config.js";
 
 dotenv.config();
 
@@ -33,34 +32,41 @@ let allowedOrigins = [...allowedOriginsFromEnv];
 
 // Add localhost defaults if in development
 if (process.env.NODE_ENV !== "production") {
-  const devOrigins = ["http://localhost:5173", "http://localhost"];
-  devOrigins.forEach((devOrigin) => {
-    if (!allowedOrigins.includes(devOrigin)) {
-      allowedOrigins.push(devOrigin);
-    }
-  });
+  // Allow any local network origin during development
+  app.use(
+    cors({
+      origin: true, // Allow all origins in development
+      credentials: true,
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+    })
+  );
+  console.log("Development mode: CORS is allowing all origins");
+} else {
+  // Production CORS configuration
+  app.use(
+    cors({
+      origin: function (origin, callback) {
+        if (!origin) {
+          return callback(null, true);
+        }
+        if (allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        } else {
+          const msg = `CORS policy does not allow access from the specified Origin: ${origin}`;
+          return callback(new Error(msg), false);
+        }
+      },
+      credentials: true,
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+    })
+  );
+  console.log(
+    "Production mode: CORS is restricted to allowed origins:",
+    allowedOrigins
+  );
 }
-
-console.log("Allowed CORS Origins:", allowedOrigins); // Log for debugging
-
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
-      // Allow if origin is in the allowed list
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      } else {
-        const msg = `CORS policy does not allow access from the specified Origin: ${origin}`;
-        return callback(new Error(msg), false);
-      }
-    },
-    credentials: true, // Allow cookies/authorization headers
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
 // --- End CORS Configuration ---
 
 // Clerk middleware setup
@@ -103,8 +109,9 @@ async function startServer() {
   try {
     await initializeDatabase();
 
-    app.listen(port, () => {
+    app.listen(port, "0.0.0.0", () => {
       console.log(`Server is running on port ${port}`);
+      console.log("Server is listening on all network interfaces");
     });
   } catch (error) {
     console.error("Failed to start server:", error);
