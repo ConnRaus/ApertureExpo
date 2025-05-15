@@ -24,9 +24,6 @@ const AdminPage = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminCheckDone, setAdminCheckDone] = useState(false);
 
-  // Get user's current time zone
-  const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
   useEffect(() => {
     if (isSignedIn) {
       // Check if user is admin
