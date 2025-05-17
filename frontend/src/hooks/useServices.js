@@ -4,7 +4,7 @@ import { PhotoService } from "../services/PhotoService";
 import { UserService } from "../services/UserService";
 import { ContestService } from "../services/ContestService";
 import { VoteService } from "../services/VoteService";
-import { ForumService } from "../services/forumService";
+import { ForumService } from "../services/ForumService";
 
 export function usePhotoService() {
   const { getToken } = useAuth();

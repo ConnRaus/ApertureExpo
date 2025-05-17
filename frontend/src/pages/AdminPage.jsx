@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useUser } from "@clerk/clerk-react";
-import { AdminService } from "../services/adminService";
+import { AdminService } from "../services/AdminService.js";
 import styles from "../styles/pages/AdminPage.module.css"; // Import the CSS module
 
 const AdminPage = () => {
