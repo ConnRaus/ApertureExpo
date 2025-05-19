@@ -315,7 +315,15 @@ export function RecentWinners() {
                     </Link>
                   </p>
                   {selectedPhoto.totalScore > 0 && (
-                    <p>Score: {Number(selectedPhoto.totalScore).toFixed(1)}</p>
+                    <p>
+                      Rating:{" "}
+                      {(
+                        selectedPhoto.averageRating ||
+                        selectedPhoto.totalScore / selectedPhoto.voteCount
+                      ).toFixed(1)}
+                      /5 ⭐ ({selectedPhoto.voteCount || 1} vote
+                      {selectedPhoto.voteCount !== 1 ? "s" : ""})
+                    </p>
                   )}
                 </div>
               </div>
