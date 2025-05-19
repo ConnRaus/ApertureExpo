@@ -6,7 +6,6 @@ import { Navigation, Footer } from "./components/layout/LayoutComponents";
 import HomePage from "./pages/HomePage";
 import EventsPage from "./pages/EventsPage";
 import EventDetailPage from "./pages/EventDetailPage";
-import ProfilePage from "./pages/ProfilePage";
 import UserProfilePage from "./pages/UserProfilePage";
 import ForumPage from "./pages/ForumPage";
 import ThreadDetailPage from "./pages/ThreadDetailPage";
