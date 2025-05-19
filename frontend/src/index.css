@@ -186,6 +186,7 @@
 
   .line-clamp-3 {
     display: -webkit-box;
+    line-clamp: 3;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
@@ -194,6 +195,7 @@
 
   .line-clamp-1 {
     display: -webkit-box;
+    line-clamp: 1;
     -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
     overflow: hidden;
@@ -490,6 +492,7 @@
   .profile-name {
     font-size: 2.25rem;
     line-height: 2.5rem;
+    line-clamp: 2;
     font-weight: 700;
     color: white;
     margin-bottom: 0.5rem;
