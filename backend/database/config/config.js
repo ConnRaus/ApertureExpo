@@ -7,7 +7,7 @@ dotenv.config(); // Load .env file for local development
 const env = process.env.NODE_ENV || "development";
 let sequelize;
 
-// Production environment (like Render) typically uses DATABASE_URL
+// Production environment uses DATABASE_URL
 if (process.env.DATABASE_URL && env === "production") {
   const dbUrl = new URL(process.env.DATABASE_URL);
 
@@ -72,5 +72,3 @@ if (process.env.DATABASE_URL && env === "production") {
 }
 
 export default sequelize;
-// Remove the named export for config as it's no longer used directly for instantiation
-// export { config };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useUser } from "@clerk/clerk-react";
-import { AdminService } from "../services/adminService";
+import { AdminService } from "../services/AdminService";
 import styles from "../styles/pages/AdminPage.module.css"; // Import the CSS module
 
 const AdminPage = () => {
@@ -23,9 +23,6 @@ const AdminPage = () => {
   const [sameAsEndDate, setSameAsEndDate] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminCheckDone, setAdminCheckDone] = useState(false);
-
-  // Get user's current time zone
-  const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   useEffect(() => {
     if (isSignedIn) {

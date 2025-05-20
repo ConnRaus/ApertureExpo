@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useVoteService } from "../../hooks";
 import { toast } from "react-toastify";
+import { useUser } from "@clerk/clerk-react";
 
 export function PhotoVoteButton({
   photo,
@@ -14,8 +15,10 @@ export function PhotoVoteButton({
   const [isVoting, setIsVoting] = useState(false);
   const [hoverRating, setHoverRating] = useState(0);
   const voteService = useVoteService();
+  const { user } = useUser();
 
   const isVotingPhase = contestPhase === "voting";
+  const isOwnPhoto = user?.id === photo.userId;
 
   // Check if user has already voted for this photo
   useEffect(() => {
@@ -41,6 +44,11 @@ export function PhotoVoteButton({
   const handleVote = async (value = 1) => {
     if (!isVotingPhase) {
       toast.info("Voting is not currently open for this contest");
+      return;
+    }
+
+    if (isOwnPhoto) {
+      toast.info("You cannot vote on your own photos");
       return;
     }
 
@@ -75,6 +83,26 @@ export function PhotoVoteButton({
       setIsVoting(false);
     }
   };
+
+  // Show disabled button with message if it's the user's own photo
+  if (isOwnPhoto) {
+    return (
+      <div className="flex flex-col items-center">
+        <div className="text-sm text-amber-300 mb-1">Your photo</div>
+        <button
+          className="px-4 py-2 rounded-md transition-all bg-gray-700/50 text-gray-400 border border-gray-700 opacity-50 cursor-not-allowed"
+          disabled={true}
+        >
+          Cannot vote
+        </button>
+        {showCount && (
+          <div className="text-sm text-gray-400 mt-1">
+            {voteCount} vote{voteCount !== 1 && "s"}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   // Render different UIs based on if we're showing stars or a simple vote button
   if (showStars) {

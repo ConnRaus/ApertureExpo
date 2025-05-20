@@ -44,8 +44,9 @@ function ContestPhotoCard({ photo, contestId, contestPhase, onClick }) {
                 </Link>
               </div>
               <div className={styles.photoStats}>
-                {photo.voteCount || 0} votes ·{" "}
-                {photo.averageRating ? photo.averageRating.toFixed(1) : 0} avg
+                {photo.averageRating ? photo.averageRating.toFixed(1) : "0.0"}/5
+                ⭐ ({photo.voteCount || 0} vote
+                {photo.voteCount !== 1 ? "s" : ""})
               </div>
             </div>
           ) : (

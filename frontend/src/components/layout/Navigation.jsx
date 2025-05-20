@@ -9,6 +9,7 @@ import {
   useClerk,
 } from "@clerk/clerk-react";
 import styles from "../../styles/components/Navigation.module.css";
+import logoImage from "../../assets/LogoTransparent.png";
 
 function Navigation() {
   const { user } = useUser();
@@ -23,6 +24,9 @@ function Navigation() {
   return (
     <nav className={styles.navHeader}>
       <div className={styles.navLeft}>
+        <Link to="/" className={styles.logoContainer}>
+          <img src={logoImage} alt="Logo" className={styles.logo} />
+        </Link>
         <button
           className={styles.hamburgerButton}
           onClick={toggleMobileMenu}
@@ -81,9 +85,8 @@ function Navigation() {
                   </svg>
                 }
               />
-              <UserButton.Appearance />
-              <UserButton.SessionList />
-              <UserButton.SignOut />
+              <UserButton.Action label="manageAccount" />
+              <UserButton.Action label="signOut" />
             </UserButton.MenuItems>
           </UserButton>
         </SignedIn>

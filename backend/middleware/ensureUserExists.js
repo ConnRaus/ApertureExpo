@@ -56,10 +56,28 @@ export const ensureUserExists = async (req, res, next) => {
           const clerkUser = await clerkClient.users.getUser(userId);
 
           // Extract user details
-          const nickname =
+          let nickname =
             clerkUser.firstName && clerkUser.lastName
               ? `${clerkUser.firstName} ${clerkUser.lastName}`
-              : clerkUser.username || clerkUser.firstName || "User";
+              : clerkUser.username || clerkUser.firstName;
+
+          // If no nickname yet, try to extract from email
+          if (
+            !nickname &&
+            clerkUser.emailAddresses &&
+            clerkUser.emailAddresses.length > 0
+          ) {
+            const email = clerkUser.emailAddresses[0].emailAddress;
+            if (email) {
+              // Extract the part before the @ symbol
+              nickname = email.split("@")[0];
+            }
+          }
+
+          // Default to <userId> if we still don't have a nickname
+          if (!nickname) {
+            nickname = userId;
+          }
 
           // Create new user with Clerk data
           user = await User.create({

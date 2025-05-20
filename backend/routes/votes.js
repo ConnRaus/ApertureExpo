@@ -36,6 +36,14 @@ router.post("/votes", requireAuth(), async (req, res) => {
       return res.status(404).json({ error: "Photo not found" });
     }
 
+    // Prevent users from voting on their own photos
+    if (photo.userId === userId) {
+      return res.status(403).json({
+        error: "Cannot vote on own photo",
+        details: "Users cannot vote on their own submissions",
+      });
+    }
+
     // Check if the contest exists and is in the voting phase
     const contest = await Contest.findByPk(contestId);
     if (!contest) {
@@ -434,6 +442,20 @@ router.post(
     }
 
     try {
+      // Check if the photo exists
+      const photo = await Photo.findByPk(photoId);
+      if (!photo) {
+        return res.status(404).json({ error: "Photo not found" });
+      }
+
+      // Prevent users from voting on their own photos
+      if (photo.userId === userId) {
+        return res.status(403).json({
+          error: "Cannot vote on own photo",
+          details: "Users cannot vote on their own submissions",
+        });
+      }
+
       // TODO: Check if contest is in voting phase
 
       let vote = await Vote.findOne({

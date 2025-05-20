@@ -2,7 +2,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
+  padding: 0.25rem 1.5rem;
   background-color: rgba(31, 41, 55, 0.5);
   backdrop-filter: blur(12px);
   border-radius: 0.5rem;
@@ -12,8 +12,24 @@
   border: 1px solid rgba(55, 65, 81, 0.5);
   position: relative;
   flex-wrap: wrap;
-  min-height: 64px; /* Set a fixed minimum height */
-  z-index: 50; /* Lowered z-index */
+  min-height: 52px; /* Reduced from 64px */
+  z-index: 50;
+}
+
+.logoContainer {
+  display: flex;
+  align-items: center;
+  margin-right: 1rem;
+}
+
+.logo {
+  height: 40px;
+  width: auto;
+  transition: transform 0.2s ease;
+}
+
+.logo:hover {
+  transform: scale(1.05);
 }
 
 .navLeft,
@@ -184,7 +200,11 @@
   }
 
   .navHeader {
-    padding: 1rem;
+    padding: 0.25rem 1rem;
+  }
+
+  .logoContainer {
+    display: none;
   }
 }
 
@@ -192,4 +212,21 @@
   .mobileMenu {
     display: none;
   }
+}
+
+/* UserButton Styling */
+.navRight :global(.cl-userButtonTrigger) {
+  height: 2.2rem; /* Reduced from 2.5rem */
+  width: 2.2rem; /* Reduced from 2.5rem */
+}
+
+.navRight :global(.cl-userButtonAvatarBox) {
+  height: 100%;
+  width: 100%;
+}
+
+.navRight :global(.cl-userButtonAvatarImage) {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
 }
