@@ -16,6 +16,22 @@
   z-index: 50;
 }
 
+.logoContainer {
+  display: flex;
+  align-items: center;
+  margin-right: 1rem;
+}
+
+.logo {
+  height: 40px;
+  width: auto;
+  transition: transform 0.2s ease;
+}
+
+.logo:hover {
+  transform: scale(1.05);
+}
+
 .navLeft,
 .navRight {
   display: flex;
@@ -185,6 +201,10 @@
 
   .navHeader {
     padding: 0.25rem 1rem;
+  }
+
+  .logoContainer {
+    display: none;
   }
 }
 
