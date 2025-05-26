@@ -89,6 +89,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
+  line-clamp: 2;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   word-wrap: break-word;
@@ -179,6 +180,7 @@
   display: -webkit-box;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  line-clamp: 3;
   -webkit-line-clamp: 3;
 }
 
@@ -364,18 +366,6 @@
   text-align: center;
 }
 
-.firstPlace {
-  /* width: 220px; */
-}
-
-.secondPlace {
-  /* width: 180px; */
-}
-
-.thirdPlace {
-  /* width: 160px; */
-}
-
 .podiumImage {
   /* height: 200px; */
   width: 100%;
@@ -451,6 +441,7 @@
   .contestDescription {
     font-size: 0.9rem;
     line-height: 1.4rem;
+    line-clamp: 3;
     -webkit-line-clamp: 3;
     display: -webkit-box;
     -webkit-box-orient: vertical;
@@ -515,6 +506,7 @@
     font-size: 0.85rem;
     line-height: 1.3rem;
     max-height: 3.9rem; /* Increased to accommodate 3 lines */
+    line-clamp: 3;
     -webkit-line-clamp: 3; /* Changed from 2 to 3 lines */
   }
 

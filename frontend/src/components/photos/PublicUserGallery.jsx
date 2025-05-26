@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from "@clerk/clerk-react";
 import { useSearchParams } from "react-router-dom";
 import { PhotoGrid } from "./PhotoGrid";
 import { PhotoLightbox } from "./PhotoLightbox";
@@ -33,7 +32,6 @@ export function PublicUserGallery({ userId, isOwner }) {
   const [bannerFileToUpload, setBannerFileToUpload] = useState(null);
   const [showPhotoSelector, setShowPhotoSelector] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
-  const { getToken } = useAuth();
 
   const shouldShowLoading = useDelayedLoading(isLoading);
   const userService = useUserService();

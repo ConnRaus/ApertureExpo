@@ -2,7 +2,6 @@ import express from "express";
 import models from "../database/models/index.js";
 import { requireAuth } from "../middleware/auth.js";
 import { clerkClient } from "@clerk/express";
-import { Op } from "sequelize";
 
 const router = express.Router();
 const { ForumThread, ForumPost, User } = models;

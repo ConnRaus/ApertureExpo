@@ -6,7 +6,6 @@ import {
   SignInButton,
   UserButton,
   useUser,
-  useClerk,
 } from "@clerk/clerk-react";
 import styles from "../../styles/components/Navigation.module.css";
 import logoImage from "../../assets/LogoTransparent.png";
@@ -14,7 +13,6 @@ import logoImage from "../../assets/LogoTransparent.png";
 function Navigation() {
   const { user } = useUser();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const clerk = useClerk();
   const navigate = useNavigate();
 
   const toggleMobileMenu = () => {
