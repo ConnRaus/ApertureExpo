@@ -6,6 +6,7 @@ import Contest from "../database/models/Contest.js";
 import { Op } from "sequelize";
 import sequelize from "../database/config/config.js";
 import User from "../database/models/User.js";
+import { getAuthFromRequest, getUserIdFromRequest } from "../utils/auth.js";
 
 const router = express.Router();
 
@@ -13,7 +14,9 @@ const router = express.Router();
 router.post("/votes", requireAuth(), async (req, res) => {
   try {
     const { photoId, contestId, value = 1 } = req.body;
-    const userId = req.auth.userId;
+
+    const auth = getAuthFromRequest(req);
+    const userId = auth.userId;
 
     if (!photoId || !contestId) {
       return res.status(400).json({
@@ -155,7 +158,13 @@ router.get("/photos/:photoId/votes", async (req, res) => {
 // Get user's votes in a contest
 router.get("/users/votes", requireAuth(), async (req, res) => {
   try {
-    const userId = req.auth.userId;
+    const auth = getAuthFromRequest(req);
+
+    const userId = auth?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
     const { contestId } = req.query;
 
     const whereClause = { userId };
@@ -360,7 +369,8 @@ router.get("/contests/:contestId/photos/:photoId/votes", async (req, res) => {
 // Get all photos in a contest, including vote counts and user vote status
 router.get("/contests/:contestId/photos-with-votes", async (req, res) => {
   const { contestId } = req.params;
-  const userId = req.auth?.userId; // Use optional chaining
+
+  const userId = getUserIdFromRequest(req);
 
   try {
     const photos = await Photo.findAll({
@@ -434,7 +444,9 @@ router.post(
   requireAuth(),
   async (req, res) => {
     const { contestId, photoId } = req.params;
-    const userId = req.auth.userId;
+
+    const auth = getAuthFromRequest(req);
+    const userId = auth.userId;
     const { value } = req.body; // Expecting +1 or -1
 
     if (![1, -1].includes(value)) {
