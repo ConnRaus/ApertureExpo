@@ -24,20 +24,30 @@ export function RecentWinners() {
             contest.phase === "ended" || contest.status === "completed"
         );
 
-        console.log(`Found ${completedContests.length} completed contests`);
         if (completedContests.length === 0) {
           setWinners([]);
           setIsLoading(false);
           return;
         }
 
-        // Sort by most recently ended
-        completedContests.sort(
+        // First, filter for contests that have photos
+        const contestsWithPhotos = completedContests.filter(
+          (contest) => contest.submissionCount > 0
+        );
+
+        if (contestsWithPhotos.length === 0) {
+          setWinners([]);
+          setIsLoading(false);
+          return;
+        }
+
+        // Sort by most recently ended among contests that have photos
+        contestsWithPhotos.sort(
           (a, b) => new Date(b.votingEndDate) - new Date(a.votingEndDate)
         );
 
-        // Take the 3 most recent contests
-        const recentContests = completedContests.slice(0, 3);
+        // Take up to 3 most recent contests that have photos
+        const recentContests = contestsWithPhotos.slice(0, 3);
 
         if (recentContests.length === 0) {
           setWinners([]);
