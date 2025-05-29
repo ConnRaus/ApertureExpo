@@ -634,7 +634,7 @@ export function UnifiedLightbox({
                 <>
                   <button
                     onClick={goToPrevious}
-                    className={`absolute left-4 z-20 text-white/70 hover:text-white text-4xl font-light transition-all duration-200 w-12 h-12 flex items-center justify-center rounded-full hover:bg-white/10 ${
+                    className={`absolute left-4 z-20 text-white/70 hover:text-white transition-all duration-200 w-12 h-12 flex items-center justify-center rounded-full hover:bg-white/10 ${
                       isTransitioning || isZoomedIn
                         ? "opacity-50 pointer-events-none"
                         : ""
@@ -646,11 +646,23 @@ export function UnifiedLightbox({
                     aria-label="Previous image"
                     style={{ top: "50%", transform: "translateY(-50%)" }}
                   >
-                    ‹
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 19l-7-7 7-7"
+                      />
+                    </svg>
                   </button>
                   <button
                     onClick={goToNext}
-                    className={`absolute right-4 z-20 text-white/70 hover:text-white text-4xl font-light transition-all duration-200 w-12 h-12 flex items-center justify-center rounded-full hover:bg-white/10 ${
+                    className={`absolute right-4 z-20 text-white/70 hover:text-white transition-all duration-200 w-12 h-12 flex items-center justify-center rounded-full hover:bg-white/10 ${
                       isTransitioning || isZoomedIn
                         ? "opacity-50 pointer-events-none"
                         : ""
@@ -662,7 +674,19 @@ export function UnifiedLightbox({
                     aria-label="Next image"
                     style={{ top: "50%", transform: "translateY(-50%)" }}
                   >
-                    ›
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
                   </button>
                 </>
               )}
