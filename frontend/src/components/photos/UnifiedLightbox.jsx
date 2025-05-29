@@ -630,47 +630,89 @@ export function UnifiedLightbox({
                   Camera Info
                 </h3>
                 <div className="space-y-2 text-sm">
-                  {currentPhoto.metadata.make && (
+                  {/* Camera Make & Model */}
+                  {(currentPhoto.metadata.Image?.Make ||
+                    currentPhoto.metadata.Image?.Model) && (
                     <div className="flex justify-between">
                       <span className="text-gray-400">Camera:</span>
                       <span className="text-gray-300">
-                        {currentPhoto.metadata.make}{" "}
-                        {currentPhoto.metadata.model}
+                        {[
+                          currentPhoto.metadata.Image?.Make,
+                          currentPhoto.metadata.Image?.Model,
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
                       </span>
                     </div>
                   )}
-                  {currentPhoto.metadata.FNumber && (
+
+                  {/* Lens Model */}
+                  {currentPhoto.metadata.Photo?.LensModel && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Lens:</span>
+                      <span className="text-gray-300">
+                        {currentPhoto.metadata.Photo.LensModel}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Aperture (F-Stop) */}
+                  {currentPhoto.metadata.Photo?.FNumber && (
                     <div className="flex justify-between">
                       <span className="text-gray-400">Aperture:</span>
                       <span className="text-gray-300">
-                        f/{currentPhoto.metadata.FNumber}
+                        f/{currentPhoto.metadata.Photo.FNumber}
                       </span>
                     </div>
                   )}
-                  {currentPhoto.metadata.ExposureTime && (
+
+                  {/* Shutter Speed */}
+                  {currentPhoto.metadata.Photo?.ExposureTime && (
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Shutter:</span>
+                      <span className="text-gray-400">Shutter Speed:</span>
                       <span className="text-gray-300">
-                        {currentPhoto.metadata.ExposureTime}s
+                        {currentPhoto.metadata.Photo.ExposureTime < 1
+                          ? `1/${Math.round(
+                              1 / currentPhoto.metadata.Photo.ExposureTime
+                            )}s`
+                          : `${currentPhoto.metadata.Photo.ExposureTime}s`}
                       </span>
                     </div>
                   )}
-                  {currentPhoto.metadata.ISO && (
+
+                  {/* ISO */}
+                  {currentPhoto.metadata.Photo?.ISOSpeedRatings && (
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Aperture:</span>
+                      <span className="text-gray-400">ISO:</span>
                       <span className="text-gray-300">
-                        {currentPhoto.metadata.ISO}
+                        {currentPhoto.metadata.Photo.ISOSpeedRatings}
                       </span>
                     </div>
                   )}
-                  {currentPhoto.metadata.FocalLength && (
+
+                  {/* Focal Length with 35mm Equivalent */}
+                  {currentPhoto.metadata.Photo?.FocalLength && (
                     <div className="flex justify-between">
                       <span className="text-gray-400">Focal Length:</span>
                       <span className="text-gray-300">
-                        {currentPhoto.metadata.FocalLength}mm
+                        {currentPhoto.metadata.Photo.FocalLength}mm
+                        {currentPhoto.metadata.Photo?.FocalLengthIn35mmFilm &&
+                          ` (${currentPhoto.metadata.Photo.FocalLengthIn35mmFilm}mm)`}
                       </span>
                     </div>
                   )}
+
+                  {/* Image dimensions */}
+                  {currentPhoto.metadata.width &&
+                    currentPhoto.metadata.height && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Dimensions:</span>
+                        <span className="text-gray-300">
+                          {currentPhoto.metadata.width} ×{" "}
+                          {currentPhoto.metadata.height}
+                        </span>
+                      </div>
+                    )}
                 </div>
               </div>
             )}

@@ -18,6 +18,7 @@ import path from "path";
 import crypto from "crypto";
 import sharp from "sharp";
 import User from "../database/models/User.js";
+import { getAuthFromRequest } from "../utils/auth.js";
 
 const imageHashAsync = promisify(imageHash.imageHash);
 const router = express.Router();
@@ -92,8 +93,17 @@ router.post(
         return res.status(400).json({ error: "No file uploaded" });
       }
 
+      // Get auth object properly
+      const auth = getAuthFromRequest(req);
+
+      // Check if user is authenticated
+      if (!auth || !auth.userId) {
+        console.error("Authentication failed - auth object:", auth);
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
       const contestId = req.body.contestId;
-      const userId = req.auth.userId;
+      const userId = auth.userId;
 
       // Check submission limit if contestId is provided
       if (contestId) {
@@ -138,12 +148,12 @@ router.post(
 
       const { mainUrl, thumbnailUrl, metadata } = await uploadToS3(
         req.file,
-        `photos/${req.auth.userId}`
+        `photos/${userId}`
       );
 
       // Create the photo first without the contest association
       const photo = await Photo.create({
-        userId: req.auth.userId,
+        userId: userId,
         title: req.body.title || "Untitled",
         description: req.body.description,
         s3Url: mainUrl,
@@ -219,6 +229,18 @@ router.get("/photos", requireAuth(), async (req, res) => {
 
     const photos = await Photo.findAll({
       where: { userId: req.auth.userId },
+      attributes: [
+        "id",
+        "title",
+        "description",
+        "s3Url",
+        "thumbnailUrl",
+        "userId",
+        "createdAt",
+        "updatedAt",
+        "metadata",
+        "ContestId",
+      ],
       include,
       order: [["createdAt", "DESC"]],
     });

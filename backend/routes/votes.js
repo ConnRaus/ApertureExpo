@@ -276,6 +276,16 @@ router.get("/contests/:contestId/top-photos", async (req, res) => {
     if (photoStats.length === 0) {
       const allPhotos = await Photo.findAll({
         where: { id: { [Op.in]: photoIds } },
+        attributes: [
+          "id",
+          "title",
+          "thumbnailUrl",
+          "s3Url",
+          "userId",
+          "createdAt",
+          "description",
+          "metadata",
+        ],
         include: [
           {
             model: User,
@@ -283,7 +293,6 @@ router.get("/contests/:contestId/top-photos", async (req, res) => {
             attributes: ["id", "nickname"],
           },
         ],
-        attributes: ["id", "title", "thumbnailUrl", "s3Url", "userId"],
         limit: parseInt(limit),
       });
 
@@ -309,6 +318,14 @@ router.get("/contests/:contestId/top-photos", async (req, res) => {
 
     const topPhotos = await Photo.findAll({
       where: { id: { [Op.in]: topPhotoIds } },
+      attributes: [
+        "id",
+        "title",
+        "thumbnailUrl",
+        "s3Url",
+        "userId",
+        "metadata",
+      ],
       include: [
         {
           model: User,
@@ -316,7 +333,6 @@ router.get("/contests/:contestId/top-photos", async (req, res) => {
           attributes: ["id", "nickname"],
         },
       ],
-      attributes: ["id", "title", "thumbnailUrl", "s3Url", "userId"],
     });
 
     // Combine photo data with vote stats
@@ -375,6 +391,18 @@ router.get("/contests/:contestId/photos-with-votes", async (req, res) => {
   try {
     const photos = await Photo.findAll({
       where: { ContestId: contestId },
+      attributes: [
+        "id",
+        "title",
+        "description",
+        "s3Url",
+        "thumbnailUrl",
+        "userId",
+        "createdAt",
+        "updatedAt",
+        "metadata",
+        "ContestId",
+      ],
       include: [
         {
           model: User,

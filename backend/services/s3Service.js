@@ -19,6 +19,177 @@ const s3Client = new S3Client({
   },
 });
 
+// Function to recursively sanitize metadata by removing null characters
+const sanitizeMetadata = (obj) => {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+
+  if (typeof obj === "string") {
+    // Remove null characters and trim whitespace
+    return obj.replace(/\u0000/g, "").trim();
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map((item) => sanitizeMetadata(item));
+  }
+
+  if (typeof obj === "object") {
+    const sanitized = {};
+    for (const [key, value] of Object.entries(obj)) {
+      const sanitizedKey = sanitizeMetadata(key);
+      const sanitizedValue = sanitizeMetadata(value);
+      // Only include the field if it has meaningful content after sanitization
+      if (typeof sanitizedValue === "string" && sanitizedValue === "") {
+        // Skip empty strings
+        continue;
+      }
+      if (sanitizedKey && sanitizedKey !== "") {
+        sanitized[sanitizedKey] = sanitizedValue;
+      }
+    }
+    return sanitized;
+  }
+
+  return obj;
+};
+
+// Function to filter metadata to only keep essential camera information
+const filterEssentialMetadata = (metadata) => {
+  if (!metadata || typeof metadata !== "object") {
+    return metadata;
+  }
+
+  const filtered = {};
+
+  // Keep basic image properties
+  if (metadata.width) filtered.width = metadata.width;
+  if (metadata.height) filtered.height = metadata.height;
+  if (metadata.format) filtered.format = metadata.format;
+  if (metadata.space) filtered.space = metadata.space;
+  if (metadata.channels) filtered.channels = metadata.channels;
+  if (metadata.depth) filtered.depth = metadata.depth;
+  if (metadata.density) filtered.density = metadata.density;
+  if (metadata.hasAlpha !== undefined) filtered.hasAlpha = metadata.hasAlpha;
+  if (metadata.isProgressive !== undefined)
+    filtered.isProgressive = metadata.isProgressive;
+  if (metadata.bigEndian !== undefined) filtered.bigEndian = metadata.bigEndian;
+
+  // Keep essential Image properties (camera make/model, basic settings)
+  if (metadata.Image) {
+    const imageProps = {};
+    const keepImageProps = [
+      "Make",
+      "Model",
+      "DateTime",
+      "Software",
+      "Orientation",
+      "XResolution",
+      "YResolution",
+      "ResolutionUnit",
+      "YCbCrPositioning",
+    ];
+
+    keepImageProps.forEach((prop) => {
+      if (metadata.Image[prop] !== undefined && metadata.Image[prop] !== null) {
+        imageProps[prop] = metadata.Image[prop];
+      }
+    });
+
+    if (Object.keys(imageProps).length > 0) {
+      filtered.Image = imageProps;
+    }
+  }
+
+  // Keep essential Photo/EXIF properties (camera settings)
+  if (metadata.Photo) {
+    const photoProps = {};
+    const keepPhotoProps = [
+      "FNumber",
+      "ExposureTime",
+      "ISOSpeedRatings",
+      "FocalLength",
+      "FocalLengthIn35mmFilm",
+      "LensModel",
+      "LensMake",
+      "LensSpecification",
+      "Flash",
+      "ExposureMode",
+      "WhiteBalance",
+      "ExposureProgram",
+      "MeteringMode",
+      "SensitivityType",
+      "ExposureBiasValue",
+      "MaxApertureValue",
+      "SubjectDistanceRange",
+      "SceneCaptureType",
+      "GainControl",
+      "Contrast",
+      "Saturation",
+      "Sharpness",
+      "DigitalZoomRatio",
+      "ColorSpace",
+      "PixelXDimension",
+      "PixelYDimension",
+      "DateTimeOriginal",
+      "DateTimeDigitized",
+      "OffsetTime",
+      "OffsetTimeOriginal",
+      "OffsetTimeDigitized",
+      "SubSecTime",
+      "SubSecTimeOriginal",
+      "SubSecTimeDigitized",
+      "CustomRendered",
+      "SensingMethod",
+      "FileSource",
+      "SceneType",
+      "CompositeImage",
+      "BrightnessValue",
+      "ShutterSpeedValue",
+      "ApertureValue",
+      "LightSource",
+      "CompressedBitsPerPixel",
+    ];
+
+    keepPhotoProps.forEach((prop) => {
+      if (metadata.Photo[prop] !== undefined && metadata.Photo[prop] !== null) {
+        // Skip Buffer objects and other complex data
+        if (
+          typeof metadata.Photo[prop] === "object" &&
+          metadata.Photo[prop].type === "Buffer"
+        ) {
+          return;
+        }
+        photoProps[prop] = metadata.Photo[prop];
+      }
+    });
+
+    if (Object.keys(photoProps).length > 0) {
+      filtered.Photo = photoProps;
+    }
+  }
+
+  // Keep Interoperability info if present (small and useful)
+  if (metadata.Iop) {
+    const iopProps = {};
+    if (metadata.Iop.InteroperabilityIndex) {
+      iopProps.InteroperabilityIndex = metadata.Iop.InteroperabilityIndex;
+    }
+    if (Object.keys(iopProps).length > 0) {
+      filtered.Iop = iopProps;
+    }
+  }
+
+  // Skip large/unnecessary data:
+  // - GPSInfo (privacy concern and large)
+  // - MakerNote (can be hundreds of KB)
+  // - Thumbnail (unnecessary for our use)
+  // - UserComment (often large buffer data)
+  // - Any Buffer objects
+
+  return filtered;
+};
+
 const processAndUploadImage = async (buffer, options) => {
   const {
     maxWidth,
@@ -202,7 +373,13 @@ export const uploadToS3 = async (
       const result = await mainUpload.done();
       // Construct the URL manually since result.Location may not be available
       const mainUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${mainKey}`;
-      return { mainUrl, thumbnailUrl: null, metadata };
+      return {
+        mainUrl,
+        thumbnailUrl: null,
+        metadata: metadata
+          ? sanitizeMetadata(filterEssentialMetadata(metadata))
+          : null,
+      };
     }
 
     // Process thumbnail (max 600px on longest side, 80% quality, max 100KB)
@@ -235,7 +412,9 @@ export const uploadToS3 = async (
     return {
       mainUrl: mainResult.Location,
       thumbnailUrl: thumbnailResult.Location,
-      metadata,
+      metadata: metadata
+        ? sanitizeMetadata(filterEssentialMetadata(metadata))
+        : null,
     };
   } catch (error) {
     console.error("Error uploading to S3:", error);

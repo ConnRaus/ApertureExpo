@@ -146,6 +146,7 @@ router.get("/contests/:id", async (req, res) => {
             "userId",
             "createdAt",
             "description",
+            "metadata",
           ],
           // Use nested: false to prevent circular references
           include: [
@@ -206,6 +207,7 @@ router.get("/contests/:id", async (req, res) => {
         "userId",
         "createdAt",
         "description",
+        "metadata",
       ],
       include: [
         {

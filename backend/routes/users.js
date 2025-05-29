@@ -130,6 +130,17 @@ router.get("/:userId/photos", async (req, res) => {
     // Then get paginated photos
     const photos = await Photo.findAll({
       where: { userId },
+      attributes: [
+        "id",
+        "title",
+        "description",
+        "s3Url",
+        "thumbnailUrl",
+        "userId",
+        "createdAt",
+        "updatedAt",
+        "metadata",
+      ],
       order: [["createdAt", "DESC"]],
       limit,
       offset,
@@ -184,6 +195,18 @@ router.get("/:userId/profile", requireAuth(), async (req, res) => {
     // Get paginated photos
     const photos = await Photo.findAll({
       where: { userId: req.params.userId },
+      attributes: [
+        "id",
+        "title",
+        "description",
+        "s3Url",
+        "thumbnailUrl",
+        "userId",
+        "createdAt",
+        "updatedAt",
+        "metadata",
+        "ContestId",
+      ],
       order: [["createdAt", "DESC"]],
       limit,
       offset,
