@@ -209,6 +209,11 @@ router.post(
 // Get all photos for the authenticated user
 router.get("/photos", requireAuth(), async (req, res) => {
   try {
+    const auth = getAuthFromRequest(req);
+    if (!auth || !auth.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
     const includeContests = req.query.include === "contests";
 
     const include = [
@@ -228,7 +233,7 @@ router.get("/photos", requireAuth(), async (req, res) => {
     }
 
     const photos = await Photo.findAll({
-      where: { userId: req.auth.userId },
+      where: { userId: auth.userId },
       attributes: [
         "id",
         "title",
@@ -250,7 +255,7 @@ router.get("/photos", requireAuth(), async (req, res) => {
       // Find photos with the legacy ContestId set
       const photosWithLegacyContests = await Photo.findAll({
         where: {
-          userId: req.auth.userId,
+          userId: auth.userId,
           ContestId: { [Op.not]: null },
         },
         include: [
@@ -299,13 +304,18 @@ router.get("/photos", requireAuth(), async (req, res) => {
 // Update photo
 router.put("/photos/:id", requireAuth(), async (req, res) => {
   try {
+    const auth = getAuthFromRequest(req);
+    if (!auth || !auth.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
     const photo = await Photo.findByPk(req.params.id);
 
     if (!photo) {
       return res.status(404).json({ error: "Photo not found" });
     }
 
-    if (photo.userId !== req.auth.userId) {
+    if (photo.userId !== auth.userId) {
       return res
         .status(403)
         .json({ error: "Not authorized to edit this photo" });
@@ -326,13 +336,18 @@ router.put("/photos/:id", requireAuth(), async (req, res) => {
 // Delete photo
 router.delete("/photos/:id", requireAuth(), async (req, res) => {
   try {
+    const auth = getAuthFromRequest(req);
+    if (!auth || !auth.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
     const photo = await Photo.findByPk(req.params.id);
 
     if (!photo) {
       return res.status(404).json({ error: "Photo not found" });
     }
 
-    if (photo.userId !== req.auth.userId) {
+    if (photo.userId !== auth.userId) {
       return res
         .status(403)
         .json({ error: "Not authorized to delete this photo" });
@@ -375,13 +390,18 @@ const ensurePhotoHasHash = async (photo) => {
 // Submit existing photo to contest
 router.post("/photos/:id/submit", requireAuth(), async (req, res) => {
   try {
+    const auth = getAuthFromRequest(req);
+    if (!auth || !auth.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
     const photo = await Photo.findByPk(req.params.id);
 
     if (!photo) {
       return res.status(404).json({ error: "Photo not found" });
     }
 
-    if (photo.userId !== req.auth.userId) {
+    if (photo.userId !== auth.userId) {
       return res
         .status(403)
         .json({ error: "Not authorized to submit this photo" });
@@ -396,7 +416,7 @@ router.post("/photos/:id/submit", requireAuth(), async (req, res) => {
       return res.status(404).json({ error: "Contest not found" });
     }
 
-    const userId = req.auth.userId;
+    const userId = auth.userId;
 
     // Check submission limit
     if (contest.maxPhotosPerUser !== null) {

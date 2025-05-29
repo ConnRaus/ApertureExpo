@@ -6,6 +6,7 @@ import Contest from "../database/models/Contest.js";
 import { requireAuth, clerkClient } from "@clerk/express";
 import { uploadToS3, deleteFromS3 } from "../services/s3Service.js";
 import { ensureUserExists } from "../middleware/ensureUserExists.js";
+import { getAuthFromRequest } from "../utils/auth.js";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -16,7 +17,11 @@ router.use(ensureUserExists);
 // Get the current user's profile with Clerk data
 router.get("/me", async (req, res) => {
   try {
-    const userId = req.auth.userId;
+    const auth = getAuthFromRequest(req);
+    if (!auth || !auth.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    const userId = auth.userId;
 
     const user = await User.findByPk(userId);
     if (!user) {
@@ -73,8 +78,11 @@ router.get("/:userId", async (req, res) => {
 // Update the current user's profile
 router.put("/me", async (req, res) => {
   try {
-    const userId = req.auth.userId;
-    const { nickname, bio, bannerImage } = req.body;
+    const auth = getAuthFromRequest(req);
+    if (!auth || !auth.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    const userId = auth.userId;
 
     const user = await User.findByPk(userId);
     if (!user) {
@@ -82,6 +90,7 @@ router.put("/me", async (req, res) => {
     }
 
     // Update user fields
+    const { nickname, bio, bannerImage } = req.body;
     if (nickname !== undefined) {
       user.nickname = nickname;
     }
@@ -237,7 +246,12 @@ router.get("/:userId/profile", requireAuth(), async (req, res) => {
 // Update user profile
 router.put("/:userId/profile", requireAuth(), async (req, res) => {
   try {
-    if (req.params.userId !== req.auth.userId) {
+    const auth = getAuthFromRequest(req);
+    if (!auth || !auth.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    if (req.params.userId !== auth.userId) {
       return res
         .status(403)
         .json({ error: "Not authorized to update this profile" });
@@ -292,7 +306,12 @@ router.post(
   upload.single("banner"),
   async (req, res) => {
     try {
-      if (req.params.userId !== req.auth.userId) {
+      const auth = getAuthFromRequest(req);
+      if (!auth || !auth.userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      if (req.params.userId !== auth.userId) {
         return res
           .status(403)
           .json({ error: "Not authorized to update this profile" });
@@ -328,7 +347,7 @@ router.post(
       // Upload new banner to S3
       const result = await uploadToS3(
         req.file,
-        `photos/${req.auth.userId}/banners`,
+        `photos/${auth.userId}/banners`,
         { generateThumbnail: false }
       );
 
@@ -404,7 +423,11 @@ router.get("/users/:userId", async (req, res) => {
 // Route to get the current authenticated user's details
 router.get("/users/me", requireAuth(), async (req, res) => {
   try {
-    const userId = req.auth.userId;
+    const auth = getAuthFromRequest(req);
+    if (!auth || !auth.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    const userId = auth.userId;
     const dbUser = await User.findByPk(userId);
 
     let clerkUser = null;

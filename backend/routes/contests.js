@@ -6,6 +6,7 @@ import Vote from "../database/models/Vote.js";
 import { Op } from "sequelize";
 import sequelize from "../database/config/config.js";
 import User from "../database/models/User.js";
+import { getAuthFromRequest } from "../utils/auth.js";
 
 const router = express.Router();
 
@@ -251,11 +252,19 @@ router.get("/contests/:id", async (req, res) => {
 
     // --- Get user-specific submission count if authenticated ---
     let userSubmissionCount = 0;
-    if (req.auth?.userId) {
-      // Count photos in the final list that belong to the current user
-      userSubmissionCount = contestData.Photos.filter(
-        (p) => p.userId === req.auth.userId
-      ).length;
+    try {
+      const auth = getAuthFromRequest(req);
+      if (auth && auth.userId) {
+        // Count photos in the final list that belong to the current user
+        userSubmissionCount = contestData.Photos.filter(
+          (p) => p.userId === auth.userId
+        ).length;
+      }
+    } catch (authError) {
+      // If auth extraction fails, just continue with userSubmissionCount = 0
+      console.log(
+        "Auth extraction failed, continuing without user submission count"
+      );
     }
     // --- End user-specific submission count ---
 
