@@ -292,10 +292,20 @@
 }
 
 .contestPhotoCard {
-  position: relative;
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   overflow: hidden;
+  background-color: rgba(31, 41, 55, 0.5);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(55, 65, 81, 0.5);
   transition: all 0.3s;
+  position: relative;
+}
+
+.contestPhotoCard:hover {
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  transform: translateY(-0.25rem);
 }
 
 .contestSubmissionImage {
@@ -307,29 +317,6 @@
 
 .contestPhotoCard:hover .contestSubmissionImage {
   transform: scale(1.05);
-}
-
-/* Contest photo card with voting */
-.photoVoteContainer {
-  padding: 0.5rem;
-  background-color: rgba(31, 41, 55, 0.7);
-  border-top: 1px solid rgba(75, 85, 99, 0.4);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.photoTitle {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: rgb(229, 231, 235);
-  text-align: center;
-  margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  width: 100%;
 }
 
 /* Results display for ended contests */

@@ -17,48 +17,57 @@ function ContestPhotoCard({ photo, contestId, contestPhase, onClick }) {
   const showStars = contestPhase === "voting";
 
   return (
-    <div className={styles.contestPhotoCard}>
-      <div onClick={() => onClick(photo)}>
+    <div className={`${styles.contestPhotoCard} relative group cursor-pointer`}>
+      <div className="relative overflow-hidden" onClick={() => onClick(photo)}>
         <img
           src={photo.thumbnailUrl}
           alt="Contest submission"
           onError={handleImageError}
-          className={styles.contestSubmissionImage}
+          className={`${styles.contestSubmissionImage} group-hover:scale-105 transition-transform duration-500`}
           loading="lazy"
         />
-      </div>
 
-      {showVotes && (
-        <div className={styles.photoVoteContainer}>
-          <h3 className={styles.photoTitle}>{photo.title}</h3>
+        {/* Text and voting overlay */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-gray-900/90 via-gray-900/70 to-transparent p-4 text-white">
+          <h3 className="text-lg font-semibold mb-2 leading-tight text-center">
+            {photo.title}
+          </h3>
 
-          {contestPhase === "ended" ? (
-            <div className={styles.photoResultsInfo}>
-              <div className={styles.photoAuthor}>
+          {contestPhase === "ended" && showVotes && (
+            <div className="text-center">
+              <div className="text-sm text-gray-300 mb-1">
                 by{" "}
                 <Link
                   to={`/users/${photo.userId}`}
                   className="text-indigo-300 hover:text-indigo-200 underline"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   {photo.User?.nickname || "Unknown"}
                 </Link>
               </div>
-              <div className={styles.photoStats}>
+              <div className="text-sm text-yellow-400">
                 {photo.averageRating ? photo.averageRating.toFixed(1) : "0.0"}/5
                 ⭐ ({photo.voteCount || 0} vote
                 {photo.voteCount !== 1 ? "s" : ""})
               </div>
             </div>
-          ) : (
-            <PhotoVoteButton
-              photo={photo}
-              contestId={contestId}
-              contestPhase={contestPhase}
-              showStars={showStars}
-            />
+          )}
+
+          {contestPhase === "voting" && showVotes && (
+            <div
+              className="flex justify-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <PhotoVoteButton
+                photo={photo}
+                contestId={contestId}
+                contestPhase={contestPhase}
+                showStars={showStars}
+              />
+            </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
