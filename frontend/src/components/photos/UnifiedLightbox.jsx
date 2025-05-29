@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { useSwipeable } from "react-swipeable";
 import { Link } from "react-router-dom";
 
@@ -16,6 +16,15 @@ export function UnifiedLightbox({
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [previousIndex, setPreviousIndex] = useState(-1);
 
+  // Zoom and pan state
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [panX, setPanX] = useState(0);
+  const [panY, setPanY] = useState(0);
+  const [isPanning, setIsPanning] = useState(false);
+  const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
+  const imageContainerRef = useRef(null);
+  const infoSidebarContentRef = useRef(null);
+
   // Configuration options with defaults
   const {
     showTitle = true,
@@ -29,7 +38,7 @@ export function UnifiedLightbox({
     enableNavigation = true,
     enableKeyboardControls = true,
     enableSwipeControls = true,
-    enableZoom = false,
+    enableZoom = true,
     showThumbnails = false,
     darkMode = true,
   } = config;
@@ -37,6 +46,136 @@ export function UnifiedLightbox({
   const isOpen = selectedIndex >= 0 && photos.length > 0;
   const currentPhoto = photos[currentIndex] || null;
   const previousPhoto = photos[previousIndex] || null;
+  const isZoomedIn = zoomLevel > 1;
+
+  // Reset zoom when image changes
+  const resetZoom = useCallback(() => {
+    setZoomLevel(1);
+    setPanX(0);
+    setPanY(0);
+    setIsPanning(false);
+  }, []);
+
+  // Zoom functions
+  const zoomIn = useCallback(() => {
+    if (!enableZoom) return;
+    setZoomLevel((prev) => Math.min(prev * 1.5, 5)); // Max 5x zoom
+  }, [enableZoom]);
+
+  const zoomOut = useCallback(() => {
+    if (!enableZoom) return;
+    setZoomLevel((prev) => {
+      const newZoom = prev / 1.5;
+      if (newZoom <= 1) {
+        // Reset pan when zooming out completely
+        setPanX(0);
+        setPanY(0);
+        return 1;
+      }
+      return newZoom;
+    });
+  }, [enableZoom]);
+
+  const resetZoomAndPan = useCallback(() => {
+    if (!enableZoom) return;
+    setZoomLevel(1);
+    setPanX(0);
+    setPanY(0);
+  }, [enableZoom]);
+
+  // Pan functions
+  const handlePanStart = useCallback(
+    (clientX, clientY) => {
+      if (!isZoomedIn) return;
+      setIsPanning(true);
+      setLastPanPoint({ x: clientX, y: clientY });
+    },
+    [isZoomedIn]
+  );
+
+  const handlePanMove = useCallback(
+    (clientX, clientY) => {
+      if (!isPanning || !isZoomedIn) return;
+
+      const deltaX = clientX - lastPanPoint.x;
+      const deltaY = clientY - lastPanPoint.y;
+
+      setPanX((prev) => prev + deltaX);
+      setPanY((prev) => prev + deltaY);
+      setLastPanPoint({ x: clientX, y: clientY });
+    },
+    [isPanning, isZoomedIn, lastPanPoint]
+  );
+
+  const handlePanEnd = useCallback(() => {
+    setIsPanning(false);
+  }, []);
+
+  // Mouse events for zoom and pan
+  const handleMouseDown = useCallback(
+    (e) => {
+      if (!enableZoom || !isZoomedIn) return;
+      e.preventDefault();
+      handlePanStart(e.clientX, e.clientY);
+    },
+    [enableZoom, isZoomedIn, handlePanStart]
+  );
+
+  const handleMouseMove = useCallback(
+    (e) => {
+      if (!enableZoom || !isPanning) return;
+      e.preventDefault();
+      handlePanMove(e.clientX, e.clientY);
+    },
+    [enableZoom, isPanning, handlePanMove]
+  );
+
+  const handleMouseUp = useCallback(() => {
+    if (!enableZoom) return;
+    handlePanEnd();
+  }, [enableZoom, handlePanEnd]);
+
+  // Touch events for zoom and pan
+  const handleTouchStart = useCallback(
+    (e) => {
+      if (!enableZoom || !isZoomedIn || e.touches.length !== 1) return;
+      const touch = e.touches[0];
+      handlePanStart(touch.clientX, touch.clientY);
+    },
+    [enableZoom, isZoomedIn, handlePanStart]
+  );
+
+  const handleTouchMove = useCallback(
+    (e) => {
+      if (!enableZoom || !isPanning || e.touches.length !== 1) return;
+      const touch = e.touches[0];
+      handlePanMove(touch.clientX, touch.clientY);
+    },
+    [enableZoom, isPanning, handlePanMove]
+  );
+
+  const handleTouchEnd = useCallback(() => {
+    if (!enableZoom) return;
+    handlePanEnd();
+  }, [enableZoom, handlePanEnd]);
+
+  // Add mouse event listeners
+  useEffect(() => {
+    if (!enableZoom) return;
+
+    const handleGlobalMouseMove = (e) => handleMouseMove(e);
+    const handleGlobalMouseUp = () => handleMouseUp();
+
+    if (isPanning) {
+      document.addEventListener("mousemove", handleGlobalMouseMove);
+      document.addEventListener("mouseup", handleGlobalMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener("mousemove", handleGlobalMouseMove);
+      document.removeEventListener("mouseup", handleGlobalMouseUp);
+    };
+  }, [enableZoom, isPanning, handleMouseMove, handleMouseUp]);
 
   // Handle opening animation and desktop default state
   useEffect(() => {
@@ -46,6 +185,7 @@ export function UnifiedLightbox({
       setIsTransitioning(false);
       setSlideDirection(null);
       setPreviousIndex(-1);
+      resetZoom(); // Reset zoom when opening
 
       // Use a small timeout for more reliable cross-browser animation
       const timer = setTimeout(() => {
@@ -65,8 +205,9 @@ export function UnifiedLightbox({
       setIsTransitioning(false);
       setSlideDirection(null);
       setPreviousIndex(-1);
+      resetZoom(); // Reset zoom when closing
     }
-  }, [isOpen, showInfoButton]);
+  }, [isOpen, showInfoButton, resetZoom]);
 
   // Detect if we're in landscape/desktop mode (aspect ratio based)
   const [isLandscape, setIsLandscape] = useState(
@@ -92,6 +233,7 @@ export function UnifiedLightbox({
   // Navigation functions with slide animation
   const goToNext = useCallback(() => {
     if (photos.length > 1 && !isTransitioning) {
+      resetZoom(); // Reset zoom when navigating
       setPreviousIndex(currentIndex);
       setSlideDirection("left");
       setIsTransitioning(true);
@@ -107,10 +249,11 @@ export function UnifiedLightbox({
         setPreviousIndex(-1);
       }, 300);
     }
-  }, [photos.length, currentIndex, isTransitioning]);
+  }, [photos.length, currentIndex, isTransitioning, resetZoom]);
 
   const goToPrevious = useCallback(() => {
     if (photos.length > 1 && !isTransitioning) {
+      resetZoom(); // Reset zoom when navigating
       setPreviousIndex(currentIndex);
       setSlideDirection("right");
       setIsTransitioning(true);
@@ -126,7 +269,7 @@ export function UnifiedLightbox({
         setPreviousIndex(-1);
       }, 300);
     }
-  }, [photos.length, currentIndex, isTransitioning]);
+  }, [photos.length, currentIndex, isTransitioning, resetZoom]);
 
   const closeLightbox = useCallback(() => {
     setIsVisible(false);
@@ -135,11 +278,12 @@ export function UnifiedLightbox({
     setIsTransitioning(false);
     setSlideDirection(null);
     setPreviousIndex(-1);
+    resetZoom(); // Reset zoom when closing
     // Delay the actual close to allow fade out animation
     setTimeout(() => {
       onClose();
     }, 200);
-  }, [onClose]);
+  }, [onClose, resetZoom]);
 
   // Handle image load
   const handleImageLoad = useCallback(() => {
@@ -161,11 +305,11 @@ export function UnifiedLightbox({
       switch (event.key) {
         case "ArrowRight":
           event.preventDefault();
-          goToNext();
+          if (!isZoomedIn) goToNext();
           break;
         case "ArrowLeft":
           event.preventDefault();
-          goToPrevious();
+          if (!isZoomedIn) goToPrevious();
           break;
         case "Escape":
           event.preventDefault();
@@ -178,6 +322,25 @@ export function UnifiedLightbox({
             setShowInfoSidebar((prev) => !prev);
           }
           break;
+        case "=":
+        case "+":
+          if (enableZoom) {
+            event.preventDefault();
+            zoomIn();
+          }
+          break;
+        case "-":
+          if (enableZoom) {
+            event.preventDefault();
+            zoomOut();
+          }
+          break;
+        case "0":
+          if (enableZoom) {
+            event.preventDefault();
+            resetZoomAndPan();
+          }
+          break;
       }
     };
 
@@ -186,50 +349,64 @@ export function UnifiedLightbox({
   }, [
     isOpen,
     enableKeyboardControls,
+    isZoomedIn,
     goToNext,
     goToPrevious,
     closeLightbox,
     showInfoButton,
+    enableZoom,
+    zoomIn,
+    zoomOut,
+    resetZoomAndPan,
   ]);
 
-  // Swipe controls
+  // Swipe controls - Modified to respect zoom state
   const swipeHandlers = useSwipeable({
-    onSwipedLeft: () => enableSwipeControls && goToNext(),
-    onSwipedRight: () => enableSwipeControls && goToPrevious(),
+    onSwipedLeft: () => enableSwipeControls && !isZoomedIn && goToNext(),
+    onSwipedRight: () => enableSwipeControls && !isZoomedIn && goToPrevious(),
     onSwipedUp: () =>
       enableSwipeControls &&
+      !isZoomedIn &&
       showInfoButton &&
       !isLandscape &&
       setShowInfoSidebar(true),
     onSwipedDown: (eventData) => {
-      if (!enableSwipeControls || isLandscape) return;
+      if (!enableSwipeControls || isLandscape || isZoomedIn) return;
 
-      // Only close sidebar if swipe started from upper third of screen
-      // and the info sidebar is actually open
+      // Only handle swipe down when info sidebar is open
       if (showInfoSidebar) {
         const startY = eventData.initial[1]; // Y coordinate where swipe started
         const screenHeight = window.innerHeight;
         const upperThird = screenHeight / 3;
 
-        // More restrictive conditions to avoid Safari pull-to-refresh:
-        // 1. Must start in upper third
-        // 2. Must have sufficient velocity (deltaY > 80px for more safety)
-        // 3. Must start from a reasonable distance from the top (at least 40px)
-        if (
-          startY <= upperThird &&
-          startY >= 40 &&
-          Math.abs(eventData.deltaY) > 80
-        ) {
-          // Prevent any potential pull-to-refresh
-          if (eventData.event && eventData.event.preventDefault) {
-            eventData.event.preventDefault();
-            eventData.event.stopPropagation();
-          }
+        // Check if the info content is scrollable
+        // We need to check the parent container that has the overflow-y-auto class
+        const sidebarContainer = infoSidebarContentRef.current?.parentElement;
+        const isContentScrollable =
+          sidebarContainer &&
+          sidebarContainer.scrollHeight > sidebarContainer.clientHeight;
+
+        // If content is not scrollable, allow swipe from anywhere
+        // If content is scrollable, require swipe from upper third to avoid interfering with scrolling
+        let shouldAllowDismiss = false;
+
+        if (!isContentScrollable) {
+          // Content not scrollable - allow swipe from anywhere with reasonable velocity
+          shouldAllowDismiss = Math.abs(eventData.deltaY) > 50;
+        } else {
+          // Content is scrollable - require swipe from upper third with stricter conditions
+          shouldAllowDismiss =
+            startY <= upperThird &&
+            startY >= 40 &&
+            Math.abs(eventData.deltaY) > 80;
+        }
+
+        if (shouldAllowDismiss) {
           setShowInfoSidebar(false);
         }
       }
     },
-    preventDefaultTouchmoveEvent: true,
+    preventDefaultTouchmoveEvent: !isZoomedIn, // Allow touch events when zoomed for panning
     trackMouse: false,
   });
 
@@ -331,10 +508,22 @@ export function UnifiedLightbox({
         {/* Close Button */}
         <button
           onClick={closeLightbox}
-          className="absolute top-4 right-4 z-30 text-white/70 hover:text-white text-3xl font-light transition-colors duration-200 w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10"
+          className="absolute top-4 right-4 z-30 text-white/70 hover:text-white transition-colors duration-200 w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10"
           aria-label="Close lightbox"
         >
-          ×
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
         </button>
 
         {/* Info Button */}
@@ -354,6 +543,78 @@ export function UnifiedLightbox({
           </button>
         )}
 
+        {/* Zoom Controls */}
+        {enableZoom && (
+          <div className="absolute top-4 left-4 z-20 flex flex-col space-y-2">
+            <button
+              onClick={zoomIn}
+              disabled={zoomLevel >= 5}
+              className="text-white/70 hover:text-white disabled:text-white/30 disabled:cursor-not-allowed transition-colors duration-200 w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 disabled:hover:bg-transparent"
+              aria-label="Zoom in"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"
+                />
+              </svg>
+            </button>
+            <button
+              onClick={zoomOut}
+              disabled={zoomLevel <= 1}
+              className="text-white/70 hover:text-white disabled:text-white/30 disabled:cursor-not-allowed transition-colors duration-200 w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 disabled:hover:bg-transparent"
+              aria-label="Zoom out"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM7 10h6"
+                />
+              </svg>
+            </button>
+            {isZoomedIn && (
+              <button
+                onClick={resetZoomAndPan}
+                className="text-white/70 hover:text-white transition-colors duration-200 w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10"
+                aria-label="Reset zoom"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+              </button>
+            )}
+            {isZoomedIn && (
+              <div className="text-white/50 text-xs text-center bg-black/50 rounded px-2 py-1">
+                {Math.round(zoomLevel * 100)}%
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Image Container - Responsive positioning */}
         <div
           className={`${
@@ -366,6 +627,7 @@ export function UnifiedLightbox({
               className={`flex-1 flex items-center justify-center relative bg-black overflow-hidden transition-all duration-300 ${
                 showInfoSidebar && isLandscape ? "mr-80" : ""
               }`}
+              ref={imageContainerRef}
             >
               {/* Navigation Buttons - positioned relative to image area */}
               {enableNavigation && photos.length > 1 && (
@@ -373,7 +635,9 @@ export function UnifiedLightbox({
                   <button
                     onClick={goToPrevious}
                     className={`absolute left-4 z-20 text-white/70 hover:text-white text-4xl font-light transition-all duration-200 w-12 h-12 flex items-center justify-center rounded-full hover:bg-white/10 ${
-                      isTransitioning ? "opacity-50 pointer-events-none" : ""
+                      isTransitioning || isZoomedIn
+                        ? "opacity-50 pointer-events-none"
+                        : ""
                     } ${
                       showInfoSidebar && !isLandscape
                         ? "pointer-events-none"
@@ -387,7 +651,9 @@ export function UnifiedLightbox({
                   <button
                     onClick={goToNext}
                     className={`absolute right-4 z-20 text-white/70 hover:text-white text-4xl font-light transition-all duration-200 w-12 h-12 flex items-center justify-center rounded-full hover:bg-white/10 ${
-                      isTransitioning ? "opacity-50 pointer-events-none" : ""
+                      isTransitioning || isZoomedIn
+                        ? "opacity-50 pointer-events-none"
+                        : ""
                     } ${
                       showInfoSidebar && !isLandscape
                         ? "pointer-events-none"
@@ -465,12 +731,29 @@ export function UnifiedLightbox({
                     alt={currentPhoto.title || "Photo"}
                     className={`max-w-full max-h-full object-contain select-none transition-opacity duration-300 ${
                       imageLoaded ? "opacity-100" : "opacity-0"
+                    } ${
+                      isZoomedIn
+                        ? "cursor-grab active:cursor-grabbing"
+                        : "cursor-default"
                     }`}
                     draggable="false"
                     onContextMenu={(e) => e.preventDefault()}
                     onLoad={handleImageLoad}
                     onError={handleImageLoad}
+                    onMouseDown={handleMouseDown}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
                     ref={checkImageLoaded}
+                    style={{
+                      transform: `scale(${zoomLevel}) translate(${
+                        panX / zoomLevel
+                      }px, ${panY / zoomLevel}px)`,
+                      transformOrigin: "center center",
+                      transition: isPanning
+                        ? "none"
+                        : "transform 0.1s ease-out",
+                    }}
                   />
                 </div>
               </div>
@@ -621,7 +904,6 @@ export function UnifiedLightbox({
           onTouchStart={(e) => e.stopPropagation()}
           onTouchMove={(e) => e.stopPropagation()}
           onTouchEnd={(e) => e.stopPropagation()}
-          onWheel={(e) => e.stopPropagation()}
         >
           {/* Portrait/Mobile: Swipe Down Indicator - Clickable */}
           {showInfoSidebar && !isLandscape && (
@@ -642,13 +924,16 @@ export function UnifiedLightbox({
                   />
                 </svg>
                 <div className="text-xs text-center whitespace-nowrap">
-                  Swipe down
+                  Less info
                 </div>
               </div>
             </div>
           )}
 
-          <div className={`p-6 space-y-6 ${!isLandscape ? "pt-2" : "pt-6"}`}>
+          <div
+            className={`p-6 space-y-6 ${!isLandscape ? "pt-2" : "pt-6"}`}
+            ref={infoSidebarContentRef}
+          >
             {/* Photo Info */}
             <div>
               {showTitle && currentPhoto.title && (
