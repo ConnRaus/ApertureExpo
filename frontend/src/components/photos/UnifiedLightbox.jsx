@@ -197,8 +197,38 @@ export function UnifiedLightbox({
     onSwipedLeft: () => enableSwipeControls && goToNext(),
     onSwipedRight: () => enableSwipeControls && goToPrevious(),
     onSwipedUp: () =>
-      enableSwipeControls && showInfoButton && setShowInfoSidebar(true),
-    onSwipedDown: () => enableSwipeControls && setShowInfoSidebar(false),
+      enableSwipeControls &&
+      showInfoButton &&
+      !isLandscape &&
+      setShowInfoSidebar(true),
+    onSwipedDown: (eventData) => {
+      if (!enableSwipeControls || isLandscape) return;
+
+      // Only close sidebar if swipe started from upper third of screen
+      // and the info sidebar is actually open
+      if (showInfoSidebar) {
+        const startY = eventData.initial[1]; // Y coordinate where swipe started
+        const screenHeight = window.innerHeight;
+        const upperThird = screenHeight / 3;
+
+        // More restrictive conditions to avoid Safari pull-to-refresh:
+        // 1. Must start in upper third
+        // 2. Must have sufficient velocity (deltaY > 80px for more safety)
+        // 3. Must start from a reasonable distance from the top (at least 40px)
+        if (
+          startY <= upperThird &&
+          startY >= 40 &&
+          Math.abs(eventData.deltaY) > 80
+        ) {
+          // Prevent any potential pull-to-refresh
+          if (eventData.event && eventData.event.preventDefault) {
+            eventData.event.preventDefault();
+            eventData.event.stopPropagation();
+          }
+          setShowInfoSidebar(false);
+        }
+      }
+    },
     preventDefaultTouchmoveEvent: true,
     trackMouse: false,
   });
@@ -209,19 +239,70 @@ export function UnifiedLightbox({
       // Standard scroll prevention
       document.body.style.overflow = "hidden";
 
-      // Safari iOS specific scroll prevention
+      // Safari iOS specific - more aggressive prevention
+      document.body.style.position = "fixed";
+      document.body.style.width = "100%";
+      document.body.style.height = "100%";
+      document.documentElement.style.overflow = "hidden";
+
+      // Safari iOS specific scroll prevention for wheel/scroll events
       const preventScroll = (e) => {
         e.preventDefault();
+        e.stopPropagation();
+      };
+
+      // More comprehensive event prevention for Safari
+      const preventDefaultScroll = (e) => {
+        // Prevent default unless it's within a scrollable container or interactive element
+        if (
+          !e.target.closest(".lightbox-scrollable") &&
+          !e.target.closest("button") &&
+          !e.target.closest("a") &&
+          !e.target.closest('[role="button"]')
+        ) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      };
+
+      // Prevent pull-to-refresh and bounce scrolling, but allow interactive elements
+      const preventScrollNotButtons = (e) => {
+        // Allow touch events on interactive elements
+        if (
+          e.target.closest("button") ||
+          e.target.closest("a") ||
+          e.target.closest('[role="button"]') ||
+          e.target.closest(".lightbox-scrollable")
+        ) {
+          return; // Don't prevent - allow normal interaction
+        }
+        e.preventDefault();
+        e.stopPropagation();
       };
 
       // Add passive: false to ensure preventDefault works
-      document.addEventListener("touchmove", preventScroll, { passive: false });
+      document.addEventListener("touchmove", preventDefaultScroll, {
+        passive: false,
+      });
       document.addEventListener("wheel", preventScroll, { passive: false });
+      document.addEventListener("scroll", preventScroll, { passive: false });
+
+      // Use the smarter prevention for touchstart
+      document.addEventListener("touchstart", preventScrollNotButtons, {
+        passive: false,
+      });
 
       return () => {
         document.body.style.overflow = "unset";
-        document.removeEventListener("touchmove", preventScroll);
+        document.body.style.position = "unset";
+        document.body.style.width = "unset";
+        document.body.style.height = "unset";
+        document.documentElement.style.overflow = "unset";
+
+        document.removeEventListener("touchmove", preventDefaultScroll);
         document.removeEventListener("wheel", preventScroll);
+        document.removeEventListener("scroll", preventScroll);
+        document.removeEventListener("touchstart", preventScrollNotButtons);
       };
     }
   }, [isOpen]);
@@ -234,6 +315,12 @@ export function UnifiedLightbox({
         isVisible ? "opacity-100" : "opacity-0"
       }`}
       onClick={closeLightbox}
+      style={{
+        WebkitOverflowScrolling: "touch",
+        overscrollBehavior: "none",
+        WebkitUserSelect: "none",
+        userSelect: "none",
+      }}
       {...swipeHandlers}
     >
       {/* Main Content Container */}
@@ -396,32 +483,43 @@ export function UnifiedLightbox({
               <div
                 className={`${
                   isLandscape ? "hidden" : "block"
-                } fixed bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white z-20`}
+                } fixed bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white z-20 max-h-96 overflow-y-auto lightbox-scrollable`}
+                onTouchStart={(e) => e.stopPropagation()}
+                onTouchMove={(e) => e.stopPropagation()}
+                onTouchEnd={(e) => e.stopPropagation()}
+                style={{
+                  scrollbarWidth: "thin",
+                  scrollbarColor: "rgba(255, 255, 255, 0.3) transparent",
+                }}
               >
                 {/* Swipe Up Indicator - Clickable - Improved spacing */}
                 {showInfoButton && (
-                  <div
-                    className="absolute -top-1 left-1/2 transform -translate-x-1/2 text-white/50 animate-bounce cursor-pointer flex flex-col items-center"
-                    onClick={() => setShowInfoSidebar(true)}
-                  >
-                    <svg
-                      className="w-4 h-4 mb-0.5"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
+                  <div className="sticky top-0 -mb-1 bg-gradient-to-b from-black/60 to-transparent pt-2 pb-3 z-10">
+                    <div
+                      className="flex flex-col items-center text-white/50 animate-bounce cursor-pointer"
+                      onClick={() => setShowInfoSidebar(true)}
                     >
-                      <path
-                        fillRule="evenodd"
-                        d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    <div className="text-xs text-center whitespace-nowrap">
-                      More info
+                      <svg
+                        className="w-4 h-4 mb-0.5"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <div className="text-xs text-center whitespace-nowrap">
+                        More info
+                      </div>
                     </div>
                   </div>
                 )}
 
-                <div className="pt-8 p-6">
+                <div
+                  className={`px-6 pb-6 ${showInfoButton ? "pt-2" : "pt-8"}`}
+                >
                   {showTitle && currentPhoto.title && (
                     <h2 className="text-xl font-semibold mb-2">
                       {currentPhoto.title}
@@ -503,7 +601,7 @@ export function UnifiedLightbox({
 
         {/* Info Sidebar */}
         <div
-          className={`fixed inset-y-0 right-0 bg-black/95 backdrop-blur-md border-l border-gray-700 overflow-y-auto z-25 transition-transform duration-300 ease-in-out ${
+          className={`fixed inset-y-0 right-0 bg-black/95 backdrop-blur-md border-l border-gray-700 overflow-y-auto lightbox-scrollable z-25 transition-transform duration-300 ease-in-out ${
             showInfoSidebar
               ? "translate-y-0 translate-x-0"
               : `${
@@ -517,32 +615,40 @@ export function UnifiedLightbox({
             backgroundColor: isLandscape
               ? "rgb(17 24 39 / 0.95)"
               : "rgb(0 0 0 / 0.95)",
+            scrollbarWidth: "thin",
+            scrollbarColor: "rgba(255, 255, 255, 0.3) transparent",
           }}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
+          onWheel={(e) => e.stopPropagation()}
         >
           {/* Portrait/Mobile: Swipe Down Indicator - Clickable */}
           {showInfoSidebar && !isLandscape && (
-            <div
-              className="absolute top-2 left-1/2 transform -translate-x-1/2 text-white/50 animate-bounce cursor-pointer flex flex-col items-center"
-              onClick={() => setShowInfoSidebar(false)}
-            >
-              <svg
-                className="w-4 h-4 mb-0.5"
-                fill="currentColor"
-                viewBox="0 0 20 20"
+            <div className="sticky top-0 bg-gradient-to-b from-black/80 to-transparent pt-2 pb-3 z-10">
+              <div
+                className="flex flex-col items-center text-white/50 animate-bounce cursor-pointer"
+                onClick={() => setShowInfoSidebar(false)}
               >
-                <path
-                  fillRule="evenodd"
-                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <div className="text-xs text-center whitespace-nowrap">
-                Swipe down
+                <svg
+                  className="w-4 h-4 mb-0.5"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <div className="text-xs text-center whitespace-nowrap">
+                  Swipe down
+                </div>
               </div>
             </div>
           )}
 
-          <div className={`p-6 space-y-6 ${!isLandscape ? "pt-12" : "pt-6"}`}>
+          <div className={`p-6 space-y-6 ${!isLandscape ? "pt-2" : "pt-6"}`}>
             {/* Photo Info */}
             <div>
               {showTitle && currentPhoto.title && (
@@ -773,6 +879,29 @@ export function UnifiedLightbox({
 
         .animate-slide-in-left {
           animation: slide-in-left 0.3s ease-in-out;
+        }
+
+        /* Custom scrollbar styles for webkit browsers */
+        .lightbox-scrollable::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        .lightbox-scrollable::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        .lightbox-scrollable::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.3);
+          border-radius: 3px;
+        }
+
+        .lightbox-scrollable::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Ensure smooth scrolling */
+        .lightbox-scrollable {
+          scroll-behavior: smooth;
         }
       `}</style>
     </div>
