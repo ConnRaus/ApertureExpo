@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { PhotoGrid } from "./PhotoGrid";
-import { PhotoLightbox } from "./PhotoLightbox";
+import { UnifiedLightbox, LightboxConfigs } from "./PhotoComponents";
 import { EditProfileModal } from "../user/EditProfileModal";
 import { PhotoSelector } from "./PhotoSelector";
 import { ProfileHeader } from "../user/ProfileHeader";
@@ -275,10 +275,13 @@ export function PublicUserGallery({ userId, isOwner }) {
         profile={profile}
       />
 
-      <PhotoLightbox
+      <UnifiedLightbox
         photos={photos}
         selectedIndex={selectedPhotoIndex}
         onClose={() => setSelectedPhotoIndex(-1)}
+        config={
+          isOwner ? LightboxConfigs.userProfile : LightboxConfigs.publicProfile
+        }
       />
 
       <PhotoSelector

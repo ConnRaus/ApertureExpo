@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styles from "../../styles/components/Contest.module.css";
-import { PhotoLightbox } from "../photos/PhotoLightbox";
+import { UnifiedLightbox, LightboxConfigs } from "../photos/PhotoComponents";
 import { PhotoVoteButton } from "./PhotoVoteButton";
 import { Link } from "react-router-dom";
 import { Pagination } from "../common/Pagination";
@@ -138,10 +138,15 @@ export function ContestSubmissions({
         />
       )}
 
-      <PhotoLightbox
+      <UnifiedLightbox
         photos={displayPhotos}
         selectedIndex={selectedPhotoIndex}
         onClose={() => setSelectedPhotoIndex(-1)}
+        config={
+          contestPhase === "voting"
+            ? LightboxConfigs.contestVoting
+            : LightboxConfigs.contestResults
+        }
       />
     </>
   );

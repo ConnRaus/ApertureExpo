@@ -1,16 +1,15 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useSwipeable } from "react-swipeable";
 import { useContestService } from "../../hooks";
 import { LoadingSpinner } from "../common/CommonComponents";
+import { UnifiedLightbox, LightboxConfigs } from "../photos/PhotoComponents";
 import styles from "../../styles/components/RecentWinners.module.css";
 
 export function RecentWinners() {
   const [winners, setWinners] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedPhoto, setSelectedPhoto] = useState(null);
-  const [currentIndex, setCurrentIndex] = useState(null);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(-1);
   const contestService = useContestService();
 
   useEffect(() => {
@@ -140,66 +139,9 @@ export function RecentWinners() {
     );
   };
 
-  const openPhotoModal = (photo, index) => {
-    setSelectedPhoto(photo);
-    setCurrentIndex(index);
+  const openPhotoModal = (index) => {
+    setSelectedPhotoIndex(index);
   };
-
-  const closePhotoModal = useCallback(() => {
-    setSelectedPhoto(null);
-    setCurrentIndex(null);
-  }, []);
-
-  const showNextPhoto = useCallback(
-    (e) => {
-      e.stopPropagation();
-      if (winners.length === 0) return;
-      const nextIndex = (currentIndex + 1) % winners.length;
-      setSelectedPhoto(winners[nextIndex]);
-      setCurrentIndex(nextIndex);
-    },
-    [currentIndex, winners]
-  );
-
-  const showPreviousPhoto = useCallback(
-    (e) => {
-      e.stopPropagation();
-      if (winners.length === 0) return;
-      const prevIndex = (currentIndex - 1 + winners.length) % winners.length;
-      setSelectedPhoto(winners[prevIndex]);
-      setCurrentIndex(prevIndex);
-    },
-    [currentIndex, winners]
-  );
-
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (selectedPhoto) {
-        if (event.key === "ArrowRight") {
-          showNextPhoto(event);
-        }
-        if (event.key === "ArrowLeft") {
-          showPreviousPhoto(event);
-        }
-        if (event.key === "Escape") {
-          closePhotoModal();
-        }
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [selectedPhoto, showNextPhoto, showPreviousPhoto, closePhotoModal]);
-
-  // Swipe handlers
-  const swipeHandlers = useSwipeable({
-    onSwipedLeft: (eventData) => showNextPhoto(eventData.event),
-    onSwipedRight: (eventData) => showPreviousPhoto(eventData.event),
-    preventDefaultTouchmoveEvent: true,
-    trackMouse: false,
-  });
 
   // Get rank display (medal emoji for top 3, number for others)
   const getRankDisplay = (rank) => {
@@ -233,7 +175,7 @@ export function RecentWinners() {
               <div
                 key={photo.id}
                 className={styles.winnerCard}
-                onClick={() => openPhotoModal(photo, index)}
+                onClick={() => openPhotoModal(index)}
               >
                 <div className={styles.rank}>{getRankDisplay(photo.rank)}</div>
                 <img
@@ -269,76 +211,12 @@ export function RecentWinners() {
             ))}
           </div>
 
-          {selectedPhoto && (
-            <div className={styles.modal} onClick={closePhotoModal}>
-              <div
-                className={styles.modalContent}
-                onClick={(e) => e.stopPropagation()}
-                {...swipeHandlers}
-              >
-                <span className={styles.closeButton} onClick={closePhotoModal}>
-                  &times;
-                </span>
-                <div className={styles.modalImageWrapper}>
-                  {winners.length > 1 && (
-                    <>
-                      <button
-                        className={`${styles.navButton} ${styles.prevButton}`}
-                        onClick={showPreviousPhoto}
-                        aria-label="Previous Winner"
-                      >
-                        &#10094;
-                      </button>
-                      <button
-                        className={`${styles.navButton} ${styles.nextButton}`}
-                        onClick={showNextPhoto}
-                        aria-label="Next Winner"
-                      >
-                        &#10095;
-                      </button>
-                    </>
-                  )}
-                  <img
-                    src={selectedPhoto.s3Url || selectedPhoto.thumbnailUrl}
-                    alt={selectedPhoto.title}
-                    className={styles.modalImage}
-                    draggable="false"
-                    onContextMenu={(e) => e.preventDefault()}
-                  />
-                </div>
-                <div className={styles.modalInfo}>
-                  <h3>{selectedPhoto.title}</h3>
-                  <p>
-                    by{" "}
-                    <Link to={`/users/${selectedPhoto.userId}`}>
-                      {selectedPhoto.User?.nickname || "Anonymous"}
-                    </Link>
-                  </p>
-                  <p>
-                    From contest:{" "}
-                    <Link
-                      to={`/events/${createSlug(selectedPhoto.contestTitle)}-${
-                        selectedPhoto.contestId
-                      }`}
-                    >
-                      {selectedPhoto.contestTitle}
-                    </Link>
-                  </p>
-                  {selectedPhoto.totalScore > 0 && (
-                    <p>
-                      Rating:{" "}
-                      {(
-                        selectedPhoto.averageRating ||
-                        selectedPhoto.totalScore / selectedPhoto.voteCount
-                      ).toFixed(1)}
-                      /5 ⭐ ({selectedPhoto.voteCount || 1} vote
-                      {selectedPhoto.voteCount !== 1 ? "s" : ""})
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
+          <UnifiedLightbox
+            photos={winners}
+            selectedIndex={selectedPhotoIndex}
+            onClose={() => setSelectedPhotoIndex(-1)}
+            config={LightboxConfigs.recentWinners}
+          />
         </>
       ) : (
         <div className={styles.noWinners}>

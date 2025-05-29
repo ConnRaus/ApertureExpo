@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { PhotoGrid } from "./PhotoGrid";
-import { PhotoLightbox } from "./PhotoLightbox";
+import { UnifiedLightbox, LightboxConfigs } from "./PhotoComponents";
 import { usePhotoService } from "../../hooks";
 
 export function UserPhotoGallery({ isEditing }) {
@@ -54,10 +54,11 @@ export function UserPhotoGallery({ isEditing }) {
         onEdit={handleEdit}
       />
 
-      <PhotoLightbox
+      <UnifiedLightbox
         photos={photos}
         selectedIndex={selectedPhotoIndex}
         onClose={() => setSelectedPhotoIndex(-1)}
+        config={LightboxConfigs.userProfile}
       />
     </div>
   );

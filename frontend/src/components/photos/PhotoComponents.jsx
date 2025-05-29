@@ -4,6 +4,8 @@ export { PublicUserGallery } from "./PublicUserGallery";
 export { EditProfileModal } from "../user/EditProfileModal";
 export { PhotoGrid } from "./PhotoGrid";
 export { PhotoLightbox } from "./PhotoLightbox";
+export { UnifiedLightbox } from "./UnifiedLightbox";
+export { LightboxConfigs } from "./LightboxConfigs";
 export { ProfileHeader } from "../user/ProfileHeader";
 export { PhotoSelector } from "./PhotoSelector";
 export { PhotoUploadModal } from "./PhotoUploadModal";
