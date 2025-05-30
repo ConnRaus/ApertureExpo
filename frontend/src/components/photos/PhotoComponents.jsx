@@ -9,3 +9,4 @@ export { LightboxConfigs } from "./LightboxConfigs";
 export { ProfileHeader } from "../user/ProfileHeader";
 export { PhotoSelector } from "./PhotoSelector";
 export { PhotoUploadModal } from "./PhotoUploadModal";
+export { CommentSection } from "./CommentSection";

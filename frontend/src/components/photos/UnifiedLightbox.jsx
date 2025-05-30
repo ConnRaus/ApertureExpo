@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { useSwipeable } from "react-swipeable";
 import { Link } from "react-router-dom";
+import { CommentSection } from "./CommentSection";
 
 export function UnifiedLightbox({
   photos = [],
@@ -302,6 +303,19 @@ export function UnifiedLightbox({
     if (!isOpen || !enableKeyboardControls) return;
 
     const handleKeyDown = (event) => {
+      // Don't trigger shortcuts if user is typing in an input field
+      const isTyping =
+        event.target.tagName === "INPUT" ||
+        event.target.tagName === "TEXTAREA" ||
+        event.target.contentEditable === "true" ||
+        event.target.closest('[role="textbox"]') ||
+        event.target.closest("input") ||
+        event.target.closest("textarea");
+
+      if (isTyping) {
+        return; // Don't handle keyboard shortcuts when typing
+      }
+
       switch (event.key) {
         case "ArrowRight":
           event.preventDefault();
@@ -461,7 +475,9 @@ export function UnifiedLightbox({
       document.addEventListener("touchmove", preventDefaultScroll, {
         passive: false,
       });
-      document.addEventListener("wheel", preventScroll, { passive: false });
+      document.addEventListener("wheel", preventDefaultScroll, {
+        passive: false,
+      });
       document.addEventListener("scroll", preventScroll, { passive: false });
 
       // Use the smarter prevention for touchstart
@@ -477,7 +493,7 @@ export function UnifiedLightbox({
         document.documentElement.style.overflow = "unset";
 
         document.removeEventListener("touchmove", preventDefaultScroll);
-        document.removeEventListener("wheel", preventScroll);
+        document.removeEventListener("wheel", preventDefaultScroll);
         document.removeEventListener("scroll", preventScroll);
         document.removeEventListener("touchstart", preventScrollNotButtons);
       };
@@ -1134,13 +1150,13 @@ export function UnifiedLightbox({
 
             {/* Comments Section */}
             {showComments && (
-              <div className="border-t border-gray-700 pt-6">
-                <h3 className="text-lg font-medium text-white mb-4">
-                  Comments
-                </h3>
-                <div className="text-gray-400 text-sm">
-                  Comments feature coming soon...
-                </div>
+              <div
+                className="border-t border-gray-700 pt-6"
+                onTouchStart={(e) => e.stopPropagation()}
+                onTouchMove={(e) => e.stopPropagation()}
+                onTouchEnd={(e) => e.stopPropagation()}
+              >
+                <CommentSection photoId={currentPhoto.id} />
               </div>
             )}
 
