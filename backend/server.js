@@ -10,6 +10,7 @@ import userRoutes from "./routes/users.js";
 import voteRoutes from "./routes/votes.js";
 import forumRoutes from "./routes/forum.js";
 import adminRoutes from "./routes/admin.js";
+import commentRoutes from "./routes/comments.js";
 import { ensureUserExists } from "./middleware/ensureUserExists.js";
 
 dotenv.config();
@@ -74,6 +75,9 @@ app.use(clerkMiddleware());
 
 // Admin routes - these routes check for admin access
 app.use("/admin", adminRoutes);
+
+// Comments routes - handle their own authentication per route
+app.use("/comments", commentRoutes);
 
 // Routes with authentication
 app.use("/", requireAuth(), ensureUserExists, photoRoutes);

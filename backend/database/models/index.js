@@ -4,6 +4,7 @@ import User from "./User.js";
 import Contest from "./Contest.js";
 import PhotoContest from "./PhotoContest.js";
 import Vote from "./Vote.js";
+import Comment from "./Comment.js";
 import ForumThreadInit from "./ForumThread.js";
 import ForumPostInit from "./ForumPost.js";
 
@@ -101,6 +102,35 @@ ForumPost.belongsTo(ForumThread, {
   as: "thread",
 });
 
+// Comment associations
+Photo.hasMany(Comment, {
+  foreignKey: "photoId",
+  as: "Comments",
+  onDelete: "CASCADE",
+});
+
+Comment.belongsTo(Photo, {
+  foreignKey: "photoId",
+  as: "Photo",
+});
+
+Comment.belongsTo(User, {
+  foreignKey: "userId",
+  as: "User",
+});
+
+// Self-referencing association for replies
+Comment.hasMany(Comment, {
+  foreignKey: "parentCommentId",
+  as: "Replies",
+  onDelete: "CASCADE",
+});
+
+Comment.belongsTo(Comment, {
+  foreignKey: "parentCommentId",
+  as: "ParentComment",
+});
+
 // Initialize models
 const models = {
   Photo,
@@ -108,6 +138,7 @@ const models = {
   Contest,
   PhotoContest,
   Vote,
+  Comment,
   ForumThread,
   ForumPost,
   sequelize,
