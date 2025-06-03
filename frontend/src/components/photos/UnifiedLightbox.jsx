@@ -524,7 +524,7 @@ export function UnifiedLightbox({
         {/* Close Button */}
         <button
           onClick={closeLightbox}
-          className="absolute top-4 right-4 z-30 text-white/70 hover:text-white transition-colors duration-200 w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10"
+          className="absolute top-4 right-4 z-30 text-white/70 hover:text-white transition-colors duration-200 w-10 h-10 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50"
           aria-label="Close lightbox"
         >
           <svg
@@ -546,7 +546,7 @@ export function UnifiedLightbox({
         {showInfoButton && (
           <button
             onClick={() => setShowInfoSidebar(!showInfoSidebar)}
-            className="absolute top-4 right-16 z-30 text-white/70 hover:text-white transition-colors duration-200 w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10"
+            className="absolute top-4 right-16 z-30 text-white/70 hover:text-white transition-colors duration-200 w-10 h-10 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50"
             aria-label="Toggle info"
           >
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -565,7 +565,7 @@ export function UnifiedLightbox({
             <button
               onClick={zoomIn}
               disabled={zoomLevel >= 5}
-              className="text-white/70 hover:text-white disabled:text-white/30 disabled:cursor-not-allowed transition-colors duration-200 w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 disabled:hover:bg-transparent"
+              className="text-white/70 hover:text-white disabled:text-white/30 disabled:cursor-not-allowed transition-colors duration-200 w-10 h-10 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50 disabled:hover:bg-black/30"
               aria-label="Zoom in"
             >
               <svg
@@ -585,7 +585,7 @@ export function UnifiedLightbox({
             <button
               onClick={zoomOut}
               disabled={zoomLevel <= 1}
-              className="text-white/70 hover:text-white disabled:text-white/30 disabled:cursor-not-allowed transition-colors duration-200 w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 disabled:hover:bg-transparent"
+              className="text-white/70 hover:text-white disabled:text-white/30 disabled:cursor-not-allowed transition-colors duration-200 w-10 h-10 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50 disabled:hover:bg-black/30"
               aria-label="Zoom out"
             >
               <svg
@@ -605,7 +605,7 @@ export function UnifiedLightbox({
             {isZoomedIn && (
               <button
                 onClick={resetZoomAndPan}
-                className="text-white/70 hover:text-white transition-colors duration-200 w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10"
+                className="text-white/70 hover:text-white transition-colors duration-200 w-10 h-10 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50"
                 aria-label="Reset zoom"
               >
                 <svg
@@ -650,7 +650,7 @@ export function UnifiedLightbox({
                 <>
                   <button
                     onClick={goToPrevious}
-                    className={`absolute left-4 z-20 text-white/70 hover:text-white transition-all duration-200 w-12 h-12 flex items-center justify-center rounded-full hover:bg-white/10 ${
+                    className={`absolute left-4 z-20 text-white/70 hover:text-white transition-all duration-200 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50 ${
                       isTransitioning || isZoomedIn
                         ? "opacity-50 pointer-events-none"
                         : ""
@@ -663,7 +663,7 @@ export function UnifiedLightbox({
                     style={{ top: "50%", transform: "translateY(-50%)" }}
                   >
                     <svg
-                      className="w-6 h-6"
+                      className="w-5 h-5 md:w-6 md:h-6"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -678,7 +678,7 @@ export function UnifiedLightbox({
                   </button>
                   <button
                     onClick={goToNext}
-                    className={`absolute right-4 z-20 text-white/70 hover:text-white transition-all duration-200 w-12 h-12 flex items-center justify-center rounded-full hover:bg-white/10 ${
+                    className={`absolute right-4 z-20 text-white/70 hover:text-white transition-all duration-200 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50 ${
                       isTransitioning || isZoomedIn
                         ? "opacity-50 pointer-events-none"
                         : ""
@@ -691,7 +691,7 @@ export function UnifiedLightbox({
                     style={{ top: "50%", transform: "translateY(-50%)" }}
                   >
                     <svg
-                      className="w-6 h-6"
+                      className="w-5 h-5 md:w-6 md:h-6"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
