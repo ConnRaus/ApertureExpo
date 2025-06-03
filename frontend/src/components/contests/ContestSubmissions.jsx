@@ -5,7 +5,13 @@ import { PhotoVoteButton } from "./PhotoVoteButton";
 import { Link } from "react-router-dom";
 import { Pagination } from "../common/Pagination";
 
-function ContestPhotoCard({ photo, contestId, contestPhase, onClick }) {
+function ContestPhotoCard({
+  photo,
+  contestId,
+  contestPhase,
+  onClick,
+  voteUpdateTrigger,
+}) {
   const handleImageError = (e) => {
     e.target.src = "https://via.placeholder.com/300x200?text=Image+Not+Found";
   };
@@ -63,6 +69,7 @@ function ContestPhotoCard({ photo, contestId, contestPhase, onClick }) {
                 contestId={contestId}
                 contestPhase={contestPhase}
                 showStars={showStars}
+                key={`${photo.id}-${voteUpdateTrigger}`}
               />
             </div>
           )}
@@ -80,30 +87,49 @@ export function ContestSubmissions({
   onPageChange,
 }) {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(-1);
+  const [displayPhotos, setDisplayPhotos] = useState([]);
+  const [voteUpdateTrigger, setVoteUpdateTrigger] = useState(0);
+
+  // Update displayPhotos when photos prop changes
+  useEffect(() => {
+    if (!photos || photos.length === 0) {
+      setDisplayPhotos([]);
+      return;
+    }
+
+    // Photos are now assumed to be pre-sorted by the backend based on phase.
+    // We only need to handle assigning rank for display in the 'ended' phase.
+    let processedPhotos = [...photos];
+    if (
+      contestPhase === "ended" &&
+      processedPhotos[0]?.totalScore !== undefined
+    ) {
+      // Add rank property for display
+      let rank = 0;
+      let lastScore = Infinity;
+      let photosProcessedForRank = 0;
+      processedPhotos = processedPhotos.map((photo) => {
+        photosProcessedForRank++;
+        const currentScore = photo.totalScore ?? -Infinity;
+        if (currentScore < lastScore) {
+          rank = photosProcessedForRank;
+        } else if (lastScore === -Infinity) {
+          rank = 1;
+        }
+        lastScore = currentScore;
+        return { ...photo, rank };
+      });
+    }
+    setDisplayPhotos(processedPhotos);
+  }, [photos, contestPhase]);
+
+  const handleVoteSuccess = (photoId, newVoteValue) => {
+    // Trigger a re-render of PhotoVoteButton components by updating the trigger
+    setVoteUpdateTrigger((prev) => prev + 1);
+  };
 
   if (!photos || photos.length === 0) {
     return <p>No submissions yet. Be the first to submit!</p>;
-  }
-
-  // Photos are now assumed to be pre-sorted by the backend based on phase.
-  // We only need to handle assigning rank for display in the 'ended' phase.
-  let displayPhotos = [...photos];
-  if (contestPhase === "ended" && displayPhotos[0]?.totalScore !== undefined) {
-    // Add rank property for display
-    let rank = 0;
-    let lastScore = Infinity;
-    let photosProcessedForRank = 0;
-    displayPhotos = displayPhotos.map((photo) => {
-      photosProcessedForRank++;
-      const currentScore = photo.totalScore ?? -Infinity;
-      if (currentScore < lastScore) {
-        rank = photosProcessedForRank;
-      } else if (lastScore === -Infinity) {
-        rank = 1;
-      }
-      lastScore = currentScore;
-      return { ...photo, rank };
-    });
   }
 
   return (
@@ -125,6 +151,7 @@ export function ContestSubmissions({
             contestId={contestId}
             contestPhase={contestPhase}
             onClick={() => setSelectedPhotoIndex(index)}
+            voteUpdateTrigger={voteUpdateTrigger}
           />
         ))}
       </div>
@@ -147,6 +174,9 @@ export function ContestSubmissions({
             ? LightboxConfigs.contestVoting
             : LightboxConfigs.contestResults
         }
+        contestId={contestId}
+        contestPhase={contestPhase}
+        onVoteSuccess={handleVoteSuccess}
       />
     </>
   );

@@ -45,6 +45,8 @@ export const LightboxConfigs = {
     enableNavigation: true,
     enableKeyboardControls: true,
     enableSwipeControls: true,
+    enableVoting: true, // Enable voting in lightbox
+    showVotingStars: true, // Show 5-star voting system
   },
 
   // For contest results - show everything including ratings

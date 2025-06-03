@@ -146,6 +146,8 @@ export function ContestResults({ photos, contestId }) {
         selectedIndex={selectedPhotoIndex}
         onClose={() => setSelectedPhotoIndex(-1)}
         config={LightboxConfigs.contestResults}
+        contestId={contestId}
+        contestPhase="ended"
       />
     </>
   );

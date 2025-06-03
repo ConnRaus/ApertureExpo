@@ -2,12 +2,16 @@ import React, { useState, useCallback, useEffect, useRef } from "react";
 import { useSwipeable } from "react-swipeable";
 import { Link } from "react-router-dom";
 import { CommentSection } from "./CommentSection";
+import { PhotoVoteButton } from "../contests/PhotoVoteButton";
 
 export function UnifiedLightbox({
   photos = [],
   selectedIndex = -1,
   onClose,
   config = {},
+  contestId = null,
+  contestPhase = null,
+  onVoteSuccess = null,
 }) {
   const [currentIndex, setCurrentIndex] = useState(selectedIndex);
   const [showInfoSidebar, setShowInfoSidebar] = useState(false);
@@ -42,6 +46,8 @@ export function UnifiedLightbox({
     enableZoom = true,
     showThumbnails = false,
     darkMode = true,
+    enableVoting = false,
+    showVotingStars = false,
   } = config;
 
   const isOpen = selectedIndex >= 0 && photos.length > 0;
@@ -628,6 +634,34 @@ export function UnifiedLightbox({
                 {Math.round(zoomLevel * 100)}%
               </div>
             )}
+          </div>
+        )}
+
+        {/* Voting Controls */}
+        {enableVoting && contestId && contestPhase && (
+          <div
+            className={`absolute left-1/2 transform -translate-x-1/2 z-20 ${
+              !showInfoSidebar &&
+              !isLandscape &&
+              (showTitle || showAuthor || showDescription || showRating)
+                ? "bottom-32 md:bottom-8" // Higher when bottom info bar is visible
+                : "bottom-20 md:bottom-8" // Normal position
+            }`}
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
+          >
+            <div className="bg-black/70 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/20 shadow-lg">
+              <PhotoVoteButton
+                photo={currentPhoto}
+                contestId={contestId}
+                contestPhase={contestPhase}
+                showStars={showVotingStars}
+                showCount={false}
+                onVoteSuccess={onVoteSuccess}
+              />
+            </div>
           </div>
         )}
 

@@ -9,6 +9,7 @@ export function PhotoVoteButton({
   contestPhase,
   showCount = true,
   showStars = false,
+  onVoteSuccess = null,
 }) {
   const [voteCount, setVoteCount] = useState(photo.voteCount || 0);
   const [userVote, setUserVote] = useState(null);
@@ -76,6 +77,10 @@ export function PhotoVoteButton({
             ? "Your vote has been updated!"
             : "Your vote has been counted!"
         );
+
+        if (onVoteSuccess) {
+          onVoteSuccess(photo.id, value);
+        }
       }
     } catch (error) {
       toast.error(error.message || "Failed to vote. Please try again.");
