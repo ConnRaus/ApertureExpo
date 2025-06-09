@@ -234,37 +234,54 @@ const processAndUploadImage = async (buffer, options) => {
     });
   }
 
-  // Progressive quality reduction to meet size target
+  // Strip all metadata to save space (we store metadata separately in database)
+  processedImage = processedImage.withMetadata({});
+
+  // Aggressive compression to guarantee size target - will reduce quality and dimensions as needed
   let currentQuality = quality;
+  let currentWidth = newWidth;
+  let currentHeight = newHeight;
   let processedBuffer;
   const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
 
-  do {
-    processedBuffer = await processedImage
+  // Keep trying until we're under the size limit
+  while (true) {
+    processedBuffer = await sharp(buffer)
+      .resize(currentWidth, currentHeight, {
+        fit: "inside",
+        withoutEnlargement: true,
+        kernel: isThumbnail ? "lanczos3" : "cubic",
+      })
+      .withMetadata({}) // Strip metadata
       .jpeg({
         quality: currentQuality,
         mozjpeg: true,
-        // Force better chroma subsampling for thumbnails
         chromaSubsampling: isThumbnail ? "4:4:4" : "4:2:0",
-      })
-      .toBuffer();
-
-    // Reduce quality by 5% each iteration if we're over the size limit
-    if (processedBuffer.length > maxSizeInBytes) {
-      currentQuality = Math.max(currentQuality - 5, 30); // Don't go below 30% quality
-    }
-  } while (processedBuffer.length > maxSizeInBytes && currentQuality > 30);
-
-  // If we still exceed the size limit at minimum quality, use more aggressive compression
-  if (processedBuffer.length > maxSizeInBytes) {
-    processedBuffer = await processedImage
-      .jpeg({
-        quality: 30,
-        mozjpeg: true,
-        chromaSubsampling: "4:2:0",
         force: true,
       })
       .toBuffer();
+
+    // If we're under the size limit, we're done!
+    if (processedBuffer.length <= maxSizeInBytes) {
+      break;
+    }
+
+    // Try reducing quality first (faster than resizing)
+    if (currentQuality > 1) {
+      currentQuality = Math.max(currentQuality - 5, 1);
+    } else {
+      // Quality is at minimum, so reduce dimensions by 10%
+      currentWidth = Math.round(currentWidth * 0.9);
+      currentHeight = Math.round(currentHeight * 0.9);
+
+      // Reset quality to a reasonable level when we reduce dimensions
+      currentQuality = Math.max(quality - 20, 30);
+
+      // Safety check: if image gets too small, break with what we have
+      if (currentWidth < 50 || currentHeight < 50) {
+        break;
+      }
+    }
   }
 
   return processedBuffer;
@@ -345,16 +362,15 @@ export const uploadToS3 = async (
       // Continue without metadata if extraction fails
     }
 
-    const fileExtension = file.originalname
-      ? file.originalname.split(".").pop().toLowerCase()
-      : "jpg";
+    // Always use .jpg since we're converting everything to JPEG format
+    const fileExtension = "jpg";
 
-    // Process main image (max 4K resolution, 85% quality, max 2MB)
+    // Process main image (max 4K resolution, 85% quality, max 1MB)
     const processedMainBuffer = await processAndUploadImage(mainBuffer, {
       maxWidth: 3840,
       maxHeight: 2160,
       quality: 85,
-      maxSizeInMB: 2,
+      maxSizeInMB: 1,
     });
 
     // Upload main image
