@@ -79,12 +79,11 @@ function CommentItem({
           <textarea
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
-            className="w-full bg-gray-700 text-white rounded px-3 py-2 resize-none lightbox-scrollable break-words"
+            className="w-full bg-gray-700 text-white rounded px-3 py-2 resize-none lightbox-scrollable break-words text-sm"
             style={{
               wordWrap: "break-word",
               overflowWrap: "break-word",
               hyphens: "auto",
-              fontSize: "16px", // Prevent iOS zoom
             }}
             rows="2"
             maxLength={150}
@@ -169,12 +168,11 @@ function CommentItem({
             value={replyContent}
             onChange={(e) => setReplyContent(e.target.value)}
             placeholder="Write a reply..."
-            className="w-full bg-gray-700 text-white rounded px-3 py-2 resize-none lightbox-scrollable break-words"
+            className="w-full bg-gray-700 text-white rounded px-3 py-2 resize-none lightbox-scrollable break-words text-sm"
             style={{
               wordWrap: "break-word",
               overflowWrap: "break-word",
               hyphens: "auto",
-              fontSize: "16px", // Prevent iOS zoom
             }}
             rows="2"
             maxLength={150}
@@ -246,6 +244,35 @@ export function CommentSection({ photoId }) {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [currentUserProfile, setCurrentUserProfile] = useState(null);
+
+  // Fetch current user's site profile data
+  useEffect(() => {
+    const fetchCurrentUserProfile = async () => {
+      if (!user?.id) return;
+
+      try {
+        const token = await getToken();
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL}/users/me`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.ok) {
+          const profile = await response.json();
+          setCurrentUserProfile(profile);
+        }
+      } catch (error) {
+        console.error("Error fetching current user profile:", error);
+      }
+    };
+
+    fetchCurrentUserProfile();
+  }, [user?.id, getToken]);
 
   // Fetch comments
   const fetchComments = async () => {
@@ -303,6 +330,16 @@ export function CommentSection({ photoId }) {
       }
 
       const newCommentData = await response.json();
+
+      // Ensure user data is present, fallback to current user's site data if missing
+      if (!newCommentData.User || !newCommentData.User.nickname) {
+        newCommentData.User = {
+          id: user.id,
+          nickname: currentUserProfile?.nickname || "You",
+          avatarUrl: currentUserProfile?.avatarUrl || user.imageUrl,
+        };
+      }
+
       setComments((prev) => [newCommentData, ...prev]);
       setNewComment("");
     } catch (err) {
@@ -335,6 +372,15 @@ export function CommentSection({ photoId }) {
       }
 
       const replyData = await response.json();
+
+      // Ensure user data is present, fallback to current user's site data if missing
+      if (!replyData.User || !replyData.User.nickname) {
+        replyData.User = {
+          id: user.id,
+          nickname: currentUserProfile?.nickname || "You",
+          avatarUrl: currentUserProfile?.avatarUrl || user.imageUrl,
+        };
+      }
 
       // Add reply to the parent comment
       setComments((prev) =>
@@ -375,11 +421,24 @@ export function CommentSection({ photoId }) {
 
       const updatedComment = await response.json();
 
+      // Ensure user data is present, fallback to current user's site data if missing
+      if (!updatedComment.User || !updatedComment.User.nickname) {
+        updatedComment.User = {
+          id: user.id,
+          nickname: currentUserProfile?.nickname || "You",
+          avatarUrl: currentUserProfile?.avatarUrl || user.imageUrl,
+        };
+      }
+
       // Update comment in state
       setComments((prev) =>
         prev.map((comment) => {
           if (comment.id === commentId) {
-            return updatedComment;
+            // When updating a parent comment, preserve the existing replies
+            return {
+              ...updatedComment,
+              Replies: comment.Replies || [],
+            };
           }
           // Check if it's a reply
           if (comment.Replies) {
@@ -451,12 +510,11 @@ export function CommentSection({ photoId }) {
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           placeholder="Write a comment..."
-          className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 lightbox-scrollable break-words"
+          className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 lightbox-scrollable break-words text-sm"
           style={{
             wordWrap: "break-word",
             overflowWrap: "break-word",
             hyphens: "auto",
-            fontSize: "16px", // Prevent iOS zoom
           }}
           rows="2"
           maxLength={150}

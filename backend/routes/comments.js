@@ -304,12 +304,17 @@ router.put("/:commentId", requireAuth(), ensureUserExists, async (req, res) => {
         {
           model: User,
           as: "User",
-          attributes: ["nickname"],
+          attributes: ["id", "nickname"],
         },
       ],
     });
 
-    res.json(updatedComment);
+    // Transform comment with Clerk data to get avatar
+    const transformedUser = await addClerkImageToUser(updatedComment.User);
+    const responseComment = updatedComment.toJSON();
+    responseComment.User = transformedUser;
+
+    res.json(responseComment);
   } catch (error) {
     console.error("Error updating comment:", error);
     res.status(500).json({ message: "Internal server error" });

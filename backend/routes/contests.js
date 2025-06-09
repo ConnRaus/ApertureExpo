@@ -3,6 +3,7 @@ import { requireAuth } from "@clerk/express";
 import Contest from "../database/models/Contest.js";
 import Photo from "../database/models/Photo.js";
 import Vote from "../database/models/Vote.js";
+import Comment from "../database/models/Comment.js";
 import { Op } from "sequelize";
 import sequelize from "../database/config/config.js";
 import User from "../database/models/User.js";
@@ -453,11 +454,29 @@ router.get("/contests/:contestId/top-photos", async (req, res) => {
       raw: true,
     });
 
-    // Get full photo details for ALL photos
+    // Get full photo details for ALL photos, including metadata and comments
     const photos = await Photo.findAll({
       where: { id: { [Op.in]: allPhotoIds } },
-      include: [{ model: User, as: "User", attributes: ["id", "nickname"] }],
-      attributes: ["id", "title", "thumbnailUrl", "s3Url", "userId"],
+      include: [
+        { model: User, as: "User", attributes: ["id", "nickname"] },
+        {
+          model: Comment,
+          as: "Comments",
+          include: [
+            { model: User, as: "User", attributes: ["id", "nickname"] },
+          ],
+          order: [["createdAt", "ASC"]],
+        },
+      ],
+      attributes: [
+        "id",
+        "title",
+        "description",
+        "thumbnailUrl",
+        "s3Url",
+        "userId",
+        "metadata",
+      ],
     });
 
     // Calculate stats for ALL photos

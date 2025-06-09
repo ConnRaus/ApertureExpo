@@ -71,8 +71,8 @@ export const LightboxConfigs = {
     showDescription: true,
     showRating: true, // Show rating for winners
     showVotes: true, // Show vote counts
-    showMetadata: false, // Keep it simple for homepage
-    showComments: false, // Keep it simple for homepage
+    showMetadata: true, // Show metadata for winners
+    showComments: true, // Show comments for winners
     showInfoButton: true, // Allow access to more info
     enableNavigation: true,
     enableKeyboardControls: true,
