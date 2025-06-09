@@ -33,11 +33,26 @@ export const LightboxConfigs = {
     enableSwipeControls: true,
   },
 
-  // For contest submissions during voting - minimal info, no spoilers
-  contestVoting: {
+  // For contest submissions during submission phase - show title and description
+  contestSubmission: {
     showTitle: true,
     showAuthor: true,
     showDescription: true,
+    showRating: false, // No ratings during submission
+    showVotes: false, // No votes during submission
+    showMetadata: false, // Hide to keep it clean
+    showComments: false, // No comments during submission
+    showInfoButton: false, // No extra info during submission
+    enableNavigation: true,
+    enableKeyboardControls: true,
+    enableSwipeControls: true,
+  },
+
+  // For contest submissions during voting - hide identifying info to prevent bias
+  contestVoting: {
+    showTitle: false, // Hide title during voting
+    showAuthor: false, // Hide author during voting
+    showDescription: false, // Hide description during voting
     showRating: false, // Hide during voting
     showVotes: false, // Hide during voting
     showMetadata: false, // Hide to prevent bias

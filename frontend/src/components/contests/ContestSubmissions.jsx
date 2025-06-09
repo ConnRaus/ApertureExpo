@@ -22,6 +22,9 @@ function ContestPhotoCard({
   // Only show stars during voting phase
   const showStars = contestPhase === "voting";
 
+  // Hide title during voting phase to prevent bias
+  const showTitle = contestPhase !== "voting";
+
   return (
     <div className={`${styles.contestPhotoCard} relative group cursor-pointer`}>
       <div className="relative overflow-hidden" onClick={() => onClick(photo)}>
@@ -35,9 +38,11 @@ function ContestPhotoCard({
 
         {/* Text and voting overlay */}
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-gray-900/90 via-gray-900/70 to-transparent p-4 text-white">
-          <h3 className="text-lg font-semibold mb-2 leading-tight text-center">
-            {photo.title}
-          </h3>
+          {showTitle && (
+            <h3 className="text-lg font-semibold mb-2 leading-tight text-center">
+              {photo.title}
+            </h3>
+          )}
 
           {contestPhase === "ended" && showVotes && (
             <div className="text-center">
@@ -170,7 +175,9 @@ export function ContestSubmissions({
         selectedIndex={selectedPhotoIndex}
         onClose={() => setSelectedPhotoIndex(-1)}
         config={
-          contestPhase === "voting"
+          contestPhase === "submission"
+            ? LightboxConfigs.contestSubmission
+            : contestPhase === "voting"
             ? LightboxConfigs.contestVoting
             : LightboxConfigs.contestResults
         }
