@@ -4,6 +4,7 @@ import {
   SignedIn,
   SignedOut,
   SignInButton,
+  SignUpButton,
   UserButton,
   useUser,
 } from "@clerk/clerk-react";
@@ -90,9 +91,24 @@ function Navigation() {
             </UserButton>
           </SignedIn>
           <SignedOut>
-            <SignInButton mode="modal">
-              <button className={styles.signInButton}>Sign In</button>
-            </SignInButton>
+            <div className={styles.authButtons}>
+              <SignInButton
+                mode="modal"
+                forceRedirectUrl="/"
+                fallbackRedirectUrl="/"
+              >
+                <button className={styles.signInButton}>Sign In</button>
+              </SignInButton>
+              <SignUpButton
+                mode="modal"
+                forceRedirectUrl="/"
+                fallbackRedirectUrl="/"
+              >
+                <button className={styles.createAccountButton}>
+                  Create Account
+                </button>
+              </SignUpButton>
+            </div>
           </SignedOut>
         </div>
       </div>

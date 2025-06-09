@@ -10,6 +10,7 @@ import UserProfilePage from "./pages/UserProfilePage";
 import ForumPage from "./pages/ForumPage";
 import ThreadDetailPage from "./pages/ThreadDetailPage";
 import AdminPage from "./pages/AdminPage";
+import LandingPage from "./components/landing/LandingPage";
 
 function App() {
   return (
@@ -36,18 +37,7 @@ function App() {
             </Routes>
           </SignedIn>
           <SignedOut>
-            <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
-              <h1 className="text-4xl font-bold mb-4">Aperture Expo</h1>
-              <p className="text-gray-400 mb-8 max-w-md">
-                Join our community of photographers, share your work, and
-                participate in exciting photo contests.
-              </p>
-              <div className="flex justify-center w-full">
-                <SignInButton mode="modal">
-                  <button className="sign-in-button">Sign In</button>
-                </SignInButton>
-              </div>
-            </div>
+            <LandingPage />
           </SignedOut>
         </main>
         <Footer />
