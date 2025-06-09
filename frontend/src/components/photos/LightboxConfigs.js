@@ -15,6 +15,7 @@ export const LightboxConfigs = {
     enableNavigation: true,
     enableKeyboardControls: true,
     enableSwipeControls: true,
+    enableEditing: true, // Allow editing on user profiles
   },
 
   // For public user galleries - show basic info and metadata

@@ -79,7 +79,7 @@ function CommentItem({
           <textarea
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
-            className="w-full bg-gray-700 text-white rounded px-3 py-2 resize-none lightbox-scrollable break-words text-sm"
+            className="w-full bg-gray-700 text-white rounded px-3 py-2 resize-none lightbox-scrollable break-words responsive-text-input"
             style={{
               wordWrap: "break-word",
               overflowWrap: "break-word",
@@ -168,7 +168,7 @@ function CommentItem({
             value={replyContent}
             onChange={(e) => setReplyContent(e.target.value)}
             placeholder="Write a reply..."
-            className="w-full bg-gray-700 text-white rounded px-3 py-2 resize-none lightbox-scrollable break-words text-sm"
+            className="w-full bg-gray-700 text-white rounded px-3 py-2 resize-none lightbox-scrollable break-words responsive-text-input"
             style={{
               wordWrap: "break-word",
               overflowWrap: "break-word",
@@ -510,7 +510,7 @@ export function CommentSection({ photoId }) {
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           placeholder="Write a comment..."
-          className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 lightbox-scrollable break-words text-sm"
+          className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 lightbox-scrollable break-words responsive-text-input"
           style={{
             wordWrap: "break-word",
             overflowWrap: "break-word",

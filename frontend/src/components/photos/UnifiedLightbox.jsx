@@ -1,8 +1,10 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { useSwipeable } from "react-swipeable";
 import { Link } from "react-router-dom";
+import { useAuth } from "@clerk/clerk-react";
 import { CommentSection } from "./CommentSection";
 import { PhotoVoteButton } from "../contests/PhotoVoteButton";
+import { PhotoService } from "../../services/PhotoService";
 
 export function UnifiedLightbox({
   photos = [],
@@ -12,6 +14,7 @@ export function UnifiedLightbox({
   contestId = null,
   contestPhase = null,
   onVoteSuccess = null,
+  onPhotoUpdate = null,
 }) {
   const [currentIndex, setCurrentIndex] = useState(selectedIndex);
   const [showInfoSidebar, setShowInfoSidebar] = useState(false);
@@ -20,6 +23,11 @@ export function UnifiedLightbox({
   const [slideDirection, setSlideDirection] = useState(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [previousIndex, setPreviousIndex] = useState(-1);
+
+  // Editing state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
 
   // Zoom and pan state
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -48,12 +56,17 @@ export function UnifiedLightbox({
     darkMode = true,
     enableVoting = false,
     showVotingStars = false,
+    enableEditing = false,
   } = config;
 
   const isOpen = selectedIndex >= 0 && photos.length > 0;
   const currentPhoto = photos[currentIndex] || null;
   const previousPhoto = photos[previousIndex] || null;
   const isZoomedIn = zoomLevel > 1;
+
+  // Auth and photo service for editing
+  const { getToken } = useAuth();
+  const photoService = new PhotoService(getToken);
 
   // Reset zoom when image changes
   const resetZoom = useCallback(() => {
@@ -62,6 +75,50 @@ export function UnifiedLightbox({
     setPanY(0);
     setIsPanning(false);
   }, []);
+
+  // Editing functions
+  const startEditing = useCallback(() => {
+    if (!currentPhoto || !enableEditing) return;
+    setEditTitle(currentPhoto.title || "");
+    setEditDescription(currentPhoto.description || "");
+    setIsEditing(true);
+  }, [currentPhoto, enableEditing]);
+
+  const cancelEditing = useCallback(() => {
+    setIsEditing(false);
+    setEditTitle("");
+    setEditDescription("");
+  }, []);
+
+  const savePhotoDetails = useCallback(async () => {
+    if (!currentPhoto || !enableEditing) return;
+
+    try {
+      const updatedPhoto = await photoService.updatePhoto(currentPhoto.id, {
+        title: editTitle.trim(),
+        description: editDescription.trim(),
+      });
+
+      // Update the photo in the photos array if onPhotoUpdate is provided
+      if (onPhotoUpdate) {
+        onPhotoUpdate(updatedPhoto);
+      }
+
+      setIsEditing(false);
+      setEditTitle("");
+      setEditDescription("");
+    } catch (error) {
+      console.error("Error updating photo:", error);
+      alert("Failed to update photo details. Please try again.");
+    }
+  }, [
+    currentPhoto,
+    enableEditing,
+    editTitle,
+    editDescription,
+    photoService,
+    onPhotoUpdate,
+  ]);
 
   // Zoom functions
   const zoomIn = useCallback(() => {
@@ -236,6 +293,15 @@ export function UnifiedLightbox({
       setCurrentIndex(selectedIndex);
     }
   }, [selectedIndex]);
+
+  // Cancel editing when photo changes
+  useEffect(() => {
+    if (isEditing) {
+      setIsEditing(false);
+      setEditTitle("");
+      setEditDescription("");
+    }
+  }, [currentIndex]); // Cancel editing whenever currentIndex changes
 
   // Navigation functions with slide animation
   const goToNext = useCallback(() => {
@@ -1010,16 +1076,100 @@ export function UnifiedLightbox({
           >
             {/* Photo Info */}
             <div>
-              {showTitle && currentPhoto.title && (
-                <h2 className="text-xl font-semibold text-white mb-3">
-                  {currentPhoto.title}
-                </h2>
+              {/* Edit button */}
+              {enableEditing && !isEditing && (
+                <div className="mb-3">
+                  <button
+                    onClick={startEditing}
+                    className="inline-flex items-center px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+                  >
+                    <svg
+                      className="w-4 h-4 mr-1"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
+                    </svg>
+                    Edit Details
+                  </button>
+                </div>
               )}
 
-              {showDescription && currentPhoto.description && (
-                <p className="text-gray-300 mb-4 leading-relaxed">
-                  {currentPhoto.description}
-                </p>
+              {/* Edit form */}
+              {isEditing ? (
+                <div className="mb-4 space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                      Title
+                    </label>
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) =>
+                        setEditTitle(e.target.value.slice(0, 25))
+                      }
+                      className="w-full bg-gray-700 text-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 responsive-text-input"
+                      maxLength={25}
+                      placeholder="Enter photo title"
+                    />
+                    <div className="text-xs text-gray-400 mt-1">
+                      {editTitle.length}/25
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                      Description
+                    </label>
+                    <textarea
+                      value={editDescription}
+                      onChange={(e) =>
+                        setEditDescription(e.target.value.slice(0, 150))
+                      }
+                      className="w-full bg-gray-700 text-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none responsive-text-input"
+                      rows="3"
+                      maxLength={150}
+                      placeholder="Enter photo description (optional)"
+                    />
+                    <div className="text-xs text-gray-400 mt-1">
+                      {editDescription.length}/150
+                    </div>
+                  </div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={savePhotoDetails}
+                      className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition-colors"
+                      disabled={!editTitle.trim()}
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      className="px-3 py-1.5 bg-gray-600 hover:bg-gray-700 text-white text-sm rounded transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {showTitle && currentPhoto.title && (
+                    <h2 className="text-xl font-semibold text-white mb-3">
+                      {currentPhoto.title}
+                    </h2>
+                  )}
+
+                  {showDescription && currentPhoto.description && (
+                    <p className="text-gray-300 mb-4 leading-relaxed">
+                      {currentPhoto.description}
+                    </p>
+                  )}
+                </>
               )}
 
               {showAuthor && currentPhoto.User && (

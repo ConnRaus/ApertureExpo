@@ -59,6 +59,7 @@ export function UserPhotoGallery({ isEditing }) {
         selectedIndex={selectedPhotoIndex}
         onClose={() => setSelectedPhotoIndex(-1)}
         config={LightboxConfigs.userProfile}
+        onPhotoUpdate={handleEdit}
       />
     </div>
   );

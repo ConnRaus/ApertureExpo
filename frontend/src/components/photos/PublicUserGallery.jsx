@@ -282,6 +282,7 @@ export function PublicUserGallery({ userId, isOwner }) {
         config={
           isOwner ? LightboxConfigs.userProfile : LightboxConfigs.publicProfile
         }
+        onPhotoUpdate={isOwner ? handleEdit : null}
       />
 
       <PhotoSelector

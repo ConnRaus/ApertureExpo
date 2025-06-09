@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
-import formStyles from "../../styles/components/Form.module.css";
 import { PhotoService } from "../../services/PhotoService";
 
 export function PhotoCard({
@@ -12,31 +11,12 @@ export function PhotoCard({
   onEdit,
   hideProfileLink = false,
 }) {
-  const [isEditingDetails, setIsEditingDetails] = useState(false);
-  const [title, setTitle] = useState(photo.title);
-  const [description, setDescription] = useState(photo.description || "");
   const { getToken } = useAuth();
   const photoService = new PhotoService(getToken);
 
   const handleImageError = (e) => {
     console.error("Image failed to load:", photo.s3Url);
     e.target.src = "https://via.placeholder.com/300x200?text=Image+Not+Found";
-  };
-
-  const handleEdit = async () => {
-    try {
-      const updatedPhoto = await photoService.updatePhoto(photo.id, {
-        title,
-        description,
-      });
-      if (onEdit) {
-        onEdit(updatedPhoto);
-      }
-      setIsEditingDetails(false);
-    } catch (error) {
-      console.error("Error updating photo:", error);
-      alert("Failed to update photo details");
-    }
   };
 
   return (
@@ -51,39 +31,11 @@ export function PhotoCard({
             }}
             aria-label="Delete photo"
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-          <button
-            className="absolute top-3 right-14 w-8 h-8 opacity-0 group-hover:opacity-100 bg-blue-600/80 text-white rounded-full flex items-center justify-center text-sm transition-all hover:bg-blue-600 hover:scale-110 z-10"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsEditingDetails(true);
-            }}
-            aria-label="Edit photo details"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                fillRule="evenodd"
+                d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                clipRule="evenodd"
               />
             </svg>
           </button>
@@ -130,52 +82,6 @@ export function PhotoCard({
           </div>
         </div>
       </div>
-
-      {/* Edit form modal overlay */}
-      {isEditingDetails && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-          onClick={() => setIsEditingDetails(false)}
-        >
-          <div
-            className="bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-semibold text-white mb-4">
-              Edit Photo Details
-            </h3>
-            <div className={formStyles.formGroup}>
-              <label className={formStyles.label}>Title</label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className={formStyles.input}
-              />
-              <label className={formStyles.label}>Description</label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className={formStyles.textarea}
-              />
-              <div className={formStyles.editButtons}>
-                <button
-                  onClick={handleEdit}
-                  className={`${formStyles.button} ${formStyles.primaryButton}`}
-                >
-                  Save
-                </button>
-                <button
-                  onClick={() => setIsEditingDetails(false)}
-                  className={`${formStyles.button} ${formStyles.secondaryButton}`}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
