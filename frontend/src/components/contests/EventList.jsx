@@ -124,9 +124,9 @@ export function EventList({ showAllTypes = true, selectedFilter = "all" }) {
     }
 
     return (
-      <div className="mb-6">
+      <div className="mb-4">
         <h2 className="text-xl font-bold mb-2">{title}</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 auto-rows-fr">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 auto-rows-fr">
           {contestList.map((contest) => (
             <ContestCard
               key={contest.id}
@@ -171,7 +171,7 @@ export function EventList({ showAllTypes = true, selectedFilter = "all" }) {
 
     return (
       <div className="mt-2">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 auto-rows-fr">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 auto-rows-fr">
           {displayContests.map((contest) => (
             <ContestCard
               key={contest.id}
@@ -205,7 +205,7 @@ export function EventList({ showAllTypes = true, selectedFilter = "all" }) {
 
     return (
       <div className="mt-2">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 auto-rows-fr">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 auto-rows-fr">
           {filteredContests.map((contest) => (
             <ContestCard
               key={contest.id}

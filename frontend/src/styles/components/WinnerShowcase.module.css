@@ -14,13 +14,13 @@
 /* Horizontal scrollable container */
 .scrollContainer {
   display: flex;
-  overflow-x: auto;
+  overflow-x: scroll; /* Changed from auto to scroll to always show scrollbar */
   padding-bottom: 1rem;
   scrollbar-width: thin;
   scrollbar-color: rgba(99, 102, 241, 0.6) rgba(55, 65, 81, 0.5);
   -webkit-overflow-scrolling: touch;
-  gap: 0.75rem;
-  padding: 0.5rem 0.1rem;
+  gap: 4px; /* Match photo grid exact spacing */
+  padding: 0.25rem 0.1rem; /* Reduced top/bottom padding */
 }
 
 .scrollContainer::-webkit-scrollbar {
