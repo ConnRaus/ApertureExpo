@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { PhotoGrid } from "./PhotoGrid";
-import { UnifiedLightbox, LightboxConfigs } from "./PhotoComponents";
+import {
+  UnifiedPhotoGrid,
+  PhotoGridConfigs,
+  UnifiedLightbox,
+  LightboxConfigs,
+} from "./PhotoComponents";
 import { EditProfileModal } from "../user/EditProfileModal";
 import { PhotoSelector } from "./PhotoSelector";
 import { ProfileHeader } from "../user/ProfileHeader";
@@ -241,14 +245,16 @@ export function PublicUserGallery({ userId, isOwner }) {
         onEditClick={() => setIsEditing(true)}
       />
 
-      <PhotoGrid
+      <UnifiedPhotoGrid
         photos={photos}
+        config={
+          isOwner
+            ? PhotoGridConfigs.userProfile
+            : PhotoGridConfigs.publicProfile
+        }
         isOwner={isOwner}
-        isEditing={isOwner && isEditing}
-        onPhotoClick={setSelectedPhotoIndex}
+        onClick={setSelectedPhotoIndex}
         onDelete={handleDelete}
-        onEdit={handleEdit}
-        hideProfileLink={true}
       />
 
       {/* Show pagination if pagination data is available */}

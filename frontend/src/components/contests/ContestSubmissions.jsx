@@ -1,88 +1,11 @@
 import React, { useState, useEffect } from "react";
-import styles from "../../styles/components/Contest.module.css";
-import { UnifiedLightbox, LightboxConfigs } from "../photos/PhotoComponents";
-import { PhotoVoteButton } from "./PhotoVoteButton";
-import { Link } from "react-router-dom";
+import {
+  UnifiedLightbox,
+  LightboxConfigs,
+  UnifiedPhotoGrid,
+  PhotoGridConfigs,
+} from "../photos/PhotoComponents";
 import { Pagination } from "../common/Pagination";
-
-function ContestPhotoCard({
-  photo,
-  contestId,
-  contestPhase,
-  onClick,
-  voteUpdateTrigger,
-}) {
-  const handleImageError = (e) => {
-    e.target.src = "https://via.placeholder.com/300x200?text=Image+Not+Found";
-  };
-
-  // Check if we should show votes
-  const showVotes = contestPhase === "voting" || contestPhase === "ended";
-
-  // Only show stars during voting phase
-  const showStars = contestPhase === "voting";
-
-  // Hide title during voting phase to prevent bias
-  const showTitle = contestPhase !== "voting";
-
-  return (
-    <div className={`${styles.contestPhotoCard} relative group cursor-pointer`}>
-      <div className="relative overflow-hidden" onClick={() => onClick(photo)}>
-        <img
-          src={photo.thumbnailUrl}
-          alt="Contest submission"
-          onError={handleImageError}
-          className={`${styles.contestSubmissionImage} group-hover:scale-105 transition-transform duration-500`}
-          loading="lazy"
-        />
-
-        {/* Text and voting overlay */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-gray-900/90 via-gray-900/70 to-transparent p-4 text-white">
-          {showTitle && (
-            <h3 className="text-lg font-semibold mb-2 leading-tight text-center">
-              {photo.title}
-            </h3>
-          )}
-
-          {contestPhase === "ended" && showVotes && (
-            <div className="text-center">
-              <div className="text-sm text-gray-300 mb-1">
-                by{" "}
-                <Link
-                  to={`/users/${photo.userId}`}
-                  className="text-indigo-300 hover:text-indigo-200 underline"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {photo.User?.nickname || "Unknown"}
-                </Link>
-              </div>
-              <div className="text-sm text-yellow-400">
-                {photo.averageRating ? photo.averageRating.toFixed(1) : "0.0"}/5
-                ⭐ ({photo.voteCount || 0} vote
-                {photo.voteCount !== 1 ? "s" : ""})
-              </div>
-            </div>
-          )}
-
-          {contestPhase === "voting" && showVotes && (
-            <div
-              className="flex justify-center"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <PhotoVoteButton
-                photo={photo}
-                contestId={contestId}
-                contestPhase={contestPhase}
-                showStars={showStars}
-                key={`${photo.id}-${voteUpdateTrigger}`}
-              />
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export function ContestSubmissions({
   photos = [],
@@ -133,6 +56,20 @@ export function ContestSubmissions({
     setVoteUpdateTrigger((prev) => prev + 1);
   };
 
+  // Determine which config to use based on contest phase
+  const getGridConfig = () => {
+    switch (contestPhase) {
+      case "submission":
+        return PhotoGridConfigs.contestSubmission;
+      case "voting":
+        return PhotoGridConfigs.contestVoting;
+      case "ended":
+        return PhotoGridConfigs.contestResults;
+      default:
+        return PhotoGridConfigs.contestSubmission;
+    }
+  };
+
   if (!photos || photos.length === 0) {
     return <p>No submissions yet. Be the first to submit!</p>;
   }
@@ -148,18 +85,14 @@ export function ContestSubmissions({
         {pagination?.totalPhotos || photos.length})
       </h3>
 
-      <div className={styles.submissionsGrid}>
-        {displayPhotos.map((photo, index) => (
-          <ContestPhotoCard
-            key={photo.id}
-            photo={photo}
-            contestId={contestId}
-            contestPhase={contestPhase}
-            onClick={() => setSelectedPhotoIndex(index)}
-            voteUpdateTrigger={voteUpdateTrigger}
-          />
-        ))}
-      </div>
+      <UnifiedPhotoGrid
+        photos={displayPhotos}
+        config={getGridConfig()}
+        onClick={setSelectedPhotoIndex}
+        contestId={contestId}
+        contestPhase={contestPhase}
+        voteUpdateTrigger={voteUpdateTrigger}
+      />
 
       {/* Show pagination if pagination data is available */}
       {pagination && (

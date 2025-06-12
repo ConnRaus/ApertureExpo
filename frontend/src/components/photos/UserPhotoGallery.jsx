@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { PhotoGrid } from "./PhotoGrid";
-import { UnifiedLightbox, LightboxConfigs } from "./PhotoComponents";
+import {
+  UnifiedPhotoGrid,
+  PhotoGridConfigs,
+  UnifiedLightbox,
+  LightboxConfigs,
+} from "./PhotoComponents";
 import { usePhotoService } from "../../hooks";
 
 export function UserPhotoGallery({ isEditing }) {
@@ -45,13 +49,12 @@ export function UserPhotoGallery({ isEditing }) {
 
   return (
     <div className="photo-gallery">
-      <PhotoGrid
+      <UnifiedPhotoGrid
         photos={photos}
+        config={PhotoGridConfigs.userProfile}
         isOwner={true}
-        isEditing={isEditing}
-        onPhotoClick={setSelectedPhotoIndex}
+        onClick={setSelectedPhotoIndex}
         onDelete={handleDelete}
-        onEdit={handleEdit}
       />
 
       <UnifiedLightbox
