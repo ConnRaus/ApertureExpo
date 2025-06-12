@@ -50,10 +50,17 @@ async function generateImageHashFromBuffer(buffer) {
   const tempDir = tmpdir();
   const randomFileName = crypto.randomBytes(16).toString("hex");
 
-  // Always convert to JPEG for consistent hashing regardless of original format
+  // Resize image to a smaller size before hashing to avoid memory issues with large panoramas
+  // We only need the hash for duplicate detection, so 800px width is plenty
   let jpegBuffer;
   try {
-    jpegBuffer = await sharp(buffer).jpeg().toBuffer();
+    jpegBuffer = await sharp(buffer)
+      .resize(800, 600, {
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .jpeg({ quality: 80 })
+      .toBuffer();
   } catch (error) {
     throw new Error(`Failed to process image: ${error.message}`);
   }
@@ -61,7 +68,7 @@ async function generateImageHashFromBuffer(buffer) {
   const tempFilePath = path.join(tempDir, `${randomFileName}.jpg`);
 
   try {
-    // Write the jpeg buffer to the temp file
+    // Write the resized jpeg buffer to the temp file
     await fs.writeFile(tempFilePath, jpegBuffer);
 
     // Generate hash from the file
@@ -374,7 +381,7 @@ const ensurePhotoHasHash = async (photo) => {
     // Get the image buffer from S3
     const imageBuffer = await getHashFromS3(photo.s3Url);
 
-    // Generate the hash using our new helper function
+    // Generate the hash using our updated helper function (which now resizes before hashing)
     const photoHash = await generateImageHashFromBuffer(imageBuffer);
 
     // Update the photo record with the hash
