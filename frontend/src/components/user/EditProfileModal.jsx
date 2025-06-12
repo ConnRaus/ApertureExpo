@@ -12,7 +12,7 @@ export function EditProfileModal({
   bannerImage,
   uploadingBanner,
   handleBannerUpload,
-  setShowPhotoSelector,
+  setShowPhotoLibraryPicker,
   handleProfileUpdate,
   profile,
 }) {
@@ -87,7 +87,7 @@ export function EditProfileModal({
                   </label>
                 </div>
                 <button
-                  onClick={() => setShowPhotoSelector(true)}
+                  onClick={() => setShowPhotoLibraryPicker(true)}
                   className={`${formStyles.button} ${formStyles.secondaryButton} w-full flex items-center justify-center`}
                   disabled={uploadingBanner}
                 >

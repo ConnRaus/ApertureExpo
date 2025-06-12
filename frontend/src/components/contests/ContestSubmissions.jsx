@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import {
-  UnifiedLightbox,
+  Lightbox,
   LightboxConfigs,
-  UnifiedPhotoGrid,
+  PhotoGrid,
   PhotoGridConfigs,
 } from "../photos/PhotoComponents";
 import { Pagination } from "../common/Pagination";
@@ -85,7 +85,7 @@ export function ContestSubmissions({
         {pagination?.totalPhotos || photos.length})
       </h3>
 
-      <UnifiedPhotoGrid
+      <PhotoGrid
         photos={displayPhotos}
         config={getGridConfig()}
         onClick={setSelectedPhotoIndex}
@@ -103,7 +103,7 @@ export function ContestSubmissions({
         />
       )}
 
-      <UnifiedLightbox
+      <Lightbox
         photos={displayPhotos}
         selectedIndex={selectedPhotoIndex}
         onClose={() => setSelectedPhotoIndex(-1)}

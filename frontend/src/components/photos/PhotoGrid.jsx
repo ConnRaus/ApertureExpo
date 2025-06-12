@@ -259,7 +259,7 @@ function calculateJustifiedRows(photos, containerWidth, targetHeight, gap) {
   return rows;
 }
 
-export function UnifiedPhotoGrid({
+export function PhotoGrid({
   photos = [],
   config = PhotoGridConfigs.userProfile,
   isOwner = false,

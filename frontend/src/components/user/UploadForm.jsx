@@ -2,12 +2,12 @@ import React, { useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import formStyles from "../../styles/components/Form.module.css";
-import { PhotoSelector } from "../photos/PhotoSelector";
-import { PhotoUploadModal } from "../photos/PhotoUploadModal";
+import { PhotoLibraryPicker } from "../photos/PhotoLibraryPicker";
+import { PhotoFileUploader } from "../photos/PhotoFileUploader";
 import { useContestService } from "../../hooks";
 
 export function UploadForm({ onUploadSuccess, contestId }) {
-  const [showPhotoSelector, setShowPhotoSelector] = useState(false);
+  const [showPhotoLibraryPicker, setShowPhotoLibraryPicker] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const contestService = useContestService();
@@ -23,7 +23,7 @@ export function UploadForm({ onUploadSuccess, contestId }) {
         isLoading: false,
         autoClose: 3000,
       });
-      setShowPhotoSelector(false);
+      setShowPhotoLibraryPicker(false);
       if (onUploadSuccess) onUploadSuccess();
     } catch (error) {
       toast.error(error.message || "Failed to submit photo. Please try again.");
@@ -46,7 +46,7 @@ export function UploadForm({ onUploadSuccess, contestId }) {
         </button>
         <span className="text-gray-400 flex items-center">or</span>
         <button
-          onClick={() => setShowPhotoSelector(true)}
+          onClick={() => setShowPhotoLibraryPicker(true)}
           className={`${formStyles.button} ${formStyles.secondaryButton} flex-1`}
           disabled={uploading}
         >
@@ -54,14 +54,14 @@ export function UploadForm({ onUploadSuccess, contestId }) {
         </button>
       </div>
 
-      <PhotoSelector
-        isOpen={showPhotoSelector}
-        onClose={() => setShowPhotoSelector(false)}
+      <PhotoLibraryPicker
+        isOpen={showPhotoLibraryPicker}
+        onClose={() => setShowPhotoLibraryPicker(false)}
         onSelect={handleExistingPhotoSelect}
         contestId={contestId}
       />
 
-      <PhotoUploadModal
+      <PhotoFileUploader
         isOpen={showUploadModal}
         onClose={() => setShowUploadModal(false)}
         contestId={contestId}

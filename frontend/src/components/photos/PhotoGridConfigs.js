@@ -1,4 +1,4 @@
-// Configuration presets for the UnifiedPhotoGrid component
+// Configuration presets for the PhotoGrid component
 // These make it easy to use the photo grid consistently across different contexts
 
 export const PhotoGridConfigs = {

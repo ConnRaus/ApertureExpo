@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useContestService } from "../../hooks";
 import { LoadingSpinner } from "../common/CommonComponents";
-import { UnifiedLightbox, LightboxConfigs } from "../photos/PhotoComponents";
-import styles from "../../styles/components/RecentWinners.module.css";
+import { Lightbox, LightboxConfigs } from "../photos/PhotoComponents";
+import styles from "../../styles/components/WinnerShowcase.module.css";
 
-export function RecentWinners() {
+export function WinnerShowcase() {
   const [winners, setWinners] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -158,7 +158,7 @@ export function RecentWinners() {
   };
 
   if (isLoading) {
-    return <LoadingSpinner size="md" message="Loading recent winners..." />;
+    return <LoadingSpinner size="md" message="Loading winner showcase..." />;
   }
 
   if (error) {
@@ -167,7 +167,7 @@ export function RecentWinners() {
 
   // Always show the section header, even if there are no winners yet
   return (
-    <div className={styles.recentWinners}>
+    <div className={styles.winnerShowcase}>
       {winners.length > 0 ? (
         <>
           <div className={styles.scrollContainer}>
@@ -211,11 +211,11 @@ export function RecentWinners() {
             ))}
           </div>
 
-          <UnifiedLightbox
+          <Lightbox
             photos={winners}
             selectedIndex={selectedPhotoIndex}
             onClose={() => setSelectedPhotoIndex(-1)}
-            config={LightboxConfigs.recentWinners}
+            config={LightboxConfigs.winnerShowcase}
           />
         </>
       ) : (

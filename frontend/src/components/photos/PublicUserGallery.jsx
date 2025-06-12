@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
-  UnifiedPhotoGrid,
+  PhotoGrid,
   PhotoGridConfigs,
-  UnifiedLightbox,
+  Lightbox,
   LightboxConfigs,
 } from "./PhotoComponents";
 import { EditProfileModal } from "../user/EditProfileModal";
-import { PhotoSelector } from "./PhotoSelector";
+import { PhotoLibraryPicker } from "./PhotoLibraryPicker";
 import { ProfileHeader } from "../user/ProfileHeader";
 import { Pagination } from "../common/Pagination";
 import {
@@ -34,7 +34,7 @@ export function PublicUserGallery({ userId, isOwner }) {
   const [bannerImage, setBannerImage] = useState("");
   const [tempBannerImage, setTempBannerImage] = useState("");
   const [bannerFileToUpload, setBannerFileToUpload] = useState(null);
-  const [showPhotoSelector, setShowPhotoSelector] = useState(false);
+  const [showPhotoLibraryPicker, setShowPhotoLibraryPicker] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
 
   const shouldShowLoading = useDelayedLoading(isLoading);
@@ -184,7 +184,7 @@ export function PublicUserGallery({ userId, isOwner }) {
 
   const handlePhotoSelect = (photo) => {
     setTempBannerImage(photo.s3Url);
-    setShowPhotoSelector(false);
+    setShowPhotoLibraryPicker(false);
   };
 
   const handleBannerUpload = (e) => {
@@ -245,7 +245,7 @@ export function PublicUserGallery({ userId, isOwner }) {
         onEditClick={() => setIsEditing(true)}
       />
 
-      <UnifiedPhotoGrid
+      <PhotoGrid
         photos={photos}
         config={
           isOwner
@@ -276,12 +276,12 @@ export function PublicUserGallery({ userId, isOwner }) {
         bannerImage={tempBannerImage || bannerImage}
         uploadingBanner={uploadingBanner}
         handleBannerUpload={handleBannerUpload}
-        setShowPhotoSelector={setShowPhotoSelector}
+        setShowPhotoLibraryPicker={setShowPhotoLibraryPicker}
         handleProfileUpdate={handleProfileUpdate}
         profile={profile}
       />
 
-      <UnifiedLightbox
+      <Lightbox
         photos={photos}
         selectedIndex={selectedPhotoIndex}
         onClose={() => setSelectedPhotoIndex(-1)}
@@ -291,9 +291,9 @@ export function PublicUserGallery({ userId, isOwner }) {
         onPhotoUpdate={isOwner ? handleEdit : null}
       />
 
-      <PhotoSelector
-        isOpen={showPhotoSelector}
-        onClose={() => setShowPhotoSelector(false)}
+      <PhotoLibraryPicker
+        isOpen={showPhotoLibraryPicker}
+        onClose={() => setShowPhotoLibraryPicker(false)}
         onSelect={handlePhotoSelect}
       />
     </div>

@@ -1,13 +1,11 @@
-export { PhotoCard } from "./PhotoCard";
 export { UserPhotoGallery } from "./UserPhotoGallery";
 export { PublicUserGallery } from "./PublicUserGallery";
 export { EditProfileModal } from "../user/EditProfileModal";
-export { UnifiedPhotoGrid } from "./UnifiedPhotoGrid";
+export { PhotoGrid } from "./PhotoGrid";
 export { PhotoGridConfigs } from "./PhotoGridConfigs";
-export { PhotoLightbox } from "./PhotoLightbox";
-export { UnifiedLightbox } from "./UnifiedLightbox";
+export { Lightbox } from "./Lightbox";
 export { LightboxConfigs } from "./LightboxConfigs";
 export { ProfileHeader } from "../user/ProfileHeader";
-export { PhotoSelector } from "./PhotoSelector";
-export { PhotoUploadModal } from "./PhotoUploadModal";
+export { PhotoLibraryPicker } from "./PhotoLibraryPicker";
+export { PhotoFileUploader } from "./PhotoFileUploader";
 export { CommentSection } from "./CommentSection";

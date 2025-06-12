@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import {
-  UnifiedPhotoGrid,
+  PhotoGrid,
   PhotoGridConfigs,
-  UnifiedLightbox,
+  Lightbox,
   LightboxConfigs,
 } from "./PhotoComponents";
 import { usePhotoService } from "../../hooks";
@@ -49,7 +49,7 @@ export function UserPhotoGallery({ isEditing }) {
 
   return (
     <div className="photo-gallery">
-      <UnifiedPhotoGrid
+      <PhotoGrid
         photos={photos}
         config={PhotoGridConfigs.userProfile}
         isOwner={true}
@@ -57,7 +57,7 @@ export function UserPhotoGallery({ isEditing }) {
         onDelete={handleDelete}
       />
 
-      <UnifiedLightbox
+      <Lightbox
         photos={photos}
         selectedIndex={selectedPhotoIndex}
         onClose={() => setSelectedPhotoIndex(-1)}

@@ -6,7 +6,7 @@ import { CommentSection } from "./CommentSection";
 import { PhotoVoteButton } from "../contests/PhotoVoteButton";
 import { PhotoService } from "../../services/PhotoService";
 
-export function UnifiedLightbox({
+export function Lightbox({
   photos = [],
   selectedIndex = -1,
   onClose,

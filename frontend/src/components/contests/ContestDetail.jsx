@@ -4,7 +4,7 @@ import { useContestService } from "../../hooks";
 import styles from "../../styles/components/Contest.module.css";
 import { ContestHeader } from "./ContestHeader";
 import { ContestSubmissions } from "./ContestSubmissions";
-import { ContestResults } from "./ContestResults";
+import { ContestPodium } from "./ContestPodium";
 import { UploadForm } from "../user/UploadForm";
 import { toast } from "react-toastify";
 import { useUser } from "@clerk/clerk-react";
@@ -309,7 +309,7 @@ export function ContestDetail(props) {
 
       {contest.phase === "ended" && winners.length > 0 && (
         <div className="mb-8">
-          <ContestResults photos={winners} contestId={contestId} />
+          <ContestPodium photos={winners} contestId={contestId} />
         </div>
       )}
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useDelayedLoading, usePhotoService } from "../../hooks";
 
-export function PhotoSelector({
+export function PhotoLibraryPicker({
   isOpen,
   onClose,
   onSelect,

@@ -80,8 +80,8 @@ export const LightboxConfigs = {
     enableSwipeControls: true,
   },
 
-  // For recent winners display - show key info and ratings
-  recentWinners: {
+  // For winner showcase display - show key info and ratings
+  winnerShowcase: {
     showTitle: true,
     showAuthor: true,
     showDescription: true,

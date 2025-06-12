@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import styles from "../../styles/components/Contest.module.css";
 import { Link } from "react-router-dom";
-import { UnifiedLightbox, LightboxConfigs } from "../photos/PhotoComponents";
+import { Lightbox, LightboxConfigs } from "../photos/PhotoComponents";
 
-export function ContestResults({ photos, contestId }) {
+export function ContestPodium({ photos, contestId }) {
   // Sort photos by score (totalScore or voteCount)
   const sortedPhotos = [...photos].sort((a, b) => {
     const scoreA = a.totalScore ?? -Infinity;
@@ -141,7 +141,7 @@ export function ContestResults({ photos, contestId }) {
           })}
         </div>
       </div>
-      <UnifiedLightbox
+      <Lightbox
         photos={podiumWinners}
         selectedIndex={selectedPhotoIndex}
         onClose={() => setSelectedPhotoIndex(-1)}
