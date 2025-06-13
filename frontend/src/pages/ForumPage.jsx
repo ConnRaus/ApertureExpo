@@ -55,7 +55,8 @@ function ForumPage() {
       await forumService.createThread(
         threadData.title,
         threadData.content,
-        threadData.category
+        threadData.category,
+        threadData.photoId
       );
       setShowCreateForm(false);
       fetchThreads(); // Refresh the thread list

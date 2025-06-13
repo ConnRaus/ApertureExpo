@@ -35,9 +35,10 @@ export function ThreadList({ threads }) {
           key={thread.id}
           className={`${styles.threadCard} ${
             thread.isPinned ? styles.pinnedThread : ""
-          } cursor-pointer hover:bg-gray-50 transition duration-150`}
+          } cursor-pointer hover:bg-gray-50 transition duration-150 relative`}
           onClick={() => handleThreadClick(thread.id)}
         >
+          {/* Main content area - full width */}
           <div className={styles.threadCardHeader}>
             <h3 className={styles.threadTitle}>{thread.title}</h3>
           </div>
@@ -81,6 +82,19 @@ export function ThreadList({ threads }) {
               </div>
             </div>
           </div>
+
+          {/* Photo thumbnail - absolutely positioned on the right */}
+          {thread.photo && (
+            <div className="absolute top-4 right-4">
+              <div className="w-16 h-16 rounded-lg overflow-hidden border border-gray-600">
+                <img
+                  src={thread.photo.thumbnailUrl || thread.photo.s3Url}
+                  alt={thread.photo.title || "Attached photo"}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          )}
         </div>
       ))}
     </div>

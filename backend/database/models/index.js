@@ -92,6 +92,12 @@ ForumThread.hasMany(ForumPost, {
   onDelete: "CASCADE",
 });
 
+// Add photo association for ForumThread
+ForumThread.belongsTo(Photo, {
+  foreignKey: "photoId",
+  as: "photo",
+});
+
 ForumPost.belongsTo(User, {
   foreignKey: "userId",
   as: "author",
@@ -100,6 +106,12 @@ ForumPost.belongsTo(User, {
 ForumPost.belongsTo(ForumThread, {
   foreignKey: "threadId",
   as: "thread",
+});
+
+// Add photo association for ForumPost
+ForumPost.belongsTo(Photo, {
+  foreignKey: "photoId",
+  as: "photo",
 });
 
 // Comment associations

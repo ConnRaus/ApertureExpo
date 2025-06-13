@@ -53,7 +53,7 @@ export class ForumService {
     return response.json();
   }
 
-  async createThread(title, content, category = "General") {
+  async createThread(title, content, category = "General", photoId = null) {
     const token = await this.getToken();
     const response = await fetch(`${API_URL}/forum/threads`, {
       method: "POST",
@@ -61,14 +61,14 @@ export class ForumService {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ title, content, category }),
+      body: JSON.stringify({ title, content, category, photoId }),
     });
 
     if (!response.ok) throw new Error("Failed to create thread");
     return response.json();
   }
 
-  async createPost(threadId, content) {
+  async createPost(threadId, content, photoId = null) {
     const token = await this.getToken();
     const response = await fetch(`${API_URL}/forum/threads/${threadId}/posts`, {
       method: "POST",
@@ -76,7 +76,7 @@ export class ForumService {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ content, photoId }),
     });
 
     if (!response.ok) throw new Error("Failed to create post");
@@ -98,7 +98,7 @@ export class ForumService {
     return response.json();
   }
 
-  async updatePost(postId, content) {
+  async updatePost(postId, content, photoId = null) {
     const token = await this.getToken();
     const response = await fetch(`${API_URL}/forum/posts/${postId}`, {
       method: "PUT",
@@ -106,7 +106,7 @@ export class ForumService {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ content, photoId }),
     });
 
     if (!response.ok) throw new Error("Failed to update post");

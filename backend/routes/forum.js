@@ -4,7 +4,7 @@ import { requireAuth, clerkClient } from "@clerk/express";
 import { getUserIdFromRequest } from "../utils/auth.js";
 
 const router = express.Router();
-const { ForumThread, ForumPost, User } = models;
+const { ForumThread, ForumPost, User, Photo } = models;
 
 // Cache for user images with a shorter expiry
 const userImageCache = new Map();
@@ -128,6 +128,19 @@ const transformThreadsWithClerkData = async (threads) => {
       threadData.author.id = authorId;
       threadData.author.nickname = authorNickname;
     }
+
+    // Add Clerk image to photo author if photo exists
+    if (threadData.photo && threadData.photo.User) {
+      const photoAuthorId = threadData.photo.User.id;
+      const photoAuthorNickname = threadData.photo.User.nickname;
+
+      threadData.photo.User = await addClerkImageToUser(threadData.photo.User);
+
+      // Ensure the ID and nickname are preserved
+      threadData.photo.User.id = photoAuthorId;
+      threadData.photo.User.nickname = photoAuthorNickname;
+    }
+
     transformedThreads.push(threadData);
   }
 
@@ -144,6 +157,17 @@ const transformPostsWithClerkData = async (posts) => {
     const postData = post.toJSON ? post.toJSON() : post;
     if (postData.author) {
       postData.author = await addClerkImageToUser(postData.author);
+    }
+    // Add Clerk image to photo author if photo exists
+    if (postData.photo && postData.photo.User) {
+      const photoAuthorId = postData.photo.User.id;
+      const photoAuthorNickname = postData.photo.User.nickname;
+
+      postData.photo.User = await addClerkImageToUser(postData.photo.User);
+
+      // Ensure the ID and nickname are preserved
+      postData.photo.User.id = photoAuthorId;
+      postData.photo.User.nickname = photoAuthorNickname;
     }
     transformedPosts.push(postData);
   }
@@ -174,6 +198,26 @@ router.get("/threads", async (req, res) => {
           model: User,
           as: "author",
           attributes: ["id", "nickname"],
+        },
+        {
+          model: Photo,
+          as: "photo",
+          attributes: [
+            "id",
+            "title",
+            "description",
+            "thumbnailUrl",
+            "s3Url",
+            "userId",
+            "metadata",
+          ],
+          include: [
+            {
+              model: User,
+              as: "User",
+              attributes: ["id", "nickname"],
+            },
+          ],
         },
       ],
     });
@@ -238,6 +282,26 @@ router.get("/threads/:threadId", async (req, res) => {
           as: "author",
           attributes: ["id", "nickname"],
         },
+        {
+          model: Photo,
+          as: "photo",
+          attributes: [
+            "id",
+            "title",
+            "description",
+            "thumbnailUrl",
+            "s3Url",
+            "userId",
+            "metadata",
+          ],
+          include: [
+            {
+              model: User,
+              as: "User",
+              attributes: ["id", "nickname"],
+            },
+          ],
+        },
       ],
     });
 
@@ -257,6 +321,26 @@ router.get("/threads/:threadId", async (req, res) => {
           as: "author",
           attributes: ["id", "nickname"],
         },
+        {
+          model: Photo,
+          as: "photo",
+          attributes: [
+            "id",
+            "title",
+            "description",
+            "thumbnailUrl",
+            "s3Url",
+            "userId",
+            "metadata",
+          ],
+          include: [
+            {
+              model: User,
+              as: "User",
+              attributes: ["id", "nickname"],
+            },
+          ],
+        },
       ],
     });
 
@@ -274,6 +358,18 @@ router.get("/threads/:threadId", async (req, res) => {
       // Ensure the ID and nickname are preserved
       threadData.author.id = authorId;
       threadData.author.nickname = authorNickname;
+    }
+
+    // Add Clerk image to thread photo author if photo exists
+    if (threadData.photo && threadData.photo.User) {
+      const photoAuthorId = threadData.photo.User.id;
+      const photoAuthorNickname = threadData.photo.User.nickname;
+
+      threadData.photo.User = await addClerkImageToUser(threadData.photo.User);
+
+      // Ensure the ID and nickname are preserved
+      threadData.photo.User.id = photoAuthorId;
+      threadData.photo.User.nickname = photoAuthorNickname;
     }
 
     // Transform posts with Clerk data
@@ -312,7 +408,7 @@ router.get("/threads/:threadId", async (req, res) => {
 // Create a new thread
 router.post("/threads", requireAuth(), async (req, res) => {
   try {
-    const { title, content, category } = req.body;
+    const { title, content, category, photoId } = req.body;
     const userId = getUserIdFromRequest(req);
 
     if (!title || !content) {
@@ -327,16 +423,37 @@ router.post("/threads", requireAuth(), async (req, res) => {
       title,
       content,
       category,
+      photoId,
       userId,
     });
 
-    // Fetch the created thread with author information
+    // Fetch the created thread with author information and photo
     const threadWithAuthor = await ForumThread.findByPk(thread.id, {
       include: [
         {
           model: User,
           as: "author",
           attributes: ["id", "nickname"],
+        },
+        {
+          model: Photo,
+          as: "photo",
+          attributes: [
+            "id",
+            "title",
+            "description",
+            "thumbnailUrl",
+            "s3Url",
+            "userId",
+            "metadata",
+          ],
+          include: [
+            {
+              model: User,
+              as: "User",
+              attributes: ["id", "nickname"],
+            },
+          ],
         },
       ],
     });
@@ -352,7 +469,7 @@ router.post("/threads", requireAuth(), async (req, res) => {
 router.post("/threads/:threadId/posts", requireAuth(), async (req, res) => {
   try {
     const { threadId } = req.params;
-    const { content } = req.body;
+    const { content, photoId } = req.body;
     const userId = getUserIdFromRequest(req);
 
     if (!content) {
@@ -361,6 +478,7 @@ router.post("/threads/:threadId/posts", requireAuth(), async (req, res) => {
 
     // Check if thread exists and is not locked
     const thread = await ForumThread.findByPk(threadId);
+
     if (!thread) {
       return res.status(404).json({ error: "Thread not found" });
     }
@@ -371,6 +489,7 @@ router.post("/threads/:threadId/posts", requireAuth(), async (req, res) => {
 
     const post = await ForumPost.create({
       content,
+      photoId,
       userId,
       threadId,
     });
@@ -378,13 +497,33 @@ router.post("/threads/:threadId/posts", requireAuth(), async (req, res) => {
     // Update the thread's last activity timestamp
     await thread.update({ lastActivityAt: new Date() });
 
-    // Fetch the created post with author information
+    // Fetch the created post with author information and photo
     const postWithAuthor = await ForumPost.findByPk(post.id, {
       include: [
         {
           model: User,
           as: "author",
           attributes: ["id", "nickname"],
+        },
+        {
+          model: Photo,
+          as: "photo",
+          attributes: [
+            "id",
+            "title",
+            "description",
+            "thumbnailUrl",
+            "s3Url",
+            "userId",
+            "metadata",
+          ],
+          include: [
+            {
+              model: User,
+              as: "User",
+              attributes: ["id", "nickname"],
+            },
+          ],
         },
       ],
     });
@@ -404,6 +543,18 @@ router.post("/threads/:threadId/posts", requireAuth(), async (req, res) => {
       postData.author.nickname = authorNickname;
     }
 
+    // Add Clerk image to photo author if photo exists
+    if (postData.photo && postData.photo.User) {
+      const photoAuthorId = postData.photo.User.id;
+      const photoAuthorNickname = postData.photo.User.nickname;
+
+      postData.photo.User = await addClerkImageToUser(postData.photo.User);
+
+      // Ensure the ID and nickname are preserved
+      postData.photo.User.id = photoAuthorId;
+      postData.photo.User.nickname = photoAuthorNickname;
+    }
+
     res.status(201).json(postData);
   } catch (error) {
     console.error("Error creating post:", error);
@@ -415,7 +566,7 @@ router.post("/threads/:threadId/posts", requireAuth(), async (req, res) => {
 router.put("/threads/:threadId", requireAuth(), async (req, res) => {
   try {
     const { threadId } = req.params;
-    const { title, content, category } = req.body;
+    const { title, content, category, photoId } = req.body;
     const userId = getUserIdFromRequest(req);
 
     const thread = await ForumThread.findByPk(threadId);
@@ -432,9 +583,41 @@ router.put("/threads/:threadId", requireAuth(), async (req, res) => {
       title: title || thread.title,
       content: content || thread.content,
       category: category || thread.category,
+      photoId: photoId !== undefined ? photoId : thread.photoId,
     });
 
-    res.json(thread);
+    // Fetch updated thread with author and photo
+    const updatedThread = await ForumThread.findByPk(threadId, {
+      include: [
+        {
+          model: User,
+          as: "author",
+          attributes: ["id", "nickname"],
+        },
+        {
+          model: Photo,
+          as: "photo",
+          attributes: [
+            "id",
+            "title",
+            "description",
+            "thumbnailUrl",
+            "s3Url",
+            "userId",
+            "metadata",
+          ],
+          include: [
+            {
+              model: User,
+              as: "User",
+              attributes: ["id", "nickname"],
+            },
+          ],
+        },
+      ],
+    });
+
+    res.json(updatedThread);
   } catch (error) {
     console.error("Error updating thread:", error);
     res.status(500).json({ error: "Failed to update thread" });
@@ -445,7 +628,7 @@ router.put("/threads/:threadId", requireAuth(), async (req, res) => {
 router.put("/posts/:postId", requireAuth(), async (req, res) => {
   try {
     const { postId } = req.params;
-    const { content } = req.body;
+    const { content, photoId } = req.body;
     const userId = getUserIdFromRequest(req);
 
     const post = await ForumPost.findByPk(postId);
@@ -460,16 +643,37 @@ router.put("/posts/:postId", requireAuth(), async (req, res) => {
 
     await post.update({
       content,
+      photoId,
       isEdited: true,
     });
 
-    // Fetch updated post with author
+    // Fetch updated post with author and photo
     const updatedPost = await ForumPost.findByPk(postId, {
       include: [
         {
           model: User,
           as: "author",
           attributes: ["id", "nickname"],
+        },
+        {
+          model: Photo,
+          as: "photo",
+          attributes: [
+            "id",
+            "title",
+            "description",
+            "thumbnailUrl",
+            "s3Url",
+            "userId",
+            "metadata",
+          ],
+          include: [
+            {
+              model: User,
+              as: "User",
+              attributes: ["id", "nickname"],
+            },
+          ],
         },
       ],
     });

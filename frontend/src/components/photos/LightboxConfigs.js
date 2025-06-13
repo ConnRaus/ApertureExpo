@@ -124,4 +124,19 @@ export const LightboxConfigs = {
     enableKeyboardControls: true,
     enableSwipeControls: true,
   },
+
+  // For forum post attachments - show photo info but no voting/comments
+  forum: {
+    showTitle: true,
+    showAuthor: true,
+    showDescription: true,
+    showRating: false,
+    showVotes: false,
+    showMetadata: true,
+    showComments: false,
+    showInfoButton: true,
+    enableNavigation: false,
+    enableKeyboardControls: true,
+    enableSwipeControls: true,
+  },
 };

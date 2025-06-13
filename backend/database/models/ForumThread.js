@@ -12,6 +12,10 @@ const ForumThread = (sequelize) => {
         foreignKey: "threadId",
         as: "posts",
       });
+      ForumThread.belongsTo(models.Photo, {
+        foreignKey: "photoId",
+        as: "photo",
+      });
     }
   }
 
@@ -38,6 +42,10 @@ const ForumThread = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: false,
         defaultValue: "General",
+      },
+      photoId: {
+        type: DataTypes.UUID,
+        allowNull: true,
       },
       isPinned: {
         type: DataTypes.BOOLEAN,

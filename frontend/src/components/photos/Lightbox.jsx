@@ -23,6 +23,7 @@ export function Lightbox({
   const [slideDirection, setSlideDirection] = useState(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [previousIndex, setPreviousIndex] = useState(-1);
+  const [isAnimatingOut, setIsAnimatingOut] = useState(false);
 
   // Editing state
   const [isEditing, setIsEditing] = useState(false);
@@ -37,6 +38,7 @@ export function Lightbox({
   const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
   const imageContainerRef = useRef(null);
   const infoSidebarContentRef = useRef(null);
+  const savedScrollPositionRef = useRef(0);
 
   // Configuration options with defaults
   const {
@@ -346,14 +348,31 @@ export function Lightbox({
 
   const closeLightbox = useCallback(() => {
     setIsVisible(false);
+    setIsAnimatingOut(true);
     setShowInfoSidebar(false);
     setImageLoaded(false);
     setIsTransitioning(false);
     setSlideDirection(null);
     setPreviousIndex(-1);
     resetZoom(); // Reset zoom when closing
+
+    // Immediately restore body styles and scroll position to prevent visual issues
+    document.body.style.overflow = "unset";
+    document.body.style.position = "unset";
+    document.body.style.top = "unset";
+    document.body.style.width = "unset";
+    document.body.style.height = "unset";
+    document.documentElement.style.overflow = "unset";
+
+    // Restore scroll position immediately
+    if (savedScrollPositionRef.current > 0) {
+      window.scrollTo(0, savedScrollPositionRef.current);
+      savedScrollPositionRef.current = 0; // Reset after use
+    }
+
     // Delay the actual close to allow fade out animation
     setTimeout(() => {
+      setIsAnimatingOut(false);
       onClose();
     }, 200);
   }, [onClose, resetZoom]);
@@ -498,12 +517,17 @@ export function Lightbox({
 
   // Prevent body scroll when lightbox is open
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && isVisible) {
+      // Store current scroll position before preventing scroll
+      const scrollY = window.scrollY;
+      savedScrollPositionRef.current = scrollY;
+
       // Standard scroll prevention
       document.body.style.overflow = "hidden";
 
-      // Safari iOS specific - more aggressive prevention
+      // Safari iOS specific - more aggressive prevention with position preservation
       document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollY}px`;
       document.body.style.width = "100%";
       document.body.style.height = "100%";
       document.documentElement.style.overflow = "hidden";
@@ -558,19 +582,14 @@ export function Lightbox({
       });
 
       return () => {
-        document.body.style.overflow = "unset";
-        document.body.style.position = "unset";
-        document.body.style.width = "unset";
-        document.body.style.height = "unset";
-        document.documentElement.style.overflow = "unset";
-
+        // Clean up event listeners immediately
         document.removeEventListener("touchmove", preventDefaultScroll);
         document.removeEventListener("wheel", preventDefaultScroll);
         document.removeEventListener("scroll", preventScroll);
         document.removeEventListener("touchstart", preventScrollNotButtons);
       };
     }
-  }, [isOpen]);
+  }, [isOpen, isVisible]);
 
   if (!isOpen || !currentPhoto) return null;
 
@@ -596,8 +615,14 @@ export function Lightbox({
         {/* Close Button */}
         <button
           onClick={closeLightbox}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            closeLightbox();
+          }}
           className="absolute top-4 right-4 z-30 text-white/70 hover:text-white transition-colors duration-200 w-10 h-10 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50"
           aria-label="Close lightbox"
+          style={{ touchAction: "manipulation" }}
         >
           <svg
             className="w-5 h-5"
@@ -618,8 +643,14 @@ export function Lightbox({
         {showInfoButton && (
           <button
             onClick={() => setShowInfoSidebar(!showInfoSidebar)}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowInfoSidebar(!showInfoSidebar);
+            }}
             className="absolute top-4 right-16 z-30 text-white/70 hover:text-white transition-colors duration-200 w-10 h-10 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50"
             aria-label="Toggle info"
+            style={{ touchAction: "manipulation" }}
           >
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
               <path

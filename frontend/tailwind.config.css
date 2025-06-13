@@ -1,5 +1,8 @@
+@import "tailwindcss";
+
 @config {
   content: [ "./src/**/*.{js,jsx,ts,tsx}", "./index.html"];
+  plugins: [ "@tailwindcss/typography"];
   theme: {
     extend: {
       /* You can extend the theme here */
