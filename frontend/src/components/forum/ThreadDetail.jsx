@@ -171,13 +171,19 @@ export function ThreadDetail({
       <div className={styles.threadDetail}>
         {isEditing ? (
           <div className={styles.editThreadForm}>
-            <input
-              type="text"
-              value={threadTitle}
-              onChange={(e) => setThreadTitle(e.target.value)}
-              className={styles.formInput}
-              placeholder="Thread title"
-            />
+            <div className="relative">
+              <input
+                type="text"
+                value={threadTitle}
+                onChange={(e) => setThreadTitle(e.target.value.slice(0, 200))}
+                className={styles.formInput}
+                placeholder="Thread title"
+                maxLength={200}
+              />
+              <span className="absolute right-3 bottom-3 text-xs text-gray-400">
+                {threadTitle.length}/200
+              </span>
+            </div>
             <div style={{ marginTop: "1rem" }}>
               <RichTextEditor
                 value={threadContent}
@@ -186,6 +192,7 @@ export function ThreadDetail({
                 selectedPhoto={editingSelectedPhoto}
                 placeholder="Write your thread content here..."
                 minHeight="10rem"
+                maxLength={10000}
                 onPhotoLibraryOpen={() => setShowPhotoLibrary(true)}
               />
             </div>

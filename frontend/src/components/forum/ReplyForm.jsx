@@ -29,6 +29,7 @@ export function ReplyForm({
     e.preventDefault();
 
     if (!content.trim()) return;
+    if (content.length > 5000) return;
 
     setIsSubmitting(true);
 
@@ -78,6 +79,7 @@ export function ReplyForm({
           selectedPhoto={selectedPhoto}
           placeholder="Write your thoughts here..."
           disabled={isSubmitting}
+          maxLength={5000}
           onPhotoLibraryOpen={onPhotoLibraryOpen}
         />
         <div className={styles.buttonGroup}>

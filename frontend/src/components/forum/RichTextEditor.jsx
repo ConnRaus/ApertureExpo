@@ -12,6 +12,7 @@ export function RichTextEditor({
   disabled = false,
   minHeight = "8rem",
   onPhotoLibraryOpen,
+  maxLength = 10000, // Default to 10k characters for thread content
 }) {
   const [showPreview, setShowPreview] = useState(false);
   const [showPhotoLibrary, setShowPhotoLibrary] = useState(false);
@@ -173,15 +174,21 @@ export function RichTextEditor({
           <ReactMarkdown>{value || "*No content to preview*"}</ReactMarkdown>
         </div>
       ) : (
-        <textarea
-          ref={textareaRef}
-          className={styles.textarea}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          disabled={disabled}
-          style={{ minHeight }}
-        />
+        <div className="relative">
+          <textarea
+            ref={textareaRef}
+            className={styles.textarea}
+            value={value}
+            onChange={(e) => onChange(e.target.value.slice(0, maxLength))}
+            placeholder={placeholder}
+            disabled={disabled}
+            maxLength={maxLength}
+            style={{ minHeight }}
+          />
+          <span className="absolute right-3 bottom-3 text-xs text-gray-400 bg-gray-800 px-1 rounded">
+            {value.length}/{maxLength}
+          </span>
+        </div>
       )}
 
       {/* Formatting Help */}
