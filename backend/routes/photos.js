@@ -10,17 +10,11 @@ import Contest from "../database/models/Contest.js";
 import PhotoContest from "../database/models/PhotoContest.js";
 import { requireAuth } from "@clerk/express";
 import { Op } from "sequelize";
-import imageHash from "image-hash";
-import { promisify } from "util";
-import { promises as fs } from "fs";
-import { tmpdir } from "os";
-import path from "path";
-import crypto from "crypto";
+import phash from "sharp-phash";
 import sharp from "sharp";
 import User from "../database/models/User.js";
 import { getAuthFromRequest } from "../utils/auth.js";
 
-const imageHashAsync = promisify(imageHash.imageHash);
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -46,46 +40,23 @@ class SimilarPhotoSubmissionError extends Error {
 
 // Helper function to safely generate a hash from a buffer
 async function generateImageHashFromBuffer(buffer) {
-  // Create a temporary unique filename - convert to jpeg for consistency
-  const tempDir = tmpdir();
-  const randomFileName = crypto.randomBytes(16).toString("hex");
-
-  // Resize image to a smaller size before hashing to avoid memory issues with large panoramas
-  // We only need the hash for duplicate detection, so 800px width is plenty
-  let jpegBuffer;
   try {
-    jpegBuffer = await sharp(buffer)
+    // Resize image to a smaller size before hashing to avoid memory issues with large panoramas
+    // We only need the hash for duplicate detection, so 800px width is plenty
+    const processedBuffer = await sharp(buffer)
       .resize(800, 600, {
         fit: "inside",
         withoutEnlargement: true,
       })
       .jpeg({ quality: 80 })
       .toBuffer();
-  } catch (error) {
-    throw new Error(`Failed to process image: ${error.message}`);
-  }
 
-  const tempFilePath = path.join(tempDir, `${randomFileName}.jpg`);
-
-  try {
-    // Write the resized jpeg buffer to the temp file
-    await fs.writeFile(tempFilePath, jpegBuffer);
-
-    // Generate hash from the file
-    const hash = await imageHashAsync(tempFilePath, 16, true);
-
-    // Clean up by deleting the temp file
-    await fs.unlink(tempFilePath);
+    // Generate hash directly from the buffer using sharp-phash
+    const hash = await phash(processedBuffer);
 
     return hash;
   } catch (error) {
-    // Make sure we attempt to clean up even if there's an error
-    try {
-      await fs.unlink(tempFilePath);
-    } catch (e) {
-      /* ignore cleanup errors */
-    }
-    throw error;
+    throw new Error(`Failed to generate image hash: ${error.message}`);
   }
 }
 
