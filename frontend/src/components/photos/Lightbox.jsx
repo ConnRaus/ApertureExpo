@@ -751,6 +751,7 @@ export function Lightbox({
           >
             <div className="bg-black/70 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/20 shadow-lg">
               <PhotoVoteButton
+                key={`vote-${currentPhoto.id}`}
                 photo={currentPhoto}
                 contestId={contestId}
                 contestPhase={contestPhase}

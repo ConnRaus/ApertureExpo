@@ -130,7 +130,7 @@ function PhotoGridItem({
                 contestId={contestId}
                 contestPhase={contestPhase}
                 showStars={true}
-                key={`${photo.id}-${voteUpdateTrigger}`}
+                key={`grid-vote-${photo.id}-${voteUpdateTrigger}`}
               />
             </div>
           )}

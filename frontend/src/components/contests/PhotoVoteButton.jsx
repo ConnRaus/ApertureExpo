@@ -21,8 +21,14 @@ export function PhotoVoteButton({
   const isVotingPhase = contestPhase === "voting";
   const isOwnPhoto = user?.id === photo.userId;
 
-  // Check if user has already voted for this photo
+  // Reset state when photo changes and check if user has already voted
   useEffect(() => {
+    // Reset all state when photo changes
+    setVoteCount(photo.voteCount || 0);
+    setUserVote(null);
+    setHoverRating(0);
+    setIsVoting(false);
+
     if (contestId && photo.id && isVotingPhase) {
       const checkUserVote = async () => {
         try {
@@ -40,7 +46,7 @@ export function PhotoVoteButton({
 
       checkUserVote();
     }
-  }, [contestId, photo.id, isVotingPhase]);
+  }, [contestId, photo.id, isVotingPhase, photo.voteCount]);
 
   const handleVote = async (value = 1) => {
     if (!isVotingPhase) {
