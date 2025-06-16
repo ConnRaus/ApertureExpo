@@ -1,6 +1,6 @@
 import React from "react";
 import { SignInButton, SignUpButton } from "@clerk/clerk-react";
-import logoImage from "../../assets/LogoTransparent.png";
+import logoImage from "../../assets/TransparentLogo.svg";
 import styles from "./LandingPage.module.css";
 
 function LandingPage() {

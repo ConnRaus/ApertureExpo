@@ -9,7 +9,7 @@ import {
   useUser,
 } from "@clerk/clerk-react";
 import styles from "../../styles/components/Navigation.module.css";
-import logoImage from "../../assets/LogoTransparent.png";
+import logoImage from "../../assets/TransparentLogo.svg";
 
 function Navigation() {
   const { user } = useUser();
