@@ -157,6 +157,20 @@ export function WinnerShowcase() {
     }
   };
 
+  // Get CSS class for rank background
+  const getRankClass = (rank) => {
+    switch (rank) {
+      case 1:
+        return `${styles.rank} ${styles.firstPlace}`;
+      case 2:
+        return `${styles.rank} ${styles.secondPlace}`;
+      case 3:
+        return `${styles.rank} ${styles.thirdPlace}`;
+      default:
+        return styles.rank;
+    }
+  };
+
   if (isLoading) {
     return <LoadingSpinner size="md" message="Loading winner showcase..." />;
   }
@@ -177,7 +191,9 @@ export function WinnerShowcase() {
                 className={styles.winnerCard}
                 onClick={() => openPhotoModal(index)}
               >
-                <div className={styles.rank}>{getRankDisplay(photo.rank)}</div>
+                <div className={getRankClass(photo.rank)}>
+                  {getRankDisplay(photo.rank)}
+                </div>
                 <img
                   src={photo.thumbnailUrl}
                   alt={photo.title}
