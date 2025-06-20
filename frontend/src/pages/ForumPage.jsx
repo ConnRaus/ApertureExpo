@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useUser } from "@clerk/clerk-react";
 import { useForumService, useDelayedLoading } from "../hooks";
 import styles from "../styles/components/Forum.module.css";
 import { ThreadList } from "../components/forum/ThreadList";
@@ -6,6 +7,7 @@ import { CreateThreadForm } from "../components/forum/CreateThreadForm";
 import { LoadingSpinner } from "../components/common/CommonComponents";
 
 function ForumPage() {
+  const { user } = useUser();
   const [threads, setThreads] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
@@ -95,14 +97,16 @@ function ForumPage() {
     <div className={styles.forumContainer}>
       <div className={styles.forumHeader}>
         <h1>Photography Forum</h1>
-        <div className={styles.forumAction}>
-          <button
-            className="sign-in-button forum-new-thread"
-            onClick={() => setShowCreateForm(true)}
-          >
-            <span>New Thread</span>
-          </button>
-        </div>
+        {user && (
+          <div className={styles.forumAction}>
+            <button
+              className="sign-in-button forum-new-thread"
+              onClick={() => setShowCreateForm(true)}
+            >
+              <span>New Thread</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {categories.length > 0 && (

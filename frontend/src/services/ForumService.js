@@ -5,8 +5,8 @@ export class ForumService {
     this.getToken = getToken;
   }
 
+  // PUBLIC METHOD - No authentication required for viewing threads
   async fetchThreads(page = 1, limit = 10, category = null) {
-    const token = await this.getToken();
     let url = `${API_URL}/forum/threads?page=${page}&limit=${limit}`;
 
     if (category) {
@@ -15,7 +15,6 @@ export class ForumService {
 
     const response = await fetch(url, {
       headers: {
-        Authorization: `Bearer ${token}`,
         Accept: "application/json",
       },
     });
@@ -24,11 +23,10 @@ export class ForumService {
     return response.json();
   }
 
+  // PUBLIC METHOD - No authentication required for viewing categories
   async fetchCategories() {
-    const token = await this.getToken();
     const response = await fetch(`${API_URL}/forum/categories`, {
       headers: {
-        Authorization: `Bearer ${token}`,
         Accept: "application/json",
       },
     });
@@ -37,13 +35,12 @@ export class ForumService {
     return response.json();
   }
 
+  // PUBLIC METHOD - No authentication required for viewing thread details
   async fetchThreadDetails(threadId, page = 1, limit = 20) {
-    const token = await this.getToken();
     const response = await fetch(
       `${API_URL}/forum/threads/${threadId}?page=${page}&limit=${limit}`,
       {
         headers: {
-          Authorization: `Bearer ${token}`,
           Accept: "application/json",
         },
       }
@@ -53,6 +50,7 @@ export class ForumService {
     return response.json();
   }
 
+  // PROTECTED METHOD - Requires authentication
   async createThread(title, content, category = "General", photoId = null) {
     const token = await this.getToken();
     const response = await fetch(`${API_URL}/forum/threads`, {
@@ -68,6 +66,7 @@ export class ForumService {
     return response.json();
   }
 
+  // PROTECTED METHOD - Requires authentication
   async createPost(threadId, content, photoId = null) {
     const token = await this.getToken();
     const response = await fetch(`${API_URL}/forum/threads/${threadId}/posts`, {
@@ -83,6 +82,7 @@ export class ForumService {
     return response.json();
   }
 
+  // PROTECTED METHOD - Requires authentication
   async updateThread(threadId, data) {
     const token = await this.getToken();
     const response = await fetch(`${API_URL}/forum/threads/${threadId}`, {
@@ -98,6 +98,7 @@ export class ForumService {
     return response.json();
   }
 
+  // PROTECTED METHOD - Requires authentication
   async updatePost(postId, content, photoId = null) {
     const token = await this.getToken();
     const response = await fetch(`${API_URL}/forum/posts/${postId}`, {
@@ -113,6 +114,7 @@ export class ForumService {
     return response.json();
   }
 
+  // PROTECTED METHOD - Requires authentication
   async deleteThread(threadId) {
     const token = await this.getToken();
     const response = await fetch(`${API_URL}/forum/threads/${threadId}`, {
@@ -126,6 +128,7 @@ export class ForumService {
     return response.json();
   }
 
+  // PROTECTED METHOD - Requires authentication
   async deletePost(postId) {
     const token = await this.getToken();
     const response = await fetch(`${API_URL}/forum/posts/${postId}`, {
@@ -139,6 +142,7 @@ export class ForumService {
     return response.json();
   }
 
+  // PROTECTED METHOD - Requires authentication
   async clearImageCache() {
     const token = await this.getToken();
     const response = await fetch(`${API_URL}/forum/clear-image-cache`, {

@@ -122,8 +122,8 @@ function CommentItem({
       {/* Comment actions - compact */}
       {!isEditing && (
         <div className="flex items-center space-x-3 text-xs mb-2">
-          {/* Only show Reply button on top-level comments */}
-          {!isReply && (
+          {/* Only show Reply button on top-level comments and if user is signed in */}
+          {!isReply && currentUserId && (
             <button
               onClick={() => setIsReplying(!isReplying)}
               className="text-gray-400 hover:text-blue-300 transition-colors"
@@ -504,32 +504,48 @@ export function CommentSection({ photoId }) {
 
   return (
     <div className="space-y-4 lightbox-scrollable">
-      {/* New comment form */}
-      <form onSubmit={handleSubmitComment} className="space-y-3">
-        <textarea
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          placeholder="Write a comment..."
-          className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 lightbox-scrollable break-words responsive-text-input"
-          style={{
-            wordWrap: "break-word",
-            overflowWrap: "break-word",
-            hyphens: "auto",
-          }}
-          rows="2"
-          maxLength={150}
-        />
-        <div className="flex justify-between items-center">
-          <span className="text-xs text-gray-400">{newComment.length}/150</span>
-          <button
-            type="submit"
-            disabled={!newComment.trim() || submitting}
-            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded text-sm transition-colors ml-3"
-          >
-            {submitting ? "Posting..." : "Post"}
-          </button>
+      {/* New comment form - Only show if user is signed in */}
+      {user && (
+        <form onSubmit={handleSubmitComment} className="space-y-3">
+          <textarea
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            placeholder="Write a comment..."
+            className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 lightbox-scrollable break-words responsive-text-input"
+            style={{
+              wordWrap: "break-word",
+              overflowWrap: "break-word",
+              hyphens: "auto",
+            }}
+            rows="2"
+            maxLength={150}
+          />
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-gray-400">
+              {newComment.length}/150
+            </span>
+            <button
+              type="submit"
+              disabled={!newComment.trim() || submitting}
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded text-sm transition-colors ml-3"
+            >
+              {submitting ? "Posting..." : "Post"}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Sign in prompt for non-signed in users */}
+      {!user && (
+        <div className="text-center py-4 bg-gray-800/50 rounded-lg border border-gray-600">
+          <p className="text-gray-300 text-sm mb-2">
+            Want to join the conversation?
+          </p>
+          <p className="text-gray-400 text-xs">
+            Sign in to leave comments and connect with other photographers.
+          </p>
         </div>
-      </form>
+      )}
 
       {/* Error message */}
       {error && (
@@ -548,7 +564,10 @@ export function CommentSection({ photoId }) {
       <div className="space-y-3 lightbox-scrollable">
         {comments.length === 0 ? (
           <div className="text-center text-gray-400 py-6">
-            <p className="text-sm">No comments yet. Be the first!</p>
+            <p className="text-sm">
+              No comments yet.{" "}
+              {user ? "Be the first!" : "Sign in to start the conversation!"}
+            </p>
           </div>
         ) : (
           <>

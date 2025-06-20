@@ -21,6 +21,17 @@ export function PhotoVoteButton({
   const isVotingPhase = contestPhase === "voting";
   const isOwnPhoto = user?.id === photo.userId;
 
+  // Don't show voting UI to non-signed-in users
+  if (!user) {
+    return showCount ? (
+      <div className="flex flex-col items-center">
+        <div className="text-sm text-gray-400 mt-1">
+          {voteCount} vote{voteCount !== 1 && "s"}
+        </div>
+      </div>
+    ) : null;
+  }
+
   // Reset state when photo changes and check if user has already voted
   useEffect(() => {
     // Reset all state when photo changes
@@ -29,7 +40,7 @@ export function PhotoVoteButton({
     setHoverRating(0);
     setIsVoting(false);
 
-    if (contestId && photo.id && isVotingPhase) {
+    if (contestId && photo.id && isVotingPhase && user) {
       const checkUserVote = async () => {
         try {
           const userVotes = await voteService.getUserVotes(contestId);
@@ -46,7 +57,7 @@ export function PhotoVoteButton({
 
       checkUserVote();
     }
-  }, [contestId, photo.id, isVotingPhase, photo.voteCount]);
+  }, [contestId, photo.id, isVotingPhase, photo.voteCount, user]);
 
   const handleVote = async (value = 1) => {
     if (!isVotingPhase) {

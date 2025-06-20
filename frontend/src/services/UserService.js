@@ -5,13 +5,12 @@ export class UserService {
     this.getToken = getToken;
   }
 
+  // PUBLIC METHOD - No authentication required for viewing user profiles
   async fetchUserProfile(userId, page = 1, limit = 24) {
-    const token = await this.getToken();
     const response = await fetch(
       `${API_URL}/users/${userId}/profile?page=${page}&limit=${limit}`,
       {
         headers: {
-          Authorization: `Bearer ${token}`,
           Accept: "application/json",
         },
       }
@@ -24,6 +23,7 @@ export class UserService {
     return response.json();
   }
 
+  // PROTECTED METHOD - Requires authentication
   async updateProfile(userId, data) {
     const token = await this.getToken();
     const response = await fetch(`${API_URL}/users/${userId}/profile`, {
@@ -38,6 +38,7 @@ export class UserService {
     return response.json();
   }
 
+  // PROTECTED METHOD - Requires authentication
   async uploadBanner(userId, formData) {
     const token = await this.getToken();
     const response = await fetch(`${API_URL}/users/${userId}/banner`, {

@@ -224,7 +224,13 @@ export function ContestDetail(props) {
         );
 
       case "submission":
-        if (limitReached) {
+        if (!user) {
+          return (
+            <div className="text-center p-3 bg-blue-900/30 rounded-lg">
+              <p>Sign in to participate in this contest!</p>
+            </div>
+          );
+        } else if (limitReached) {
           return (
             <div className="text-center p-3 bg-yellow-900/30 rounded-lg">
               <p>You have reached the submission limit{limitText}.</p>

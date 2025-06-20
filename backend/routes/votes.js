@@ -156,7 +156,7 @@ router.get("/photos/:photoId/votes", async (req, res) => {
 });
 
 // Get user's votes in a contest
-router.get("/users/votes", requireAuth(), async (req, res) => {
+router.get("/user-votes", requireAuth(), async (req, res) => {
   try {
     const auth = getAuthFromRequest(req);
 

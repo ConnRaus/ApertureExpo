@@ -79,14 +79,15 @@ app.use("/admin", adminRoutes);
 // Comments routes - handle their own authentication per route
 app.use("/comments", commentRoutes);
 
-// Routes with authentication
-app.use("/", requireAuth(), ensureUserExists, photoRoutes);
-app.use("/", requireAuth(), ensureUserExists, contestRoutes);
-app.use("/", requireAuth(), ensureUserExists, voteRoutes);
-app.use("/users", requireAuth(), userRoutes);
+// PUBLIC ROUTES - No authentication required for viewing content
+// These routes allow non-signed in users to browse the site
+app.use("/", contestRoutes); // Public contest viewing
+app.use("/forum", forumRoutes); // Public forum viewing
+app.use("/users", userRoutes); // Public user profile viewing
 
-// Forum routes with user existence check
-app.use("/forum", requireAuth(), ensureUserExists, forumRoutes);
+// PROTECTED ROUTES - Authentication required for actions
+app.use("/", requireAuth(), ensureUserExists, photoRoutes);
+app.use("/", requireAuth(), ensureUserExists, voteRoutes);
 
 // --- Global Error Handler ---
 // Must come after all routes and other middleware

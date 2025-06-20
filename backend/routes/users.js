@@ -75,8 +75,8 @@ router.get("/:userId", async (req, res) => {
   }
 });
 
-// Update the current user's profile
-router.put("/me", async (req, res) => {
+// Update the current user's profile (PROTECTED)
+router.put("/me", requireAuth(), async (req, res) => {
   try {
     const auth = getAuthFromRequest(req);
     if (!auth || !auth.userId) {
@@ -170,8 +170,8 @@ router.get("/:userId/photos", async (req, res) => {
   }
 });
 
-// Get user profile
-router.get("/:userId/profile", requireAuth(), async (req, res) => {
+// Get user profile (PUBLIC - no auth required for viewing)
+router.get("/:userId/profile", async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 25; // 25 photos per page

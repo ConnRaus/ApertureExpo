@@ -47,7 +47,7 @@ export class VoteService {
 
   async getUserVotes(contestId = null) {
     const token = await this.getToken();
-    let url = `${API_URL}/users/votes`;
+    let url = `${API_URL}/user-votes`;
     if (contestId) {
       url += `?contestId=${contestId}`;
     }

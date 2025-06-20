@@ -317,11 +317,13 @@ export function ThreadDetail({
         </>
       )}
 
-      <ReplyForm
-        onSubmit={handleLocalReply}
-        threadId={localThread.id}
-        buttonText="Post Reply"
-      />
+      {user && (
+        <ReplyForm
+          onSubmit={handleLocalReply}
+          threadId={localThread.id}
+          buttonText="Post Reply"
+        />
+      )}
 
       {/* Photo Library Picker rendered at ThreadDetail level for full-screen display */}
       <PhotoLibraryPicker

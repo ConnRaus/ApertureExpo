@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { useSwipeable } from "react-swipeable";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
 import { CommentSection } from "./CommentSection";
 import { PhotoVoteButton } from "../contests/PhotoVoteButton";
@@ -16,6 +16,7 @@ export function Lightbox({
   onVoteSuccess = null,
   onPhotoUpdate = null,
 }) {
+  const location = useLocation();
   const [currentIndex, setCurrentIndex] = useState(selectedIndex);
   const [showInfoSidebar, setShowInfoSidebar] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -590,6 +591,35 @@ export function Lightbox({
       };
     }
   }, [isOpen, isVisible]);
+
+  // Cleanup on component unmount
+  useEffect(() => {
+    return () => {
+      // Only restore body styles on unmount, don't call onClose
+      document.body.style.overflow = "unset";
+      document.body.style.position = "unset";
+      document.body.style.top = "unset";
+      document.body.style.width = "unset";
+      document.body.style.height = "unset";
+      document.documentElement.style.overflow = "unset";
+
+      // Restore scroll position if it was saved
+      if (savedScrollPositionRef.current > 0) {
+        window.scrollTo(0, savedScrollPositionRef.current);
+        savedScrollPositionRef.current = 0;
+      }
+    };
+  }, []);
+
+  // Auto-close lightbox when route changes (when user clicks a Link)
+  const previousPathnameRef = useRef(location.pathname);
+  useEffect(() => {
+    // Only close if pathname actually changed and lightbox is open
+    if (location.pathname !== previousPathnameRef.current && isOpen) {
+      closeLightbox();
+    }
+    previousPathnameRef.current = location.pathname;
+  }, [location.pathname, isOpen, closeLightbox]);
 
   if (!isOpen || !currentPhoto) return null;
 
