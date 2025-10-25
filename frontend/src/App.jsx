@@ -16,6 +16,7 @@ import UserProfilePage from "./pages/UserProfilePage";
 import ForumPage from "./pages/ForumPage";
 import ThreadDetailPage from "./pages/ThreadDetailPage";
 import AdminPage from "./pages/AdminPage";
+import LeaderboardPage from "./pages/LeaderboardPage";
 import LandingPage from "./components/landing/LandingPage";
 
 // Component to handle homepage logic
@@ -51,6 +52,7 @@ function App() {
               path="/forum/threads/:threadId"
               element={<ThreadDetailPage />}
             />
+            <Route path="/leaderboard" element={<LeaderboardPage />} />
 
             {/* Routes that require authentication */}
             <Route

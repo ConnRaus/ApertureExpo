@@ -28,15 +28,28 @@ export class ContestService {
     }
   }
 
-  // PUBLIC METHOD - No authentication required for viewing contest details
+  // PUBLIC METHOD - No authentication required for viewing contest details, but includes auth if available
   async fetchContestDetails(contestId, page = 1) {
     try {
+      // Try to get auth token if available (for user-specific data like submission counts)
+      let headers = {
+        Accept: "application/json",
+      };
+
+      try {
+        const token = await this.getToken();
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+      } catch (authError) {
+        // Auth not available, continue without it
+      }
+
       const response = await fetch(
         `${API_URL}/contests/${contestId}?page=${page}`,
         {
-          headers: {
-            Accept: "application/json",
-          },
+          headers,
+          credentials: "include",
         }
       );
 

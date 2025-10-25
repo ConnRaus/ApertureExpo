@@ -7,6 +7,7 @@ import { Op } from "sequelize";
 import sequelize from "../database/config/config.js";
 import User from "../database/models/User.js";
 import { getAuthFromRequest, getUserIdFromRequest } from "../utils/auth.js";
+import XPService from "../services/xpService.js";
 
 const router = express.Router();
 
@@ -111,6 +112,24 @@ router.post("/votes", requireAuth(), async (req, res) => {
       contestId,
       value,
     });
+
+    // Award XP for voting (only for new votes, not updates)
+    try {
+      const xpResult = await XPService.awardVoteXP(userId, contestId, photoId);
+      if (xpResult.success) {
+        console.log(
+          `Awarded ${xpResult.xpAwarded} XP to user ${userId} for voting`
+        );
+        if (xpResult.leveledUp) {
+          console.log(
+            `User ${userId} leveled up to level ${xpResult.newLevel}!`
+          );
+        }
+      }
+    } catch (xpError) {
+      console.error("Error awarding vote XP:", xpError);
+      // Don't fail the vote if XP fails
+    }
 
     res.status(201).json({
       message: "Vote cast successfully",

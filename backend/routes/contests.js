@@ -2,12 +2,14 @@ import express from "express";
 import { requireAuth } from "@clerk/express";
 import Contest from "../database/models/Contest.js";
 import Photo from "../database/models/Photo.js";
+import PhotoContest from "../database/models/PhotoContest.js";
 import Vote from "../database/models/Vote.js";
 import Comment from "../database/models/Comment.js";
 import { Op } from "sequelize";
 import sequelize from "../database/config/config.js";
 import User from "../database/models/User.js";
 import { getAuthFromRequest } from "../utils/auth.js";
+import XPService from "../services/xpService.js";
 
 const router = express.Router();
 
@@ -76,6 +78,17 @@ router.get("/contests", async (req, res) => {
         ) {
           await contest.update({ status: "completed" });
           contestData.status = "completed";
+
+          // Award placement XP when contest is first marked as completed
+          try {
+            await XPService.awardContestPlacementXP(contest.id);
+          } catch (xpError) {
+            console.error(
+              `Error awarding placement XP for contest ${contest.id}:`,
+              xpError
+            );
+            // Don't fail the contest update if XP fails
+          }
         }
 
         // Get any legacy photos for this contest
@@ -194,6 +207,17 @@ router.get("/contests/:id", async (req, res) => {
     ) {
       await contest.update({ status: "completed" });
       contestData.status = "completed";
+
+      // Award placement XP when contest is first marked as completed
+      try {
+        await XPService.awardContestPlacementXP(contest.id);
+      } catch (xpError) {
+        console.error(
+          `Error awarding placement XP for contest ${contest.id}:`,
+          xpError
+        );
+        // Don't fail the contest update if XP fails
+      }
     }
 
     // Also get any legacy photos that might be associated through the old ContestId relationship
@@ -256,15 +280,56 @@ router.get("/contests/:id", async (req, res) => {
     try {
       const auth = getAuthFromRequest(req);
       if (auth && auth.userId) {
-        // Count photos in the final list that belong to the current user
-        userSubmissionCount = contestData.Photos.filter(
-          (p) => p.userId === auth.userId
-        ).length;
+        console.log(
+          `[DEBUG] Calculating submission count for user ${auth.userId} in contest ${contest.id}`
+        );
+
+        // Count photos submitted by this user to this contest using direct database queries
+        // First get all photo IDs from both methods
+        const photoContestPhotos = await PhotoContest.findAll({
+          where: { contestId: contest.id },
+          include: [
+            {
+              model: Photo,
+              where: { userId: auth.userId },
+              attributes: ["id"],
+            },
+          ],
+          attributes: ["photoId"],
+        });
+
+        const legacyPhotos = await Photo.findAll({
+          where: {
+            ContestId: contest.id,
+            userId: auth.userId,
+          },
+          attributes: ["id"],
+        });
+
+        console.log(
+          `[DEBUG] Found ${photoContestPhotos.length} photos from PhotoContest table`
+        );
+        console.log(
+          `[DEBUG] Found ${legacyPhotos.length} photos from legacy ContestId field`
+        );
+
+        // Create a set of unique photo IDs
+        const userPhotoIds = new Set();
+        photoContestPhotos.forEach((pc) => userPhotoIds.add(pc.photoId));
+        legacyPhotos.forEach((p) => userPhotoIds.add(p.id));
+
+        userSubmissionCount = userPhotoIds.size;
+        console.log(
+          `[DEBUG] Final submission count for user ${auth.userId}: ${userSubmissionCount}`
+        );
+      } else {
+        console.log(`[DEBUG] No authenticated user found for submission count`);
       }
     } catch (authError) {
       // If auth extraction fails, just continue with userSubmissionCount = 0
       console.log(
-        "Auth extraction failed, continuing without user submission count"
+        "Auth extraction failed, continuing without user submission count:",
+        authError
       );
     }
     // --- End user-specific submission count ---

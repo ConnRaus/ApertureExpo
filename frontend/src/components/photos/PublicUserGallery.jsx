@@ -9,6 +9,7 @@ import {
 import { EditProfileModal } from "../user/EditProfileModal";
 import { PhotoLibraryPicker } from "./PhotoLibraryPicker";
 import { ProfileHeader } from "../user/ProfileHeader";
+import { XPDashboard } from "../user/XPDisplay";
 import { Pagination } from "../common/Pagination";
 import {
   usePhotoService,

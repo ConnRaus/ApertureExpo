@@ -1,0 +1,128 @@
+import express from "express";
+import { requireAuth } from "@clerk/express";
+import XPService from "../services/xpService.js";
+import { getAuthFromRequest } from "../utils/auth.js";
+
+const router = express.Router();
+
+// Get current user's XP stats
+router.get("/stats", requireAuth(), async (req, res) => {
+  try {
+    const auth = getAuthFromRequest(req);
+    if (!auth || !auth.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const stats = await XPService.getUserXPStats(auth.userId);
+    res.json(stats);
+  } catch (error) {
+    console.error("Error getting user XP stats:", error);
+    res.status(500).json({ error: "Failed to get XP stats" });
+  }
+});
+
+// Get XP leaderboard with timeframe support
+router.get("/leaderboard", async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 50;
+    const timeframe = req.query.timeframe || "all"; // all, monthly, yearly
+
+    // Validate timeframe
+    if (!["all", "monthly", "yearly"].includes(timeframe)) {
+      return res.status(400).json({
+        error: "Invalid timeframe. Use 'all', 'monthly', or 'yearly'",
+      });
+    }
+
+    const leaderboard = await XPService.getTimeBasedLeaderboard(
+      timeframe,
+      limit
+    );
+    res.json({
+      timeframe,
+      leaderboard,
+    });
+  } catch (error) {
+    console.error("Error getting leaderboard:", error);
+    res.status(500).json({ error: "Failed to get leaderboard" });
+  }
+});
+
+// Get user's XP for specific timeframe
+router.get("/user-timeframe/:timeframe", requireAuth(), async (req, res) => {
+  try {
+    const auth = getAuthFromRequest(req);
+    if (!auth || !auth.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const { timeframe } = req.params;
+
+    // Validate timeframe
+    if (!["all", "monthly", "yearly"].includes(timeframe)) {
+      return res.status(400).json({
+        error: "Invalid timeframe. Use 'all', 'monthly', or 'yearly'",
+      });
+    }
+
+    const timeframeXP = await XPService.getUserTimeframeXP(
+      auth.userId,
+      timeframe
+    );
+    res.json({
+      timeframe,
+      xp: timeframeXP,
+    });
+  } catch (error) {
+    console.error("Error getting user timeframe XP:", error);
+    res.status(500).json({ error: "Failed to get user timeframe XP" });
+  }
+});
+
+// Get specific user's XP for timeframe (public endpoint)
+router.get("/user/:userId/timeframe/:timeframe", async (req, res) => {
+  try {
+    const { userId, timeframe } = req.params;
+
+    // Validate timeframe
+    if (!["all", "monthly", "yearly"].includes(timeframe)) {
+      return res.status(400).json({
+        error: "Invalid timeframe. Use 'all', 'monthly', or 'yearly'",
+      });
+    }
+
+    const timeframeXP = await XPService.getUserTimeframeXP(userId, timeframe);
+    res.json({
+      userId,
+      timeframe,
+      xp: timeframeXP,
+    });
+  } catch (error) {
+    console.error("Error getting user timeframe XP:", error);
+    res.status(500).json({ error: "Failed to get user timeframe XP" });
+  }
+});
+
+// Get XP rewards information
+router.get("/rewards", async (req, res) => {
+  try {
+    res.json({
+      rewards: XPService.XP_REWARDS,
+      levelFormula: "level^2 * 100",
+      description: {
+        SUBMIT_PHOTO: "XP awarded for submitting a photo to a contest",
+        VOTE: "XP awarded for voting on a photo",
+        PLACE_1ST: "XP awarded for winning 1st place in a contest",
+        PLACE_2ND: "XP awarded for winning 2nd place in a contest",
+        PLACE_3RD: "XP awarded for winning 3rd place in a contest",
+        TOP_10_PERCENT: "XP awarded for placing in top 10% of a contest",
+        TOP_25_PERCENT: "XP awarded for placing in top 25% of a contest",
+      },
+    });
+  } catch (error) {
+    console.error("Error getting XP rewards info:", error);
+    res.status(500).json({ error: "Failed to get XP rewards info" });
+  }
+});
+
+export default router;

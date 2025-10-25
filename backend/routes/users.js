@@ -7,6 +7,7 @@ import { requireAuth, clerkClient } from "@clerk/express";
 import { uploadToS3, deleteFromS3 } from "../services/s3Service.js";
 import { ensureUserExists } from "../middleware/ensureUserExists.js";
 import { getAuthFromRequest } from "../utils/auth.js";
+import XPService from "../services/xpService.js";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -31,8 +32,9 @@ router.get("/me", async (req, res) => {
     // Fetch Clerk user data to get the profile image
     const clerkUser = await clerkClient.users.getUser(userId);
 
-    // Combine DB user with Clerk data
-    const userData = user.toJSON();
+    // Combine DB user with Clerk data and enrich with XP calculations
+    let userData = user.toJSON();
+    userData = XPService.enrichUserWithXPData(userData);
     userData.avatarUrl = clerkUser.imageUrl || null;
     userData.fullName =
       clerkUser.firstName && clerkUser.lastName
@@ -56,7 +58,8 @@ router.get("/:userId", async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const userData = user.toJSON();
+    let userData = user.toJSON();
+    userData = XPService.enrichUserWithXPData(userData);
 
     // If the requested user is the current user or a public user,
     // try to fetch their Clerk profile image
@@ -105,8 +108,9 @@ router.put("/me", requireAuth(), async (req, res) => {
 
     await user.save();
 
-    // Get updated user with Clerk data
-    const updatedUser = user.toJSON();
+    // Get updated user with Clerk data and enrich with XP calculations
+    let updatedUser = user.toJSON();
+    updatedUser = XPService.enrichUserWithXPData(updatedUser);
 
     try {
       const clerkUser = await clerkClient.users.getUser(userId);
@@ -183,8 +187,9 @@ router.get("/:userId/profile", async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Add Clerk image URL to the user profile
+    // Add Clerk image URL to the user profile and enrich with XP calculations
     let userProfile = user.toJSON();
+    userProfile = XPService.enrichUserWithXPData(userProfile);
     try {
       // Get user data from Clerk
       const clerkUser = await clerkClient.users.getUser(user.id);
@@ -281,8 +286,9 @@ router.put("/:userId/profile", requireAuth(), async (req, res) => {
     // Fetch the updated user to ensure we have the latest data
     const updatedUser = await User.findByPk(req.params.userId);
 
-    // Add Clerk image URL to response
+    // Add Clerk image URL to response and enrich with XP calculations
     let userResponse = updatedUser.toJSON();
+    userResponse = XPService.enrichUserWithXPData(userResponse);
     try {
       const clerkUser = await clerkClient.users.getUser(updatedUser.id);
       userResponse.avatarUrl = clerkUser.imageUrl || null;
@@ -403,15 +409,18 @@ router.get("/users/:userId", async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Prioritize DB data, fill in from Clerk if missing
-    const profileData = {
+    // Prioritize DB data, fill in from Clerk if missing, and enrich with XP calculations
+    let profileData = {
       id: userId,
       nickname:
         dbUser?.nickname || clerkUser?.username || `User ${userId.slice(0, 6)}`,
       bio: dbUser?.bio || "",
       bannerImage: dbUser?.bannerImage || "",
       avatarUrl: clerkUser?.imageUrl || dbUser?.avatarUrl || null, // Use Clerk image first
+      xp: dbUser?.xp || 0,
+      level: dbUser?.level || 0,
     };
+    profileData = XPService.enrichUserWithXPData(profileData);
 
     res.json(profileData);
   } catch (error) {
@@ -444,13 +453,16 @@ router.get("/users/me", requireAuth(), async (req, res) => {
       return res.status(404).json({ error: "User profile not found in DB" });
     }
 
-    const profileData = {
+    let profileData = {
       id: userId,
       nickname: dbUser.nickname,
       bio: dbUser.bio,
       bannerImage: dbUser.bannerImage,
       avatarUrl: clerkUser?.imageUrl || dbUser.avatarUrl || null, // Use Clerk image first
+      xp: dbUser.xp,
+      level: dbUser.level,
     };
+    profileData = XPService.enrichUserWithXPData(profileData);
 
     res.json(profileData);
   } catch (error) {

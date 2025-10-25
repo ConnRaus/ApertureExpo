@@ -11,6 +11,7 @@ import voteRoutes from "./routes/votes.js";
 import forumRoutes from "./routes/forum.js";
 import adminRoutes from "./routes/admin.js";
 import commentRoutes from "./routes/comments.js";
+import xpRoutes from "./routes/xp.js";
 import { ensureUserExists } from "./middleware/ensureUserExists.js";
 
 dotenv.config();
@@ -84,6 +85,7 @@ app.use("/comments", commentRoutes);
 app.use("/", contestRoutes); // Public contest viewing
 app.use("/forum", forumRoutes); // Public forum viewing
 app.use("/users", userRoutes); // Public user profile viewing
+app.use("/xp", xpRoutes); // XP stats and leaderboard (public and authenticated routes)
 
 // PROTECTED ROUTES - Authentication required for actions
 app.use("/", requireAuth(), ensureUserExists, photoRoutes);

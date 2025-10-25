@@ -5,6 +5,7 @@ import { UserService } from "../services/UserService";
 import { ContestService } from "../services/ContestService";
 import { VoteService } from "../services/VoteService";
 import { ForumService } from "../services/ForumService";
+import { XPService } from "../services/XPService";
 
 export function usePhotoService() {
   const { getToken } = useAuth();
@@ -56,6 +57,17 @@ export function useForumService() {
 
   if (!serviceRef.current) {
     serviceRef.current = new ForumService(getToken);
+  }
+
+  return serviceRef.current;
+}
+
+export function useXPService() {
+  const { getToken } = useAuth();
+  const serviceRef = useRef(null);
+
+  if (!serviceRef.current) {
+    serviceRef.current = new XPService(getToken);
   }
 
   return serviceRef.current;

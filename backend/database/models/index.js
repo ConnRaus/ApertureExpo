@@ -5,6 +5,7 @@ import Contest from "./Contest.js";
 import PhotoContest from "./PhotoContest.js";
 import Vote from "./Vote.js";
 import Comment from "./Comment.js";
+import XPTransaction from "./XPTransaction.js";
 import ForumThreadInit from "./ForumThread.js";
 import ForumPostInit from "./ForumPost.js";
 
@@ -143,6 +144,28 @@ Comment.belongsTo(Comment, {
   as: "ParentComment",
 });
 
+// XP Transaction associations
+XPTransaction.belongsTo(User, {
+  foreignKey: "userId",
+  as: "User",
+});
+
+User.hasMany(XPTransaction, {
+  foreignKey: "userId",
+  as: "XPTransactions",
+  onDelete: "CASCADE",
+});
+
+XPTransaction.belongsTo(Contest, {
+  foreignKey: "contestId",
+  as: "Contest",
+});
+
+XPTransaction.belongsTo(Photo, {
+  foreignKey: "photoId",
+  as: "Photo",
+});
+
 // Initialize models
 const models = {
   Photo,
@@ -151,6 +174,7 @@ const models = {
   PhotoContest,
   Vote,
   Comment,
+  XPTransaction,
   ForumThread,
   ForumPost,
   sequelize,

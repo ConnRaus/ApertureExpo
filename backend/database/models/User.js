@@ -37,6 +37,22 @@ User.init(
         },
       },
     },
+    xp: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      validate: {
+        min: 0,
+      },
+    },
+    level: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      validate: {
+        min: 0,
+      },
+    },
   },
   {
     sequelize,
@@ -45,6 +61,9 @@ User.init(
     indexes: [
       {
         fields: ["nickname"],
+      },
+      {
+        fields: ["level", "xp"],
       },
     ],
   }

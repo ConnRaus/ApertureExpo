@@ -58,6 +58,9 @@ function Navigation() {
             <Link to="/forum" className={styles.navLink}>
               Forum
             </Link>
+            <Link to="/leaderboard" className={styles.navLink}>
+              Leaderboard
+            </Link>
           </div>
         </div>
 
@@ -137,6 +140,13 @@ function Navigation() {
           onClick={toggleMobileMenu}
         >
           Forum
+        </Link>
+        <Link
+          to="/leaderboard"
+          className={styles.mobileNavLink}
+          onClick={toggleMobileMenu}
+        >
+          Leaderboard
         </Link>
       </div>
     </nav>

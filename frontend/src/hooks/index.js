@@ -16,6 +16,7 @@ export {
   useContestService,
   useVoteService,
   useForumService,
+  useXPService,
 } from "./useServices";
 
 // Export other hooks here as they are created
