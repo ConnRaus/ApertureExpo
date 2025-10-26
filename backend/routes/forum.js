@@ -2,6 +2,7 @@ import express from "express";
 import models from "../database/models/index.js";
 import { requireAuth, clerkClient } from "@clerk/express";
 import { getUserIdFromRequest } from "../utils/auth.js";
+import NotificationService from "../services/notificationService.js";
 
 const router = express.Router();
 const { ForumThread, ForumPost, User, Photo } = models;
@@ -496,6 +497,17 @@ router.post("/threads/:threadId/posts", requireAuth(), async (req, res) => {
 
     // Update the thread's last activity timestamp
     await thread.update({ lastActivityAt: new Date() });
+
+    // Send notification to thread author about the new reply
+    try {
+      await NotificationService.notifyForumReply(threadId, userId);
+    } catch (notifError) {
+      console.error(
+        `Error sending forum reply notification for thread ${threadId}:`,
+        notifError
+      );
+      // Don't fail the post creation if notification fails
+    }
 
     // Fetch the created post with author information and photo
     const postWithAuthor = await ForumPost.findByPk(post.id, {

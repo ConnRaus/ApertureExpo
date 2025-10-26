@@ -10,6 +10,7 @@ import sequelize from "../database/config/config.js";
 import User from "../database/models/User.js";
 import { getAuthFromRequest } from "../utils/auth.js";
 import XPService from "../services/xpService.js";
+import NotificationService from "../services/notificationService.js";
 
 const router = express.Router();
 
@@ -72,6 +73,17 @@ router.get("/contests", async (req, res) => {
         } else if (phase === "voting" && contestData.status !== "voting") {
           await contest.update({ status: "voting" });
           contestData.status = "voting";
+
+          // Notify all participants that voting has started
+          try {
+            await NotificationService.notifyContestVotingStarted(contest.id);
+          } catch (notifError) {
+            console.error(
+              `Error sending voting started notifications for contest ${contest.id}:`,
+              notifError
+            );
+            // Don't fail the contest update if notifications fail
+          }
         } else if (
           (phase === "ended" || phase === "processing") &&
           contestData.status !== "completed"
@@ -88,6 +100,17 @@ router.get("/contests", async (req, res) => {
               xpError
             );
             // Don't fail the contest update if XP fails
+          }
+
+          // Notify all participants that the contest has ended
+          try {
+            await NotificationService.notifyContestEnded(contest.id);
+          } catch (notifError) {
+            console.error(
+              `Error sending contest ended notifications for contest ${contest.id}:`,
+              notifError
+            );
+            // Don't fail the contest update if notifications fail
           }
         }
 
@@ -201,6 +224,17 @@ router.get("/contests/:id", async (req, res) => {
     } else if (phase === "voting" && contestData.status !== "voting") {
       await contest.update({ status: "voting" });
       contestData.status = "voting";
+
+      // Notify all participants that voting has started
+      try {
+        await NotificationService.notifyContestVotingStarted(contest.id);
+      } catch (notifError) {
+        console.error(
+          `Error sending voting started notifications for contest ${contest.id}:`,
+          notifError
+        );
+        // Don't fail the contest update if notifications fail
+      }
     } else if (
       (phase === "ended" || phase === "processing") &&
       contestData.status !== "completed"
@@ -217,6 +251,17 @@ router.get("/contests/:id", async (req, res) => {
           xpError
         );
         // Don't fail the contest update if XP fails
+      }
+
+      // Notify all participants that the contest has ended
+      try {
+        await NotificationService.notifyContestEnded(contest.id);
+      } catch (notifError) {
+        console.error(
+          `Error sending contest ended notifications for contest ${contest.id}:`,
+          notifError
+        );
+        // Don't fail the contest update if notifications fail
       }
     }
 

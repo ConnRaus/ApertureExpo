@@ -10,6 +10,7 @@ import {
 } from "@clerk/clerk-react";
 import styles from "../../styles/components/Navigation.module.css";
 import logoImage from "../../assets/TransparentLogo.svg";
+import NotificationBell from "../common/NotificationBell";
 
 function Navigation() {
   const { user } = useUser();
@@ -66,6 +67,7 @@ function Navigation() {
 
         <div className={styles.navRight}>
           <SignedIn>
+            <NotificationBell />
             <UserButton>
               <UserButton.MenuItems>
                 <UserButton.Action

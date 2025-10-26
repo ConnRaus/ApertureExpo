@@ -8,6 +8,7 @@ import Comment from "./Comment.js";
 import XPTransaction from "./XPTransaction.js";
 import ForumThreadInit from "./ForumThread.js";
 import ForumPostInit from "./ForumPost.js";
+import Notification from "./Notification.js";
 
 // Initialize forum models with sequelize
 const ForumThread = ForumThreadInit(sequelize);
@@ -166,6 +167,33 @@ XPTransaction.belongsTo(Photo, {
   as: "Photo",
 });
 
+// Notification associations
+Notification.belongsTo(User, {
+  foreignKey: "userId",
+  as: "User",
+});
+
+User.hasMany(Notification, {
+  foreignKey: "userId",
+  as: "Notifications",
+  onDelete: "CASCADE",
+});
+
+Notification.belongsTo(Contest, {
+  foreignKey: "contestId",
+  as: "Contest",
+});
+
+Notification.belongsTo(ForumThread, {
+  foreignKey: "threadId",
+  as: "ForumThread",
+});
+
+Notification.belongsTo(ForumPost, {
+  foreignKey: "postId",
+  as: "ForumPost",
+});
+
 // Initialize models
 const models = {
   Photo,
@@ -177,6 +205,7 @@ const models = {
   XPTransaction,
   ForumThread,
   ForumPost,
+  Notification,
   sequelize,
 };
 
