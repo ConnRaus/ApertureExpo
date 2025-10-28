@@ -139,6 +139,35 @@ export class XPService {
   }
 
   /**
+   * Get recent XP transactions for current user
+   */
+  async getRecentTransactions(limit = 20) {
+    try {
+      const token = await this.getToken();
+      const response = await fetch(
+        `${API_BASE}/xp/transactions/recent?limit=${limit}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          credentials: "include",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching recent transactions:", error);
+      throw error;
+    }
+  }
+
+  /**
    * Calculate level from XP (for client-side display)
    */
   static calculateLevelFromXP(currentXP) {

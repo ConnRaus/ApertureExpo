@@ -586,6 +586,41 @@ class XPService {
   }
 
   /**
+   * Get recent XP transactions for a user
+   */
+  static async getRecentTransactions(userId, limit = 20) {
+    try {
+      const transactions = await XPTransaction.findAll({
+        where: { userId },
+        order: [["awardedAt", "DESC"]],
+        limit,
+        include: [
+          {
+            model: (await import("../database/models/Contest.js")).default,
+            as: "Contest",
+            attributes: ["id", "title"],
+            required: false,
+          },
+        ],
+      });
+
+      return transactions.map((t) => ({
+        id: t.id,
+        xpAmount: t.xpAmount,
+        reason: t.reason,
+        actionType: t.actionType,
+        contestId: t.contestId,
+        contestTitle: t.Contest?.title,
+        photoId: t.photoId,
+        awardedAt: t.awardedAt,
+      }));
+    } catch (error) {
+      console.error("Error getting recent transactions:", error);
+      throw error;
+    }
+  }
+
+  /**
    * Get user's XP stats for a specific timeframe
    */
   static async getUserTimeframeXP(userId, timeframe = "all") {

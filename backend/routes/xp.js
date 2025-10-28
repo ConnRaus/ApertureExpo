@@ -125,4 +125,24 @@ router.get("/rewards", async (req, res) => {
   }
 });
 
+// Get recent XP transactions for current user
+router.get("/transactions/recent", requireAuth(), async (req, res) => {
+  try {
+    const auth = getAuthFromRequest(req);
+    if (!auth || !auth.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const limit = parseInt(req.query.limit) || 20;
+    const transactions = await XPService.getRecentTransactions(
+      auth.userId,
+      limit
+    );
+    res.json(transactions);
+  } catch (error) {
+    console.error("Error getting recent transactions:", error);
+    res.status(500).json({ error: "Failed to get recent transactions" });
+  }
+});
+
 export default router;
