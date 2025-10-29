@@ -1,67 +1,11 @@
 import React, { useState, useEffect } from "react";
-import styles from "../../styles/components/Contest.module.css";
-import { PhotoLightbox } from "../photos/PhotoLightbox";
-import { PhotoVoteButton } from "./PhotoVoteButton";
-import { Link } from "react-router-dom";
+import {
+  Lightbox,
+  LightboxConfigs,
+  PhotoGrid,
+  PhotoGridConfigs,
+} from "../photos/PhotoComponents";
 import { Pagination } from "../common/Pagination";
-
-function ContestPhotoCard({ photo, contestId, contestPhase, onClick }) {
-  const handleImageError = (e) => {
-    e.target.src = "https://via.placeholder.com/300x200?text=Image+Not+Found";
-  };
-
-  // Check if we should show votes
-  const showVotes = contestPhase === "voting" || contestPhase === "ended";
-
-  // Only show stars during voting phase
-  const showStars = contestPhase === "voting";
-
-  return (
-    <div className={styles.contestPhotoCard}>
-      <div onClick={() => onClick(photo)}>
-        <img
-          src={photo.thumbnailUrl}
-          alt="Contest submission"
-          onError={handleImageError}
-          className={styles.contestSubmissionImage}
-          loading="lazy"
-        />
-      </div>
-
-      {showVotes && (
-        <div className={styles.photoVoteContainer}>
-          <h3 className={styles.photoTitle}>{photo.title}</h3>
-
-          {contestPhase === "ended" ? (
-            <div className={styles.photoResultsInfo}>
-              <div className={styles.photoAuthor}>
-                by{" "}
-                <Link
-                  to={`/users/${photo.userId}`}
-                  className="text-indigo-300 hover:text-indigo-200 underline"
-                >
-                  {photo.User?.nickname || "Unknown"}
-                </Link>
-              </div>
-              <div className={styles.photoStats}>
-                {photo.averageRating ? photo.averageRating.toFixed(1) : "0.0"}/5
-                ⭐ ({photo.voteCount || 0} vote
-                {photo.voteCount !== 1 ? "s" : ""})
-              </div>
-            </div>
-          ) : (
-            <PhotoVoteButton
-              photo={photo}
-              contestId={contestId}
-              contestPhase={contestPhase}
-              showStars={showStars}
-            />
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
 
 export function ContestSubmissions({
   photos = [],
@@ -71,30 +15,63 @@ export function ContestSubmissions({
   onPageChange,
 }) {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(-1);
+  const [displayPhotos, setDisplayPhotos] = useState([]);
+  const [voteUpdateTrigger, setVoteUpdateTrigger] = useState(0);
+
+  // Update displayPhotos when photos prop changes
+  useEffect(() => {
+    if (!photos || photos.length === 0) {
+      setDisplayPhotos([]);
+      return;
+    }
+
+    // Photos are now assumed to be pre-sorted by the backend based on phase.
+    // We only need to handle assigning rank for display in the 'ended' phase.
+    let processedPhotos = [...photos];
+    if (
+      contestPhase === "ended" &&
+      processedPhotos[0]?.totalScore !== undefined
+    ) {
+      // Add rank property for display
+      let rank = 0;
+      let lastScore = Infinity;
+      let photosProcessedForRank = 0;
+      processedPhotos = processedPhotos.map((photo) => {
+        photosProcessedForRank++;
+        const currentScore = photo.totalScore ?? -Infinity;
+        if (currentScore < lastScore) {
+          rank = photosProcessedForRank;
+        } else if (lastScore === -Infinity) {
+          rank = 1;
+        }
+        lastScore = currentScore;
+        return { ...photo, rank };
+      });
+    }
+    setDisplayPhotos(processedPhotos);
+  }, [photos, contestPhase]);
+
+  const handleVoteSuccess = (photoId, newVoteValue) => {
+    // Trigger a re-render of PhotoVoteButton components by updating the trigger
+    setVoteUpdateTrigger((prev) => prev + 1);
+  };
+
+  // Determine which config to use based on contest phase
+  const getGridConfig = () => {
+    switch (contestPhase) {
+      case "submission":
+        return PhotoGridConfigs.contestSubmission;
+      case "voting":
+        return PhotoGridConfigs.contestVoting;
+      case "ended":
+        return PhotoGridConfigs.contestResults;
+      default:
+        return PhotoGridConfigs.contestSubmission;
+    }
+  };
 
   if (!photos || photos.length === 0) {
     return <p>No submissions yet. Be the first to submit!</p>;
-  }
-
-  // Photos are now assumed to be pre-sorted by the backend based on phase.
-  // We only need to handle assigning rank for display in the 'ended' phase.
-  let displayPhotos = [...photos];
-  if (contestPhase === "ended" && displayPhotos[0]?.totalScore !== undefined) {
-    // Add rank property for display
-    let rank = 0;
-    let lastScore = Infinity;
-    let photosProcessedForRank = 0;
-    displayPhotos = displayPhotos.map((photo) => {
-      photosProcessedForRank++;
-      const currentScore = photo.totalScore ?? -Infinity;
-      if (currentScore < lastScore) {
-        rank = photosProcessedForRank;
-      } else if (lastScore === -Infinity) {
-        rank = 1;
-      }
-      lastScore = currentScore;
-      return { ...photo, rank };
-    });
   }
 
   return (
@@ -108,17 +85,14 @@ export function ContestSubmissions({
         {pagination?.totalPhotos || photos.length})
       </h3>
 
-      <div className={styles.submissionsGrid}>
-        {displayPhotos.map((photo, index) => (
-          <ContestPhotoCard
-            key={photo.id}
-            photo={photo}
-            contestId={contestId}
-            contestPhase={contestPhase}
-            onClick={() => setSelectedPhotoIndex(index)}
-          />
-        ))}
-      </div>
+      <PhotoGrid
+        photos={displayPhotos}
+        config={getGridConfig()}
+        onClick={setSelectedPhotoIndex}
+        contestId={contestId}
+        contestPhase={contestPhase}
+        voteUpdateTrigger={voteUpdateTrigger}
+      />
 
       {/* Show pagination if pagination data is available */}
       {pagination && (
@@ -129,10 +103,20 @@ export function ContestSubmissions({
         />
       )}
 
-      <PhotoLightbox
+      <Lightbox
         photos={displayPhotos}
         selectedIndex={selectedPhotoIndex}
         onClose={() => setSelectedPhotoIndex(-1)}
+        config={
+          contestPhase === "submission"
+            ? LightboxConfigs.contestSubmission
+            : contestPhase === "voting"
+            ? LightboxConfigs.contestVoting
+            : LightboxConfigs.contestResults
+        }
+        contestId={contestId}
+        contestPhase={contestPhase}
+        onVoteSuccess={handleVoteSuccess}
       />
     </>
   );

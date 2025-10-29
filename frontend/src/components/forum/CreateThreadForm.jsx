@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import styles from "../../styles/components/Forum.module.css";
 import { useForumService } from "../../hooks";
+import { RichTextEditor } from "./RichTextEditor";
 
 export function CreateThreadForm({ onSubmit, onCancel }) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [category, setCategory] = useState("General");
   const [categories, setCategories] = useState([
     "General",
@@ -36,11 +38,12 @@ export function CreateThreadForm({ onSubmit, onCancel }) {
     e.preventDefault();
 
     if (!title.trim() || !content.trim()) return;
+    if (title.length > 200 || content.length > 10000) return;
 
     setIsSubmitting(true);
 
     try {
-      await onSubmit({ title, content, category });
+      await onSubmit({ title, content, category, photoId: selectedPhoto?.id });
       resetForm();
     } catch (error) {
       console.error("Error creating thread:", error);
@@ -53,6 +56,7 @@ export function CreateThreadForm({ onSubmit, onCancel }) {
   const resetForm = () => {
     setTitle("");
     setContent("");
+    setSelectedPhoto(null);
     setCategory("General");
   };
 
@@ -64,16 +68,22 @@ export function CreateThreadForm({ onSubmit, onCancel }) {
           <label htmlFor="title" className={styles.formLabel}>
             Title
           </label>
-          <input
-            type="text"
-            id="title"
-            className={styles.formInput}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Thread title"
-            disabled={isSubmitting}
-            required
-          />
+          <div className="relative">
+            <input
+              type="text"
+              id="title"
+              className={styles.formInput}
+              value={title}
+              onChange={(e) => setTitle(e.target.value.slice(0, 200))}
+              placeholder="Thread title"
+              disabled={isSubmitting}
+              maxLength={200}
+              required
+            />
+            <span className="absolute right-3 bottom-3 text-xs text-gray-400">
+              {title.length}/200
+            </span>
+          </div>
         </div>
 
         <div className={styles.formGroup}>
@@ -99,15 +109,15 @@ export function CreateThreadForm({ onSubmit, onCancel }) {
           <label htmlFor="content" className={styles.formLabel}>
             Content
           </label>
-          <textarea
-            id="content"
-            className={styles.textarea}
+          <RichTextEditor
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={setContent}
+            onPhotoSelect={setSelectedPhoto}
+            selectedPhoto={selectedPhoto}
             placeholder="Write your thoughts here..."
             disabled={isSubmitting}
-            required
-            style={{ minHeight: "12rem" }}
+            minHeight="12rem"
+            maxLength={10000}
           />
         </div>
 

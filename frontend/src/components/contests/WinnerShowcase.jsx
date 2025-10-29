@@ -1,16 +1,15 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useSwipeable } from "react-swipeable";
 import { useContestService } from "../../hooks";
 import { LoadingSpinner } from "../common/CommonComponents";
-import styles from "../../styles/components/RecentWinners.module.css";
+import { Lightbox, LightboxConfigs } from "../photos/PhotoComponents";
+import styles from "../../styles/components/WinnerShowcase.module.css";
 
-export function RecentWinners() {
+export function WinnerShowcase() {
   const [winners, setWinners] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedPhoto, setSelectedPhoto] = useState(null);
-  const [currentIndex, setCurrentIndex] = useState(null);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(-1);
   const contestService = useContestService();
 
   useEffect(() => {
@@ -24,20 +23,30 @@ export function RecentWinners() {
             contest.phase === "ended" || contest.status === "completed"
         );
 
-        console.log(`Found ${completedContests.length} completed contests`);
         if (completedContests.length === 0) {
           setWinners([]);
           setIsLoading(false);
           return;
         }
 
-        // Sort by most recently ended
-        completedContests.sort(
+        // First, filter for contests that have photos
+        const contestsWithPhotos = completedContests.filter(
+          (contest) => contest.submissionCount > 0
+        );
+
+        if (contestsWithPhotos.length === 0) {
+          setWinners([]);
+          setIsLoading(false);
+          return;
+        }
+
+        // Sort by most recently ended among contests that have photos
+        contestsWithPhotos.sort(
           (a, b) => new Date(b.votingEndDate) - new Date(a.votingEndDate)
         );
 
-        // Take the 3 most recent contests
-        const recentContests = completedContests.slice(0, 3);
+        // Take up to 3 most recent contests that have photos
+        const recentContests = contestsWithPhotos.slice(0, 3);
 
         if (recentContests.length === 0) {
           setWinners([]);
@@ -130,66 +139,9 @@ export function RecentWinners() {
     );
   };
 
-  const openPhotoModal = (photo, index) => {
-    setSelectedPhoto(photo);
-    setCurrentIndex(index);
+  const openPhotoModal = (index) => {
+    setSelectedPhotoIndex(index);
   };
-
-  const closePhotoModal = useCallback(() => {
-    setSelectedPhoto(null);
-    setCurrentIndex(null);
-  }, []);
-
-  const showNextPhoto = useCallback(
-    (e) => {
-      e.stopPropagation();
-      if (winners.length === 0) return;
-      const nextIndex = (currentIndex + 1) % winners.length;
-      setSelectedPhoto(winners[nextIndex]);
-      setCurrentIndex(nextIndex);
-    },
-    [currentIndex, winners]
-  );
-
-  const showPreviousPhoto = useCallback(
-    (e) => {
-      e.stopPropagation();
-      if (winners.length === 0) return;
-      const prevIndex = (currentIndex - 1 + winners.length) % winners.length;
-      setSelectedPhoto(winners[prevIndex]);
-      setCurrentIndex(prevIndex);
-    },
-    [currentIndex, winners]
-  );
-
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (selectedPhoto) {
-        if (event.key === "ArrowRight") {
-          showNextPhoto(event);
-        }
-        if (event.key === "ArrowLeft") {
-          showPreviousPhoto(event);
-        }
-        if (event.key === "Escape") {
-          closePhotoModal();
-        }
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [selectedPhoto, showNextPhoto, showPreviousPhoto, closePhotoModal]);
-
-  // Swipe handlers
-  const swipeHandlers = useSwipeable({
-    onSwipedLeft: (eventData) => showNextPhoto(eventData.event),
-    onSwipedRight: (eventData) => showPreviousPhoto(eventData.event),
-    preventDefaultTouchmoveEvent: true,
-    trackMouse: false,
-  });
 
   // Get rank display (medal emoji for top 3, number for others)
   const getRankDisplay = (rank) => {
@@ -205,8 +157,22 @@ export function RecentWinners() {
     }
   };
 
+  // Get CSS class for rank background
+  const getRankClass = (rank) => {
+    switch (rank) {
+      case 1:
+        return `${styles.rank} ${styles.firstPlace}`;
+      case 2:
+        return `${styles.rank} ${styles.secondPlace}`;
+      case 3:
+        return `${styles.rank} ${styles.thirdPlace}`;
+      default:
+        return styles.rank;
+    }
+  };
+
   if (isLoading) {
-    return <LoadingSpinner size="md" message="Loading recent winners..." />;
+    return <LoadingSpinner size="md" message="Loading winner showcase..." />;
   }
 
   if (error) {
@@ -215,7 +181,7 @@ export function RecentWinners() {
 
   // Always show the section header, even if there are no winners yet
   return (
-    <div className={styles.recentWinners}>
+    <div className={styles.winnerShowcase}>
       {winners.length > 0 ? (
         <>
           <div className={styles.scrollContainer}>
@@ -223,9 +189,11 @@ export function RecentWinners() {
               <div
                 key={photo.id}
                 className={styles.winnerCard}
-                onClick={() => openPhotoModal(photo, index)}
+                onClick={() => openPhotoModal(index)}
               >
-                <div className={styles.rank}>{getRankDisplay(photo.rank)}</div>
+                <div className={getRankClass(photo.rank)}>
+                  {getRankDisplay(photo.rank)}
+                </div>
                 <img
                   src={photo.thumbnailUrl}
                   alt={photo.title}
@@ -259,76 +227,12 @@ export function RecentWinners() {
             ))}
           </div>
 
-          {selectedPhoto && (
-            <div className={styles.modal} onClick={closePhotoModal}>
-              <div
-                className={styles.modalContent}
-                onClick={(e) => e.stopPropagation()}
-                {...swipeHandlers}
-              >
-                <span className={styles.closeButton} onClick={closePhotoModal}>
-                  &times;
-                </span>
-                <div className={styles.modalImageWrapper}>
-                  {winners.length > 1 && (
-                    <>
-                      <button
-                        className={`${styles.navButton} ${styles.prevButton}`}
-                        onClick={showPreviousPhoto}
-                        aria-label="Previous Winner"
-                      >
-                        &#10094;
-                      </button>
-                      <button
-                        className={`${styles.navButton} ${styles.nextButton}`}
-                        onClick={showNextPhoto}
-                        aria-label="Next Winner"
-                      >
-                        &#10095;
-                      </button>
-                    </>
-                  )}
-                  <img
-                    src={selectedPhoto.s3Url || selectedPhoto.thumbnailUrl}
-                    alt={selectedPhoto.title}
-                    className={styles.modalImage}
-                    draggable="false"
-                    onContextMenu={(e) => e.preventDefault()}
-                  />
-                </div>
-                <div className={styles.modalInfo}>
-                  <h3>{selectedPhoto.title}</h3>
-                  <p>
-                    by{" "}
-                    <Link to={`/users/${selectedPhoto.userId}`}>
-                      {selectedPhoto.User?.nickname || "Anonymous"}
-                    </Link>
-                  </p>
-                  <p>
-                    From contest:{" "}
-                    <Link
-                      to={`/events/${createSlug(selectedPhoto.contestTitle)}-${
-                        selectedPhoto.contestId
-                      }`}
-                    >
-                      {selectedPhoto.contestTitle}
-                    </Link>
-                  </p>
-                  {selectedPhoto.totalScore > 0 && (
-                    <p>
-                      Rating:{" "}
-                      {(
-                        selectedPhoto.averageRating ||
-                        selectedPhoto.totalScore / selectedPhoto.voteCount
-                      ).toFixed(1)}
-                      /5 ⭐ ({selectedPhoto.voteCount || 1} vote
-                      {selectedPhoto.voteCount !== 1 ? "s" : ""})
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
+          <Lightbox
+            photos={winners}
+            selectedIndex={selectedPhotoIndex}
+            onClose={() => setSelectedPhotoIndex(-1)}
+            config={LightboxConfigs.winnerShowcase}
+          />
         </>
       ) : (
         <div className={styles.noWinners}>

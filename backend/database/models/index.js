@@ -4,8 +4,11 @@ import User from "./User.js";
 import Contest from "./Contest.js";
 import PhotoContest from "./PhotoContest.js";
 import Vote from "./Vote.js";
+import Comment from "./Comment.js";
+import XPTransaction from "./XPTransaction.js";
 import ForumThreadInit from "./ForumThread.js";
 import ForumPostInit from "./ForumPost.js";
+import Notification from "./Notification.js";
 
 // Initialize forum models with sequelize
 const ForumThread = ForumThreadInit(sequelize);
@@ -91,6 +94,12 @@ ForumThread.hasMany(ForumPost, {
   onDelete: "CASCADE",
 });
 
+// Add photo association for ForumThread
+ForumThread.belongsTo(Photo, {
+  foreignKey: "photoId",
+  as: "photo",
+});
+
 ForumPost.belongsTo(User, {
   foreignKey: "userId",
   as: "author",
@@ -101,6 +110,90 @@ ForumPost.belongsTo(ForumThread, {
   as: "thread",
 });
 
+// Add photo association for ForumPost
+ForumPost.belongsTo(Photo, {
+  foreignKey: "photoId",
+  as: "photo",
+});
+
+// Comment associations
+Photo.hasMany(Comment, {
+  foreignKey: "photoId",
+  as: "Comments",
+  onDelete: "CASCADE",
+});
+
+Comment.belongsTo(Photo, {
+  foreignKey: "photoId",
+  as: "Photo",
+});
+
+Comment.belongsTo(User, {
+  foreignKey: "userId",
+  as: "User",
+});
+
+// Self-referencing association for replies
+Comment.hasMany(Comment, {
+  foreignKey: "parentCommentId",
+  as: "Replies",
+  onDelete: "CASCADE",
+});
+
+Comment.belongsTo(Comment, {
+  foreignKey: "parentCommentId",
+  as: "ParentComment",
+});
+
+// XP Transaction associations
+XPTransaction.belongsTo(User, {
+  foreignKey: "userId",
+  as: "User",
+});
+
+User.hasMany(XPTransaction, {
+  foreignKey: "userId",
+  as: "XPTransactions",
+  onDelete: "CASCADE",
+});
+
+XPTransaction.belongsTo(Contest, {
+  foreignKey: "contestId",
+  as: "Contest",
+});
+
+XPTransaction.belongsTo(Photo, {
+  foreignKey: "photoId",
+  as: "Photo",
+});
+
+// Notification associations
+Notification.belongsTo(User, {
+  foreignKey: "userId",
+  as: "User",
+});
+
+User.hasMany(Notification, {
+  foreignKey: "userId",
+  as: "Notifications",
+  onDelete: "CASCADE",
+});
+
+Notification.belongsTo(Contest, {
+  foreignKey: "contestId",
+  as: "Contest",
+});
+
+Notification.belongsTo(ForumThread, {
+  foreignKey: "threadId",
+  as: "ForumThread",
+});
+
+Notification.belongsTo(ForumPost, {
+  foreignKey: "postId",
+  as: "ForumPost",
+});
+
 // Initialize models
 const models = {
   Photo,
@@ -108,8 +201,11 @@ const models = {
   Contest,
   PhotoContest,
   Vote,
+  Comment,
+  XPTransaction,
   ForumThread,
   ForumPost,
+  Notification,
   sequelize,
 };
 

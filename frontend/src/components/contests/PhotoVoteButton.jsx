@@ -9,6 +9,7 @@ export function PhotoVoteButton({
   contestPhase,
   showCount = true,
   showStars = false,
+  onVoteSuccess = null,
 }) {
   const [voteCount, setVoteCount] = useState(photo.voteCount || 0);
   const [userVote, setUserVote] = useState(null);
@@ -20,9 +21,26 @@ export function PhotoVoteButton({
   const isVotingPhase = contestPhase === "voting";
   const isOwnPhoto = user?.id === photo.userId;
 
-  // Check if user has already voted for this photo
+  // Don't show voting UI to non-signed-in users
+  if (!user) {
+    return showCount ? (
+      <div className="flex flex-col items-center">
+        <div className="text-sm text-gray-400 mt-1">
+          {voteCount} vote{voteCount !== 1 && "s"}
+        </div>
+      </div>
+    ) : null;
+  }
+
+  // Reset state when photo changes and check if user has already voted
   useEffect(() => {
-    if (contestId && photo.id && isVotingPhase) {
+    // Reset all state when photo changes
+    setVoteCount(photo.voteCount || 0);
+    setUserVote(null);
+    setHoverRating(0);
+    setIsVoting(false);
+
+    if (contestId && photo.id && isVotingPhase && user) {
       const checkUserVote = async () => {
         try {
           const userVotes = await voteService.getUserVotes(contestId);
@@ -39,7 +57,7 @@ export function PhotoVoteButton({
 
       checkUserVote();
     }
-  }, [contestId, photo.id, isVotingPhase]);
+  }, [contestId, photo.id, isVotingPhase, photo.voteCount, user]);
 
   const handleVote = async (value = 1) => {
     if (!isVotingPhase) {
@@ -76,6 +94,10 @@ export function PhotoVoteButton({
             ? "Your vote has been updated!"
             : "Your vote has been counted!"
         );
+
+        if (onVoteSuccess) {
+          onVoteSuccess(photo.id, value);
+        }
       }
     } catch (error) {
       toast.error(error.message || "Failed to vote. Please try again.");

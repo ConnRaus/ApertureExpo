@@ -6,6 +6,8 @@ import Contest from "../database/models/Contest.js";
 import { Op } from "sequelize";
 import sequelize from "../database/config/config.js";
 import User from "../database/models/User.js";
+import { getAuthFromRequest, getUserIdFromRequest } from "../utils/auth.js";
+import XPService from "../services/xpService.js";
 
 const router = express.Router();
 
@@ -13,7 +15,9 @@ const router = express.Router();
 router.post("/votes", requireAuth(), async (req, res) => {
   try {
     const { photoId, contestId, value = 1 } = req.body;
-    const userId = req.auth.userId;
+
+    const auth = getAuthFromRequest(req);
+    const userId = auth.userId;
 
     if (!photoId || !contestId) {
       return res.status(400).json({
@@ -109,6 +113,24 @@ router.post("/votes", requireAuth(), async (req, res) => {
       value,
     });
 
+    // Award XP for voting (only for new votes, not updates)
+    try {
+      const xpResult = await XPService.awardVoteXP(userId, contestId, photoId);
+      if (xpResult.success) {
+        console.log(
+          `Awarded ${xpResult.xpAwarded} XP to user ${userId} for voting`
+        );
+        if (xpResult.leveledUp) {
+          console.log(
+            `User ${userId} leveled up to level ${xpResult.newLevel}!`
+          );
+        }
+      }
+    } catch (xpError) {
+      console.error("Error awarding vote XP:", xpError);
+      // Don't fail the vote if XP fails
+    }
+
     res.status(201).json({
       message: "Vote cast successfully",
       vote,
@@ -153,9 +175,15 @@ router.get("/photos/:photoId/votes", async (req, res) => {
 });
 
 // Get user's votes in a contest
-router.get("/users/votes", requireAuth(), async (req, res) => {
+router.get("/user-votes", requireAuth(), async (req, res) => {
   try {
-    const userId = req.auth.userId;
+    const auth = getAuthFromRequest(req);
+
+    const userId = auth?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
     const { contestId } = req.query;
 
     const whereClause = { userId };
@@ -267,6 +295,16 @@ router.get("/contests/:contestId/top-photos", async (req, res) => {
     if (photoStats.length === 0) {
       const allPhotos = await Photo.findAll({
         where: { id: { [Op.in]: photoIds } },
+        attributes: [
+          "id",
+          "title",
+          "thumbnailUrl",
+          "s3Url",
+          "userId",
+          "createdAt",
+          "description",
+          "metadata",
+        ],
         include: [
           {
             model: User,
@@ -274,7 +312,6 @@ router.get("/contests/:contestId/top-photos", async (req, res) => {
             attributes: ["id", "nickname"],
           },
         ],
-        attributes: ["id", "title", "thumbnailUrl", "s3Url", "userId"],
         limit: parseInt(limit),
       });
 
@@ -300,6 +337,14 @@ router.get("/contests/:contestId/top-photos", async (req, res) => {
 
     const topPhotos = await Photo.findAll({
       where: { id: { [Op.in]: topPhotoIds } },
+      attributes: [
+        "id",
+        "title",
+        "thumbnailUrl",
+        "s3Url",
+        "userId",
+        "metadata",
+      ],
       include: [
         {
           model: User,
@@ -307,7 +352,6 @@ router.get("/contests/:contestId/top-photos", async (req, res) => {
           attributes: ["id", "nickname"],
         },
       ],
-      attributes: ["id", "title", "thumbnailUrl", "s3Url", "userId"],
     });
 
     // Combine photo data with vote stats
@@ -360,11 +404,24 @@ router.get("/contests/:contestId/photos/:photoId/votes", async (req, res) => {
 // Get all photos in a contest, including vote counts and user vote status
 router.get("/contests/:contestId/photos-with-votes", async (req, res) => {
   const { contestId } = req.params;
-  const userId = req.auth?.userId; // Use optional chaining
+
+  const userId = getUserIdFromRequest(req);
 
   try {
     const photos = await Photo.findAll({
       where: { ContestId: contestId },
+      attributes: [
+        "id",
+        "title",
+        "description",
+        "s3Url",
+        "thumbnailUrl",
+        "userId",
+        "createdAt",
+        "updatedAt",
+        "metadata",
+        "ContestId",
+      ],
       include: [
         {
           model: User,
@@ -434,7 +491,9 @@ router.post(
   requireAuth(),
   async (req, res) => {
     const { contestId, photoId } = req.params;
-    const userId = req.auth.userId;
+
+    const auth = getAuthFromRequest(req);
+    const userId = auth.userId;
     const { value } = req.body; // Expecting +1 or -1
 
     if (![1, -1].includes(value)) {

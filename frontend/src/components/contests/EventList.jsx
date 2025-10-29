@@ -4,7 +4,7 @@ import { ContestCard } from "./ContestCard";
 import { useContestService, useDelayedLoading } from "../../hooks";
 import { LoadingSpinner } from "../common/CommonComponents";
 
-export function EventList({ showAllTypes = true }) {
+export function EventList({ showAllTypes = true, selectedFilter = "all" }) {
   const [contests, setContests] = useState([]);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -124,9 +124,9 @@ export function EventList({ showAllTypes = true }) {
     }
 
     return (
-      <div className="mb-6">
+      <div className="mb-4">
         <h2 className="text-xl font-bold mb-2">{title}</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 auto-rows-fr">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 auto-rows-fr">
           {contestList.map((contest) => (
             <ContestCard
               key={contest.id}
@@ -137,6 +137,23 @@ export function EventList({ showAllTypes = true }) {
         </div>
       </div>
     );
+  };
+
+  // Helper function to get filtered contests based on selectedFilter
+  const getFilteredContests = () => {
+    switch (selectedFilter) {
+      case "active":
+        return activeContests;
+      case "voting":
+        return votingContests;
+      case "coming soon":
+        return upcomingContests;
+      case "ended":
+        return endedContests;
+      case "all":
+      default:
+        return null; // Show all sections
+    }
   };
 
   // If we're only showing active contests (e.g., on the home page)
@@ -154,7 +171,7 @@ export function EventList({ showAllTypes = true }) {
 
     return (
       <div className="mt-2">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 auto-rows-fr">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 auto-rows-fr">
           {displayContests.map((contest) => (
             <ContestCard
               key={contest.id}
@@ -167,7 +184,41 @@ export function EventList({ showAllTypes = true }) {
     );
   }
 
-  // Otherwise show all sections
+  // If a specific filter is selected (not "all"), show only those contests
+  const filteredContests = getFilteredContests();
+  if (filteredContests !== null) {
+    if (filteredContests.length === 0) {
+      const filterLabels = {
+        active: "active contests",
+        voting: "contests in voting phase",
+        "coming soon": "upcoming contests",
+        ended: "past contests",
+      };
+      return (
+        <div className="mt-2">
+          <p>
+            No {filterLabels[selectedFilter]} at the moment. Check back later!
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="mt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 auto-rows-fr">
+          {filteredContests.map((contest) => (
+            <ContestCard
+              key={contest.id}
+              contest={contest}
+              onClick={() => navigateToContest(contest)}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Otherwise show all sections (when filter is "all")
   return (
     <div className="mt-2">
       {renderContestSection(

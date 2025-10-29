@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { useUser } from "@clerk/clerk-react";
 import { Link, useNavigate } from "react-router-dom";
+import { useUser } from "@clerk/clerk-react";
 import styles from "../../styles/components/Forum.module.css";
 import { PostList } from "./PostList";
 import { ReplyForm } from "./ReplyForm";
+import { FormattedContent } from "./FormattedContent";
+import { RichTextEditor } from "./RichTextEditor";
+import { PhotoLibraryPicker } from "../photos/PhotoLibraryPicker";
+import { Lightbox } from "../photos/Lightbox";
+import { LightboxConfigs } from "../photos/LightboxConfigs";
 import { useForumService } from "../../hooks";
 
 const formatDate = (dateString) => {
@@ -28,20 +33,47 @@ export function ThreadDetail({
   const { user } = useUser();
   const navigate = useNavigate();
   const forumService = useForumService();
-  const [isEditing, setIsEditing] = useState(false);
-  const [threadTitle, setThreadTitle] = useState(thread?.title || "");
-  const [threadContent, setThreadContent] = useState(thread?.content || "");
+
   const [localThread, setLocalThread] = useState(thread);
-  const [localPosts, setLocalPosts] = useState(initialPosts);
-  const [localTotalPosts, setLocalTotalPosts] = useState(initialTotalPosts);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [localPosts, setLocalPosts] = useState(initialPosts || []);
+  const [localTotalPosts, setLocalTotalPosts] = useState(
+    initialTotalPosts || 0
+  );
+  const [isEditing, setIsEditing] = useState(false);
+  const [threadTitle, setThreadTitle] = useState("");
+  const [threadContent, setThreadContent] = useState("");
+  const [editingSelectedPhoto, setEditingSelectedPhoto] = useState(null);
+  const [showPhotoLibrary, setShowPhotoLibrary] = useState(false);
+
+  // Lightbox state
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
+
+  const isThreadOwner = user?.id === localThread?.author?.id;
 
   // Keep local state in sync with props
   useEffect(() => {
-    setLocalThread(thread);
-    setLocalPosts(initialPosts);
-    setLocalTotalPosts(initialTotalPosts);
-  }, [thread, initialPosts, initialTotalPosts]);
+    if (thread) {
+      setLocalThread(thread);
+    }
+  }, [thread]);
+
+  useEffect(() => {
+    if (initialPosts) {
+      setLocalPosts(initialPosts);
+    }
+  }, [initialPosts]);
+
+  useEffect(() => {
+    if (initialTotalPosts !== undefined) {
+      setLocalTotalPosts(initialTotalPosts);
+    }
+  }, [initialTotalPosts]);
+
+  // Early return if no thread data
+  if (!localThread) {
+    return <div>Loading...</div>;
+  }
 
   // Function to fetch the latest thread data
   const refreshThreadData = async () => {
@@ -60,23 +92,25 @@ export function ThreadDetail({
     }
   };
 
-  if (!localThread) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-gray-400">Thread not found</p>
-      </div>
-    );
-  }
+  const handlePhotoClick = (photo) => {
+    setSelectedPhoto(photo);
+    setSelectedPhotoIndex(0);
+  };
 
-  const isThreadOwner = user?.id === localThread.author?.id;
+  const closeLightbox = () => {
+    setSelectedPhoto(null);
+    setSelectedPhotoIndex(-1);
+  };
 
   const handleEditThread = async () => {
     try {
       await forumService.updateThread(localThread.id, {
         title: threadTitle,
         content: threadContent,
+        photoId: editingSelectedPhoto?.id,
       });
       setIsEditing(false);
+      setEditingSelectedPhoto(null);
 
       // Immediately refresh data after update
       await refreshThreadData();
@@ -112,9 +146,9 @@ export function ThreadDetail({
     await refreshThreadData();
   };
 
-  const handleLocalReply = async (threadId, content) => {
+  const handleLocalReply = async (content, photoId) => {
     try {
-      await onReply(threadId, content);
+      await onReply(localThread.id, content, photoId);
       // Refresh data locally after reply
       await refreshThreadData();
     } catch (error) {
@@ -122,28 +156,51 @@ export function ThreadDetail({
     }
   };
 
+  const handlePhotoSelect = (photo) => {
+    setEditingSelectedPhoto(photo);
+    setShowPhotoLibrary(false);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditingSelectedPhoto(null);
+  };
+
   return (
     <div>
       <div className={styles.threadDetail}>
         {isEditing ? (
           <div className={styles.editThreadForm}>
-            <input
-              type="text"
-              value={threadTitle}
-              onChange={(e) => setThreadTitle(e.target.value)}
-              className={styles.formInput}
-            />
-            <textarea
-              value={threadContent}
-              onChange={(e) => setThreadContent(e.target.value)}
-              className={styles.textarea}
-              style={{ marginTop: "1rem", minHeight: "10rem" }}
-            />
+            <div className="relative">
+              <input
+                type="text"
+                value={threadTitle}
+                onChange={(e) => setThreadTitle(e.target.value.slice(0, 200))}
+                className={styles.formInput}
+                placeholder="Thread title"
+                maxLength={200}
+              />
+              <span className="absolute right-3 bottom-3 text-xs text-gray-400">
+                {threadTitle.length}/200
+              </span>
+            </div>
+            <div style={{ marginTop: "1rem" }}>
+              <RichTextEditor
+                value={threadContent}
+                onChange={setThreadContent}
+                onPhotoSelect={setEditingSelectedPhoto}
+                selectedPhoto={editingSelectedPhoto}
+                placeholder="Write your thread content here..."
+                minHeight="10rem"
+                maxLength={10000}
+                onPhotoLibraryOpen={() => setShowPhotoLibrary(true)}
+              />
+            </div>
             <div className={styles.buttonGroup} style={{ marginTop: "1rem" }}>
               <button
                 type="button"
                 className={styles.cancelButton}
-                onClick={() => setIsEditing(false)}
+                onClick={handleCancelEdit}
               >
                 Cancel
               </button>
@@ -172,6 +229,7 @@ export function ThreadDetail({
                       onClick={() => {
                         setThreadTitle(localThread.title);
                         setThreadContent(localThread.content);
+                        setEditingSelectedPhoto(localThread.photo);
                         setIsEditing(true);
                       }}
                     >
@@ -212,58 +270,76 @@ export function ThreadDetail({
                   <img
                     src={
                       localThread.author?.avatarUrl ||
-                      "https://via.placeholder.com/30"
+                      "https://via.placeholder.com/50"
                     }
                     alt={localThread.author?.nickname || "User"}
                     className={styles.authorAvatar}
                   />
-                  <Link
-                    to={`/users/${localThread.author?.id}`}
-                    className={`${styles.authorName} hover:text-indigo-600 hover:underline`}
-                  >
-                    {localThread.author?.nickname || "Anonymous"}
-                  </Link>
-                </div>
-                <div>
-                  <span className={styles.threadCategory}>
-                    {localThread.category}
-                  </span>
-                  <span className="ml-4 text-gray-400">
-                    Posted: {formatDate(localThread.createdAt)}
-                  </span>
+                  <div>
+                    <span className={styles.authorName}>
+                      <Link
+                        to={`/users/${localThread.author?.id}`}
+                        className="hover:text-indigo-600 hover:underline"
+                      >
+                        {localThread.author?.nickname || "Anonymous"}
+                      </Link>
+                    </span>
+                    <div className="text-sm text-gray-400">
+                      {formatDate(localThread.createdAt)}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className={styles.threadContent}>{localThread.content}</div>
+            <FormattedContent
+              content={localThread.content}
+              photo={localThread.photo}
+              onPhotoClick={handlePhotoClick}
+            />
           </>
         )}
       </div>
 
-      {localPosts && localPosts.length > 0 && (
+      {localTotalPosts > 0 && (
         <>
-          <h2 className={styles.postCount}>
+          <h3 className={styles.postCount}>
             {localTotalPosts} {localTotalPosts === 1 ? "Reply" : "Replies"}
-          </h2>
+          </h3>
+
           <PostList
             posts={localPosts}
             currentUserId={user?.id}
             threadAuthorId={localThread.author?.id}
             onPostUpdate={handlePostUpdate}
+            onPhotoClick={handlePhotoClick}
           />
         </>
       )}
 
-      {!localThread.isLocked && !isEditing && (
+      {user && (
         <ReplyForm
-          onSubmit={(content) => handleLocalReply(localThread.id, content)}
+          onSubmit={handleLocalReply}
+          threadId={localThread.id}
+          buttonText="Post Reply"
         />
       )}
 
-      {localThread.isLocked && (
-        <div className="text-center py-4 text-gray-400">
-          This thread is locked. No new replies can be posted.
-        </div>
+      {/* Photo Library Picker rendered at ThreadDetail level for full-screen display */}
+      <PhotoLibraryPicker
+        isOpen={showPhotoLibrary}
+        onClose={() => setShowPhotoLibrary(false)}
+        onSelect={handlePhotoSelect}
+      />
+
+      {/* Lightbox rendered at this level, outside of post containers */}
+      {selectedPhoto && (
+        <Lightbox
+          photos={[selectedPhoto]}
+          selectedIndex={selectedPhotoIndex}
+          onClose={closeLightbox}
+          config={LightboxConfigs.forum}
+        />
       )}
     </div>
   );

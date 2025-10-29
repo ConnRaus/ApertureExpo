@@ -12,6 +12,10 @@ const ForumPost = (sequelize) => {
         foreignKey: "threadId",
         as: "thread",
       });
+      ForumPost.belongsTo(models.Photo, {
+        foreignKey: "photoId",
+        as: "photo",
+      });
     }
   }
 
@@ -33,6 +37,10 @@ const ForumPost = (sequelize) => {
       threadId: {
         type: DataTypes.UUID,
         allowNull: false,
+      },
+      photoId: {
+        type: DataTypes.UUID,
+        allowNull: true,
       },
       isEdited: {
         type: DataTypes.BOOLEAN,

@@ -108,14 +108,13 @@
 
   /* Photo Cards */
   .photo-card {
-    background-color: rgba(31, 41, 55, 0.5);
-    backdrop-filter: blur(4px);
     border-radius: 0.75rem;
     overflow: hidden;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
-      0 4px 6px -4px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s;
+    background-color: rgba(31, 41, 55, 0.5);
+    backdrop-filter: blur(4px);
     border: 1px solid rgba(55, 65, 81, 0.5);
+    transition: all 0.3s;
+    position: relative;
   }
 
   .photo-card:hover {
@@ -128,11 +127,13 @@
     position: relative;
     cursor: pointer;
     overflow: hidden;
+    width: 100%;
+    height: 16rem;
   }
 
   .photo-image img {
     width: 100%;
-    height: 16rem;
+    height: 100%;
     object-fit: cover;
     transition: transform 0.5s;
   }
@@ -141,53 +142,19 @@
     transform: scale(1.05);
   }
 
-  .photo-image::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background-image: linear-gradient(
-      to top,
-      rgba(17, 24, 39, 0.6),
-      transparent
-    );
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-
-  .photo-card:hover .photo-image::after {
-    opacity: 1;
-  }
-
-  .photo-info {
-    padding: 0.75rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .photo-info h3 {
-    font-size: 1.125rem;
-    line-height: 1.25rem;
-    font-weight: 600;
-    color: rgb(229, 231, 235);
-  }
-
-  .photo-info p {
-    color: rgb(156, 163, 175);
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-  }
-
-  .photo-description {
-    color: rgb(156, 163, 175);
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-  }
-
   .line-clamp-3 {
     display: -webkit-box;
     line-clamp: 3;
     -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -201,24 +168,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: normal;
-  }
-
-  .upload-date {
-    color: rgb(107, 114, 128);
-    font-size: 0.75rem;
-    margin-top: 0.375rem;
-  }
-
-  .user-link {
-    color: rgb(129, 140, 248);
-    font-size: 0.875rem;
-    display: inline-block;
-    margin-top: 0.25rem;
-    transition: color 0.2s;
-  }
-
-  .user-link:hover {
-    color: rgb(165, 180, 252);
   }
 
   /* Upload Form */
@@ -407,34 +356,7 @@
     font-size: 0.875rem;
   }
 
-  /* Grids */
-  .photo-grid,
-  .contest-grid {
-    display: grid;
-    grid-template-columns: repeat(1, minmax(0, 1fr));
-    gap: 0.75rem;
-  }
-
-  @media (min-width: 640px) {
-    .photo-grid,
-    .contest-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .photo-grid,
-    .contest-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-  }
-
-  @media (min-width: 1280px) {
-    .photo-grid,
-    .contest-grid {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-  }
+  /* Note: All grids now use the unified photo grid system */
 
   /* Profile Section */
   .profile-header-container {
@@ -444,7 +366,7 @@
   }
 
   .profile-banner {
-    height: 14rem;
+    height: 16rem;
     width: 100%;
     background-size: cover;
     background-position: center;
@@ -757,6 +679,62 @@
       border-radius: 0.5rem;
       padding: 0.25rem;
     }
+  }
+
+  /* Responsive font sizes for text inputs - prevent mobile zoom but look good on desktop */
+  .responsive-text-input {
+    font-size: 16px; /* Default mobile size to prevent zoom */
+  }
+
+  @media (orientation: landscape) {
+    .responsive-text-input {
+      font-size: 14px; /* Desktop/landscape size for better aesthetics */
+    }
+  }
+
+  /* Unified Photo Grid - Horizontal Masonry Layout (Justified) */
+  .unified-photo-grid-justified {
+    width: 100%;
+  }
+
+  .justified-row {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .unified-photo-item {
+    position: relative;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background-color: rgba(31, 41, 55, 0.5);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(55, 65, 81, 0.3);
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+  }
+
+  .unified-photo-item:hover {
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+      0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    z-index: 10;
+  }
+
+  .unified-photo-item .photo-container {
+    position: relative;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+  }
+
+  .unified-photo-item .photo-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
 }
 

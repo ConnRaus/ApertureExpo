@@ -5,7 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 import formStyles from "../../styles/components/Form.module.css";
 import { useContestService } from "../../hooks";
 
-export function PhotoUploadModal({
+export function PhotoFileUploader({
   isOpen,
   onClose,
   contestId,

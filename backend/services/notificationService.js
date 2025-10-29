@@ -1,0 +1,275 @@
+import models from "../database/models/index.js";
+
+const { Notification, PhotoContest, User, Contest, ForumThread } = models;
+
+class NotificationService {
+  /**
+   * Create a notification for contest ending
+   */
+  static async notifyContestEnded(contestId) {
+    try {
+      console.log(
+        `[NotificationService] Starting notification process for contest ${contestId}`
+      );
+
+      const contest = await Contest.findByPk(contestId);
+      if (!contest) {
+        console.error(`[NotificationService] Contest ${contestId} not found`);
+        return;
+      }
+
+      console.log(`[NotificationService] Found contest: ${contest.title}`);
+
+      // Get all users who submitted photos to this contest
+      const photoContestEntries = await PhotoContest.findAll({
+        where: { contestId },
+        attributes: ["photoId"],
+      });
+
+      console.log(
+        `[NotificationService] Found ${photoContestEntries.length} photo submissions`
+      );
+
+      if (photoContestEntries.length === 0) {
+        console.log(
+          `[NotificationService] No submissions for contest ${contestId}, skipping notifications`
+        );
+        return;
+      }
+
+      // Get all unique user IDs from the photos
+      const Photo = models.Photo;
+      const photoIds = photoContestEntries.map((entry) => entry.photoId);
+
+      const photos = await Photo.findAll({
+        where: { id: photoIds },
+        attributes: ["userId", "id"],
+      });
+
+      console.log(
+        `[NotificationService] Found ${photos.length} photos from ${photoIds.length} entries`
+      );
+
+      const uniqueUserIds = [...new Set(photos.map((photo) => photo.userId))];
+
+      console.log(
+        `[NotificationService] Notifying ${uniqueUserIds.length} unique users:`,
+        uniqueUserIds
+      );
+
+      // Create notifications for all participants
+      const notifications = uniqueUserIds.map((userId) => ({
+        userId,
+        type: "contest_ended",
+        title: "Contest Ended!",
+        message: `The contest "${contest.title}" has ended. Check out the results!`,
+        link: `/events/${contestId}`,
+        contestId,
+      }));
+
+      await Notification.bulkCreate(notifications);
+
+      console.log(
+        `[NotificationService] ✓ Created ${notifications.length} notifications for contest ${contestId} ending`
+      );
+
+      return { success: true, count: notifications.length };
+    } catch (error) {
+      console.error(
+        "[NotificationService] Error creating contest ended notifications:",
+        error
+      );
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Create a notification for contest voting starting
+   */
+  static async notifyContestVotingStarted(contestId) {
+    try {
+      console.log(
+        `[NotificationService] Starting voting notification process for contest ${contestId}`
+      );
+
+      const contest = await Contest.findByPk(contestId);
+      if (!contest) {
+        console.error(`[NotificationService] Contest ${contestId} not found`);
+        return;
+      }
+
+      console.log(`[NotificationService] Found contest: ${contest.title}`);
+
+      // Get all users who submitted photos to this contest
+      const photoContestEntries = await PhotoContest.findAll({
+        where: { contestId },
+        attributes: ["photoId"],
+      });
+
+      console.log(
+        `[NotificationService] Found ${photoContestEntries.length} photo submissions`
+      );
+
+      if (photoContestEntries.length === 0) {
+        console.log(
+          `[NotificationService] No submissions for contest ${contestId}, skipping voting notifications`
+        );
+        return;
+      }
+
+      // Get all unique user IDs from the photos
+      const Photo = models.Photo;
+      const photoIds = photoContestEntries.map((entry) => entry.photoId);
+
+      const photos = await Photo.findAll({
+        where: { id: photoIds },
+        attributes: ["userId", "id"],
+      });
+
+      console.log(
+        `[NotificationService] Found ${photos.length} photos from ${photoIds.length} entries`
+      );
+
+      const uniqueUserIds = [...new Set(photos.map((photo) => photo.userId))];
+
+      console.log(
+        `[NotificationService] Notifying ${uniqueUserIds.length} unique users:`,
+        uniqueUserIds
+      );
+
+      // Create notifications for all participants
+      const notifications = uniqueUserIds.map((userId) => ({
+        userId,
+        type: "contest_ended", // Using same type for now
+        title: "Voting Has Started!",
+        message: `Voting has started for "${contest.title}"! Cast your votes now.`,
+        link: `/events/${contestId}`,
+        contestId,
+      }));
+
+      await Notification.bulkCreate(notifications);
+
+      console.log(
+        `[NotificationService] ✓ Created ${notifications.length} voting notifications for contest ${contestId}`
+      );
+
+      return { success: true, count: notifications.length };
+    } catch (error) {
+      console.error(
+        "[NotificationService] Error creating voting started notifications:",
+        error
+      );
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Create a notification for a forum reply
+   */
+  static async notifyForumReply(threadId, postAuthorId) {
+    try {
+      const thread = await ForumThread.findByPk(threadId, {
+        include: [
+          {
+            model: User,
+            as: "author",
+            attributes: ["id", "nickname"],
+          },
+        ],
+      });
+
+      if (!thread) {
+        console.error(`Thread ${threadId} not found`);
+        return;
+      }
+
+      // Don't notify if the thread author is replying to their own thread
+      if (thread.userId === postAuthorId) {
+        return;
+      }
+
+      // Get the post author's nickname for the notification
+      const postAuthor = await User.findByPk(postAuthorId);
+      if (!postAuthor) {
+        console.error(`Post author ${postAuthorId} not found`);
+        return;
+      }
+
+      // Create notification for the thread author
+      await Notification.create({
+        userId: thread.userId,
+        type: "forum_reply",
+        title: "New Reply to Your Thread",
+        message: `${postAuthor.nickname} replied to your thread "${thread.title}"`,
+        link: `/forum/thread/${threadId}`,
+        threadId,
+      });
+
+      console.log(
+        `Created notification for user ${thread.userId} about reply in thread ${threadId}`
+      );
+    } catch (error) {
+      console.error("Error creating forum reply notification:", error);
+    }
+  }
+
+  /**
+   * Create a notification for contest winner
+   */
+  static async notifyContestWinner(userId, contestId, placement) {
+    try {
+      const contest = await Contest.findByPk(contestId);
+      if (!contest) {
+        console.error(`Contest ${contestId} not found`);
+        return;
+      }
+
+      let placementText = "";
+      if (placement === 1) {
+        placementText = "1st place";
+      } else if (placement === 2) {
+        placementText = "2nd place";
+      } else if (placement === 3) {
+        placementText = "3rd place";
+      } else {
+        placementText = `${placement}th place`;
+      }
+
+      await Notification.create({
+        userId,
+        type: "contest_winner",
+        title: `${placementText} in Contest!`,
+        message: `Congratulations! You placed ${placementText} in "${contest.title}"`,
+        link: `/events/${contestId}`,
+        contestId,
+      });
+
+      console.log(
+        `Created winner notification for user ${userId} (${placementText}) in contest ${contestId}`
+      );
+    } catch (error) {
+      console.error("Error creating contest winner notification:", error);
+    }
+  }
+
+  /**
+   * Create a general notification for a user
+   */
+  static async notifyUser(userId, title, message, link = null) {
+    try {
+      await Notification.create({
+        userId,
+        type: "general",
+        title,
+        message,
+        link,
+      });
+
+      console.log(`Created general notification for user ${userId}: ${title}`);
+    } catch (error) {
+      console.error("Error creating general notification:", error);
+    }
+  }
+}
+
+export default NotificationService;

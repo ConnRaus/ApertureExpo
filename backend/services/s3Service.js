@@ -19,6 +19,177 @@ const s3Client = new S3Client({
   },
 });
 
+// Function to recursively sanitize metadata by removing null characters
+const sanitizeMetadata = (obj) => {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+
+  if (typeof obj === "string") {
+    // Remove null characters and trim whitespace
+    return obj.replace(/\u0000/g, "").trim();
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map((item) => sanitizeMetadata(item));
+  }
+
+  if (typeof obj === "object") {
+    const sanitized = {};
+    for (const [key, value] of Object.entries(obj)) {
+      const sanitizedKey = sanitizeMetadata(key);
+      const sanitizedValue = sanitizeMetadata(value);
+      // Only include the field if it has meaningful content after sanitization
+      if (typeof sanitizedValue === "string" && sanitizedValue === "") {
+        // Skip empty strings
+        continue;
+      }
+      if (sanitizedKey && sanitizedKey !== "") {
+        sanitized[sanitizedKey] = sanitizedValue;
+      }
+    }
+    return sanitized;
+  }
+
+  return obj;
+};
+
+// Function to filter metadata to only keep essential camera information
+const filterEssentialMetadata = (metadata) => {
+  if (!metadata || typeof metadata !== "object") {
+    return metadata;
+  }
+
+  const filtered = {};
+
+  // Keep basic image properties
+  if (metadata.width) filtered.width = metadata.width;
+  if (metadata.height) filtered.height = metadata.height;
+  if (metadata.format) filtered.format = metadata.format;
+  if (metadata.space) filtered.space = metadata.space;
+  if (metadata.channels) filtered.channels = metadata.channels;
+  if (metadata.depth) filtered.depth = metadata.depth;
+  if (metadata.density) filtered.density = metadata.density;
+  if (metadata.hasAlpha !== undefined) filtered.hasAlpha = metadata.hasAlpha;
+  if (metadata.isProgressive !== undefined)
+    filtered.isProgressive = metadata.isProgressive;
+  if (metadata.bigEndian !== undefined) filtered.bigEndian = metadata.bigEndian;
+
+  // Keep essential Image properties (camera make/model, basic settings)
+  if (metadata.Image) {
+    const imageProps = {};
+    const keepImageProps = [
+      "Make",
+      "Model",
+      "DateTime",
+      "Software",
+      "Orientation",
+      "XResolution",
+      "YResolution",
+      "ResolutionUnit",
+      "YCbCrPositioning",
+    ];
+
+    keepImageProps.forEach((prop) => {
+      if (metadata.Image[prop] !== undefined && metadata.Image[prop] !== null) {
+        imageProps[prop] = metadata.Image[prop];
+      }
+    });
+
+    if (Object.keys(imageProps).length > 0) {
+      filtered.Image = imageProps;
+    }
+  }
+
+  // Keep essential Photo/EXIF properties (camera settings)
+  if (metadata.Photo) {
+    const photoProps = {};
+    const keepPhotoProps = [
+      "FNumber",
+      "ExposureTime",
+      "ISOSpeedRatings",
+      "FocalLength",
+      "FocalLengthIn35mmFilm",
+      "LensModel",
+      "LensMake",
+      "LensSpecification",
+      "Flash",
+      "ExposureMode",
+      "WhiteBalance",
+      "ExposureProgram",
+      "MeteringMode",
+      "SensitivityType",
+      "ExposureBiasValue",
+      "MaxApertureValue",
+      "SubjectDistanceRange",
+      "SceneCaptureType",
+      "GainControl",
+      "Contrast",
+      "Saturation",
+      "Sharpness",
+      "DigitalZoomRatio",
+      "ColorSpace",
+      "PixelXDimension",
+      "PixelYDimension",
+      "DateTimeOriginal",
+      "DateTimeDigitized",
+      "OffsetTime",
+      "OffsetTimeOriginal",
+      "OffsetTimeDigitized",
+      "SubSecTime",
+      "SubSecTimeOriginal",
+      "SubSecTimeDigitized",
+      "CustomRendered",
+      "SensingMethod",
+      "FileSource",
+      "SceneType",
+      "CompositeImage",
+      "BrightnessValue",
+      "ShutterSpeedValue",
+      "ApertureValue",
+      "LightSource",
+      "CompressedBitsPerPixel",
+    ];
+
+    keepPhotoProps.forEach((prop) => {
+      if (metadata.Photo[prop] !== undefined && metadata.Photo[prop] !== null) {
+        // Skip Buffer objects and other complex data
+        if (
+          typeof metadata.Photo[prop] === "object" &&
+          metadata.Photo[prop].type === "Buffer"
+        ) {
+          return;
+        }
+        photoProps[prop] = metadata.Photo[prop];
+      }
+    });
+
+    if (Object.keys(photoProps).length > 0) {
+      filtered.Photo = photoProps;
+    }
+  }
+
+  // Keep Interoperability info if present (small and useful)
+  if (metadata.Iop) {
+    const iopProps = {};
+    if (metadata.Iop.InteroperabilityIndex) {
+      iopProps.InteroperabilityIndex = metadata.Iop.InteroperabilityIndex;
+    }
+    if (Object.keys(iopProps).length > 0) {
+      filtered.Iop = iopProps;
+    }
+  }
+
+  // Skip large/unnecessary data:
+  // - GPSInfo (privacy concern and large)
+  // - MakerNote (can be hundreds of KB)
+  // - Thumbnail (unnecessary for our use)
+  // - UserComment (often large buffer data)
+  // - Any Buffer objects
+
+  return filtered;
+};
+
 const processAndUploadImage = async (buffer, options) => {
   const {
     maxWidth,
@@ -63,37 +234,54 @@ const processAndUploadImage = async (buffer, options) => {
     });
   }
 
-  // Progressive quality reduction to meet size target
+  // Strip all metadata to save space (we store metadata separately in database)
+  processedImage = processedImage.withMetadata({});
+
+  // Aggressive compression to guarantee size target - will reduce quality and dimensions as needed
   let currentQuality = quality;
+  let currentWidth = newWidth;
+  let currentHeight = newHeight;
   let processedBuffer;
   const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
 
-  do {
-    processedBuffer = await processedImage
+  // Keep trying until we're under the size limit
+  while (true) {
+    processedBuffer = await sharp(buffer)
+      .resize(currentWidth, currentHeight, {
+        fit: "inside",
+        withoutEnlargement: true,
+        kernel: isThumbnail ? "lanczos3" : "cubic",
+      })
+      .withMetadata({}) // Strip metadata
       .jpeg({
         quality: currentQuality,
         mozjpeg: true,
-        // Force better chroma subsampling for thumbnails
         chromaSubsampling: isThumbnail ? "4:4:4" : "4:2:0",
-      })
-      .toBuffer();
-
-    // Reduce quality by 5% each iteration if we're over the size limit
-    if (processedBuffer.length > maxSizeInBytes) {
-      currentQuality = Math.max(currentQuality - 5, 30); // Don't go below 30% quality
-    }
-  } while (processedBuffer.length > maxSizeInBytes && currentQuality > 30);
-
-  // If we still exceed the size limit at minimum quality, use more aggressive compression
-  if (processedBuffer.length > maxSizeInBytes) {
-    processedBuffer = await processedImage
-      .jpeg({
-        quality: 30,
-        mozjpeg: true,
-        chromaSubsampling: "4:2:0",
         force: true,
       })
       .toBuffer();
+
+    // If we're under the size limit, we're done!
+    if (processedBuffer.length <= maxSizeInBytes) {
+      break;
+    }
+
+    // Try reducing quality first (faster than resizing)
+    if (currentQuality > 1) {
+      currentQuality = Math.max(currentQuality - 5, 1);
+    } else {
+      // Quality is at minimum, so reduce dimensions by 10%
+      currentWidth = Math.round(currentWidth * 0.9);
+      currentHeight = Math.round(currentHeight * 0.9);
+
+      // Reset quality to a reasonable level when we reduce dimensions
+      currentQuality = Math.max(quality - 20, 30);
+
+      // Safety check: if image gets too small, break with what we have
+      if (currentWidth < 50 || currentHeight < 50) {
+        break;
+      }
+    }
   }
 
   return processedBuffer;
@@ -174,16 +362,15 @@ export const uploadToS3 = async (
       // Continue without metadata if extraction fails
     }
 
-    const fileExtension = file.originalname
-      ? file.originalname.split(".").pop().toLowerCase()
-      : "jpg";
+    // Always use .jpg since we're converting everything to JPEG format
+    const fileExtension = "jpg";
 
-    // Process main image (max 4K resolution, 85% quality, max 2MB)
+    // Process main image (max 4K resolution, 85% quality, max 1MB)
     const processedMainBuffer = await processAndUploadImage(mainBuffer, {
       maxWidth: 3840,
       maxHeight: 2160,
       quality: 85,
-      maxSizeInMB: 2,
+      maxSizeInMB: 1,
     });
 
     // Upload main image
@@ -202,7 +389,13 @@ export const uploadToS3 = async (
       const result = await mainUpload.done();
       // Construct the URL manually since result.Location may not be available
       const mainUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${mainKey}`;
-      return { mainUrl, thumbnailUrl: null, metadata };
+      return {
+        mainUrl,
+        thumbnailUrl: null,
+        metadata: metadata
+          ? sanitizeMetadata(filterEssentialMetadata(metadata))
+          : null,
+      };
     }
 
     // Process thumbnail (max 600px on longest side, 80% quality, max 100KB)
@@ -235,7 +428,9 @@ export const uploadToS3 = async (
     return {
       mainUrl: mainResult.Location,
       thumbnailUrl: thumbnailResult.Location,
-      metadata,
+      metadata: metadata
+        ? sanitizeMetadata(filterEssentialMetadata(metadata))
+        : null,
     };
   } catch (error) {
     console.error("Error uploading to S3:", error);

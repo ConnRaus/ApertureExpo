@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useDelayedLoading, usePhotoService } from "../../hooks";
 
-export function PhotoSelector({
+export function PhotoLibraryPicker({
   isOpen,
   onClose,
   onSelect,
@@ -81,7 +81,7 @@ export function PhotoSelector({
                 No photos available to select from.
               </p>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                 {photos.map((photo) => {
                   // Check if the photo is already in this contest by looking at the Contests array
                   // or the legacy ContestId field for backward compatibility

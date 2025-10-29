@@ -1,4 +1,4 @@
-.recentWinners {
+.winnerShowcase {
   margin-bottom: 1rem;
   width: 100%;
 }
@@ -14,13 +14,13 @@
 /* Horizontal scrollable container */
 .scrollContainer {
   display: flex;
-  overflow-x: auto;
+  overflow-x: scroll; /* Changed from auto to scroll to always show scrollbar */
   padding-bottom: 1rem;
   scrollbar-width: thin;
   scrollbar-color: rgba(99, 102, 241, 0.6) rgba(55, 65, 81, 0.5);
   -webkit-overflow-scrolling: touch;
-  gap: 0.75rem;
-  padding: 0.5rem 0.1rem;
+  gap: 4px; /* Match photo grid exact spacing */
+  padding: 0.25rem 0.1rem; /* Reduced top/bottom padding */
 }
 
 .scrollContainer::-webkit-scrollbar {
@@ -78,7 +78,7 @@
   border-radius: 9999px;
   font-size: 1rem;
   font-weight: 500;
-  z-index: 1;
+  z-index: 10;
   border: 1px solid rgba(255, 255, 255, 0.1);
   line-height: 1;
   display: flex;
@@ -86,9 +86,33 @@
   justify-content: center;
 }
 
+/* Gold background for 1st place */
+.rank.firstPlace {
+  background-color: rgba(183, 155, 0, 0.9);
+  color: #000;
+  border: 1px solid rgba(255, 215, 0, 0.8);
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+
+/* Silver background for 2nd place */
+.rank.secondPlace {
+  background-color: rgba(145, 145, 145, 0.9);
+  color: #000;
+  border: 1px solid rgba(192, 192, 192, 0.8);
+  box-shadow: 0 2px 8px rgba(192, 192, 192, 0.3);
+}
+
+/* Bronze background for 3rd place */
+.rank.thirdPlace {
+  background-color: rgba(148, 92, 36, 0.9);
+  color: #fff;
+  border: 1px solid rgba(205, 127, 50, 0.8);
+  box-shadow: 0 2px 8px rgba(205, 127, 50, 0.3);
+}
+
 .thumbnail {
   width: 100%;
-  height: 140px;
+  height: 100%;
   object-fit: cover;
   transition: transform 0.5s;
 }
@@ -98,12 +122,21 @@
 }
 
 .photoInfo {
-  padding: 0.6rem;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(
+    to top,
+    rgba(17, 24, 39, 0.9),
+    rgba(17, 24, 39, 0.7),
+    transparent
+  );
+  padding: 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
-  flex-grow: 1;
-  min-height: 90px;
+  color: white;
 }
 
 .photoTitle {
@@ -312,28 +345,30 @@
     width: 180px;
     height: 220px;
   }
-  .thumbnail {
-    height: 120px;
-  }
+
   .photoInfo {
-    min-height: 80px;
-    padding: 0.6rem;
+    padding: 0.75rem;
   }
+
   .photoTitle {
     font-size: 0.9rem;
   }
+
   .photographer,
   .contestInfo {
     font-size: 0.75rem;
   }
+
   .navButton {
     width: 35px;
     height: 35px;
     font-size: 1.2rem;
   }
+
   .prevButton {
     left: 10px;
   }
+
   .nextButton {
     right: 10px;
   }

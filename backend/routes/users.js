@@ -6,6 +6,8 @@ import Contest from "../database/models/Contest.js";
 import { requireAuth, clerkClient } from "@clerk/express";
 import { uploadToS3, deleteFromS3 } from "../services/s3Service.js";
 import { ensureUserExists } from "../middleware/ensureUserExists.js";
+import { getAuthFromRequest } from "../utils/auth.js";
+import XPService from "../services/xpService.js";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -16,7 +18,11 @@ router.use(ensureUserExists);
 // Get the current user's profile with Clerk data
 router.get("/me", async (req, res) => {
   try {
-    const userId = req.auth.userId;
+    const auth = getAuthFromRequest(req);
+    if (!auth || !auth.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    const userId = auth.userId;
 
     const user = await User.findByPk(userId);
     if (!user) {
@@ -26,8 +32,9 @@ router.get("/me", async (req, res) => {
     // Fetch Clerk user data to get the profile image
     const clerkUser = await clerkClient.users.getUser(userId);
 
-    // Combine DB user with Clerk data
-    const userData = user.toJSON();
+    // Combine DB user with Clerk data and enrich with XP calculations
+    let userData = user.toJSON();
+    userData = XPService.enrichUserWithXPData(userData);
     userData.avatarUrl = clerkUser.imageUrl || null;
     userData.fullName =
       clerkUser.firstName && clerkUser.lastName
@@ -51,7 +58,8 @@ router.get("/:userId", async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const userData = user.toJSON();
+    let userData = user.toJSON();
+    userData = XPService.enrichUserWithXPData(userData);
 
     // If the requested user is the current user or a public user,
     // try to fetch their Clerk profile image
@@ -70,11 +78,14 @@ router.get("/:userId", async (req, res) => {
   }
 });
 
-// Update the current user's profile
-router.put("/me", async (req, res) => {
+// Update the current user's profile (PROTECTED)
+router.put("/me", requireAuth(), async (req, res) => {
   try {
-    const userId = req.auth.userId;
-    const { nickname, bio, bannerImage } = req.body;
+    const auth = getAuthFromRequest(req);
+    if (!auth || !auth.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    const userId = auth.userId;
 
     const user = await User.findByPk(userId);
     if (!user) {
@@ -82,6 +93,7 @@ router.put("/me", async (req, res) => {
     }
 
     // Update user fields
+    const { nickname, bio, bannerImage } = req.body;
     if (nickname !== undefined) {
       user.nickname = nickname;
     }
@@ -96,8 +108,9 @@ router.put("/me", async (req, res) => {
 
     await user.save();
 
-    // Get updated user with Clerk data
-    const updatedUser = user.toJSON();
+    // Get updated user with Clerk data and enrich with XP calculations
+    let updatedUser = user.toJSON();
+    updatedUser = XPService.enrichUserWithXPData(updatedUser);
 
     try {
       const clerkUser = await clerkClient.users.getUser(userId);
@@ -130,6 +143,17 @@ router.get("/:userId/photos", async (req, res) => {
     // Then get paginated photos
     const photos = await Photo.findAll({
       where: { userId },
+      attributes: [
+        "id",
+        "title",
+        "description",
+        "s3Url",
+        "thumbnailUrl",
+        "userId",
+        "createdAt",
+        "updatedAt",
+        "metadata",
+      ],
       order: [["createdAt", "DESC"]],
       limit,
       offset,
@@ -150,8 +174,8 @@ router.get("/:userId/photos", async (req, res) => {
   }
 });
 
-// Get user profile
-router.get("/:userId/profile", requireAuth(), async (req, res) => {
+// Get user profile (PUBLIC - no auth required for viewing)
+router.get("/:userId/profile", async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 25; // 25 photos per page
@@ -163,8 +187,9 @@ router.get("/:userId/profile", requireAuth(), async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Add Clerk image URL to the user profile
+    // Add Clerk image URL to the user profile and enrich with XP calculations
     let userProfile = user.toJSON();
+    userProfile = XPService.enrichUserWithXPData(userProfile);
     try {
       // Get user data from Clerk
       const clerkUser = await clerkClient.users.getUser(user.id);
@@ -184,6 +209,18 @@ router.get("/:userId/profile", requireAuth(), async (req, res) => {
     // Get paginated photos
     const photos = await Photo.findAll({
       where: { userId: req.params.userId },
+      attributes: [
+        "id",
+        "title",
+        "description",
+        "s3Url",
+        "thumbnailUrl",
+        "userId",
+        "createdAt",
+        "updatedAt",
+        "metadata",
+        "ContestId",
+      ],
       order: [["createdAt", "DESC"]],
       limit,
       offset,
@@ -214,7 +251,12 @@ router.get("/:userId/profile", requireAuth(), async (req, res) => {
 // Update user profile
 router.put("/:userId/profile", requireAuth(), async (req, res) => {
   try {
-    if (req.params.userId !== req.auth.userId) {
+    const auth = getAuthFromRequest(req);
+    if (!auth || !auth.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    if (req.params.userId !== auth.userId) {
       return res
         .status(403)
         .json({ error: "Not authorized to update this profile" });
@@ -244,8 +286,9 @@ router.put("/:userId/profile", requireAuth(), async (req, res) => {
     // Fetch the updated user to ensure we have the latest data
     const updatedUser = await User.findByPk(req.params.userId);
 
-    // Add Clerk image URL to response
+    // Add Clerk image URL to response and enrich with XP calculations
     let userResponse = updatedUser.toJSON();
+    userResponse = XPService.enrichUserWithXPData(userResponse);
     try {
       const clerkUser = await clerkClient.users.getUser(updatedUser.id);
       userResponse.avatarUrl = clerkUser.imageUrl || null;
@@ -269,7 +312,12 @@ router.post(
   upload.single("banner"),
   async (req, res) => {
     try {
-      if (req.params.userId !== req.auth.userId) {
+      const auth = getAuthFromRequest(req);
+      if (!auth || !auth.userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      if (req.params.userId !== auth.userId) {
         return res
           .status(403)
           .json({ error: "Not authorized to update this profile" });
@@ -305,7 +353,7 @@ router.post(
       // Upload new banner to S3
       const result = await uploadToS3(
         req.file,
-        `photos/${req.auth.userId}/banners`,
+        `photos/${auth.userId}/banners`,
         { generateThumbnail: false }
       );
 
@@ -361,15 +409,18 @@ router.get("/users/:userId", async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Prioritize DB data, fill in from Clerk if missing
-    const profileData = {
+    // Prioritize DB data, fill in from Clerk if missing, and enrich with XP calculations
+    let profileData = {
       id: userId,
       nickname:
         dbUser?.nickname || clerkUser?.username || `User ${userId.slice(0, 6)}`,
       bio: dbUser?.bio || "",
       bannerImage: dbUser?.bannerImage || "",
       avatarUrl: clerkUser?.imageUrl || dbUser?.avatarUrl || null, // Use Clerk image first
+      xp: dbUser?.xp || 0,
+      level: dbUser?.level || 0,
     };
+    profileData = XPService.enrichUserWithXPData(profileData);
 
     res.json(profileData);
   } catch (error) {
@@ -381,7 +432,11 @@ router.get("/users/:userId", async (req, res) => {
 // Route to get the current authenticated user's details
 router.get("/users/me", requireAuth(), async (req, res) => {
   try {
-    const userId = req.auth.userId;
+    const auth = getAuthFromRequest(req);
+    if (!auth || !auth.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    const userId = auth.userId;
     const dbUser = await User.findByPk(userId);
 
     let clerkUser = null;
@@ -398,13 +453,16 @@ router.get("/users/me", requireAuth(), async (req, res) => {
       return res.status(404).json({ error: "User profile not found in DB" });
     }
 
-    const profileData = {
+    let profileData = {
       id: userId,
       nickname: dbUser.nickname,
       bio: dbUser.bio,
       bannerImage: dbUser.bannerImage,
       avatarUrl: clerkUser?.imageUrl || dbUser.avatarUrl || null, // Use Clerk image first
+      xp: dbUser.xp,
+      level: dbUser.level,
     };
+    profileData = XPService.enrichUserWithXPData(profileData);
 
     res.json(profileData);
   } catch (error) {

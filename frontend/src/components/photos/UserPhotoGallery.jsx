@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { useUser } from "@clerk/clerk-react";
-import { PhotoGrid } from "./PhotoGrid";
-import { PhotoLightbox } from "./PhotoLightbox";
+import {
+  PhotoGrid,
+  PhotoGridConfigs,
+  Lightbox,
+  LightboxConfigs,
+} from "./PhotoComponents";
 import { usePhotoService } from "../../hooks";
 
 export function UserPhotoGallery({ isEditing }) {
   const [photos, setPhotos] = useState([]);
   const [error, setError] = useState(null);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(-1);
-  const { user } = useUser();
   const photoService = usePhotoService();
 
   useEffect(() => {
@@ -49,17 +51,18 @@ export function UserPhotoGallery({ isEditing }) {
     <div className="photo-gallery">
       <PhotoGrid
         photos={photos}
+        config={PhotoGridConfigs.userProfile}
         isOwner={true}
-        isEditing={isEditing}
-        onPhotoClick={setSelectedPhotoIndex}
+        onClick={setSelectedPhotoIndex}
         onDelete={handleDelete}
-        onEdit={handleEdit}
       />
 
-      <PhotoLightbox
+      <Lightbox
         photos={photos}
         selectedIndex={selectedPhotoIndex}
         onClose={() => setSelectedPhotoIndex(-1)}
+        config={LightboxConfigs.userProfile}
+        onPhotoUpdate={handleEdit}
       />
     </div>
   );

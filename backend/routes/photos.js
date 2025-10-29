@@ -10,16 +10,12 @@ import Contest from "../database/models/Contest.js";
 import PhotoContest from "../database/models/PhotoContest.js";
 import { requireAuth } from "@clerk/express";
 import { Op } from "sequelize";
-import imageHash from "image-hash";
-import { promisify } from "util";
-import { promises as fs } from "fs";
-import { tmpdir } from "os";
-import path from "path";
-import crypto from "crypto";
+import phash from "sharp-phash";
 import sharp from "sharp";
 import User from "../database/models/User.js";
+import { getAuthFromRequest } from "../utils/auth.js";
+import XPService from "../services/xpService.js";
 
-const imageHashAsync = promisify(imageHash.imageHash);
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -45,39 +41,23 @@ class SimilarPhotoSubmissionError extends Error {
 
 // Helper function to safely generate a hash from a buffer
 async function generateImageHashFromBuffer(buffer) {
-  // Create a temporary unique filename - convert to jpeg for consistency
-  const tempDir = tmpdir();
-  const randomFileName = crypto.randomBytes(16).toString("hex");
-
-  // Always convert to JPEG for consistent hashing regardless of original format
-  let jpegBuffer;
   try {
-    jpegBuffer = await sharp(buffer).jpeg().toBuffer();
-  } catch (error) {
-    throw new Error(`Failed to process image: ${error.message}`);
-  }
+    // Resize image to a smaller size before hashing to avoid memory issues with large panoramas
+    // We only need the hash for duplicate detection, so 800px width is plenty
+    const processedBuffer = await sharp(buffer)
+      .resize(800, 600, {
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .jpeg({ quality: 80 })
+      .toBuffer();
 
-  const tempFilePath = path.join(tempDir, `${randomFileName}.jpg`);
-
-  try {
-    // Write the jpeg buffer to the temp file
-    await fs.writeFile(tempFilePath, jpegBuffer);
-
-    // Generate hash from the file
-    const hash = await imageHashAsync(tempFilePath, 16, true);
-
-    // Clean up by deleting the temp file
-    await fs.unlink(tempFilePath);
+    // Generate hash directly from the buffer using sharp-phash
+    const hash = await phash(processedBuffer);
 
     return hash;
   } catch (error) {
-    // Make sure we attempt to clean up even if there's an error
-    try {
-      await fs.unlink(tempFilePath);
-    } catch (e) {
-      /* ignore cleanup errors */
-    }
-    throw error;
+    throw new Error(`Failed to generate image hash: ${error.message}`);
   }
 }
 
@@ -92,8 +72,17 @@ router.post(
         return res.status(400).json({ error: "No file uploaded" });
       }
 
+      // Get auth object properly
+      const auth = getAuthFromRequest(req);
+
+      // Check if user is authenticated
+      if (!auth || !auth.userId) {
+        console.error("Authentication failed - auth object:", auth);
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
       const contestId = req.body.contestId;
-      const userId = req.auth.userId;
+      const userId = auth.userId;
 
       // Check submission limit if contestId is provided
       if (contestId) {
@@ -138,12 +127,12 @@ router.post(
 
       const { mainUrl, thumbnailUrl, metadata } = await uploadToS3(
         req.file,
-        `photos/${req.auth.userId}`
+        `photos/${userId}`
       );
 
       // Create the photo first without the contest association
       const photo = await Photo.create({
-        userId: req.auth.userId,
+        userId: userId,
         title: req.body.title || "Untitled",
         description: req.body.description,
         s3Url: mainUrl,
@@ -154,12 +143,38 @@ router.post(
 
       // If a contest ID was provided, associate the photo with that contest using the join table
       if (contestId) {
-        await PhotoContest.create({
+        const photoContestEntry = await PhotoContest.create({
           photoId: photo.id,
           contestId: contestId,
           // Ensure userId is set in PhotoContest if the model supports it
           // userId: userId,
         });
+        console.log(
+          `[DEBUG] Created PhotoContest entry:`,
+          photoContestEntry.toJSON()
+        );
+
+        // Award XP for submitting a photo to a contest
+        try {
+          const xpResult = await XPService.awardSubmissionXP(
+            userId,
+            contestId,
+            photo.id
+          );
+          if (xpResult.success) {
+            console.log(
+              `Awarded ${xpResult.xpAwarded} XP to user ${userId} for contest submission`
+            );
+            if (xpResult.leveledUp) {
+              console.log(
+                `User ${userId} leveled up to level ${xpResult.newLevel}!`
+              );
+            }
+          }
+        } catch (xpError) {
+          console.error("Error awarding submission XP:", xpError);
+          // Don't fail the photo upload if XP fails
+        }
       }
 
       // Fetch the created photo with the related contests
@@ -199,6 +214,11 @@ router.post(
 // Get all photos for the authenticated user
 router.get("/photos", requireAuth(), async (req, res) => {
   try {
+    const auth = getAuthFromRequest(req);
+    if (!auth || !auth.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
     const includeContests = req.query.include === "contests";
 
     const include = [
@@ -218,7 +238,19 @@ router.get("/photos", requireAuth(), async (req, res) => {
     }
 
     const photos = await Photo.findAll({
-      where: { userId: req.auth.userId },
+      where: { userId: auth.userId },
+      attributes: [
+        "id",
+        "title",
+        "description",
+        "s3Url",
+        "thumbnailUrl",
+        "userId",
+        "createdAt",
+        "updatedAt",
+        "metadata",
+        "ContestId",
+      ],
       include,
       order: [["createdAt", "DESC"]],
     });
@@ -228,7 +260,7 @@ router.get("/photos", requireAuth(), async (req, res) => {
       // Find photos with the legacy ContestId set
       const photosWithLegacyContests = await Photo.findAll({
         where: {
-          userId: req.auth.userId,
+          userId: auth.userId,
           ContestId: { [Op.not]: null },
         },
         include: [
@@ -277,13 +309,18 @@ router.get("/photos", requireAuth(), async (req, res) => {
 // Update photo
 router.put("/photos/:id", requireAuth(), async (req, res) => {
   try {
+    const auth = getAuthFromRequest(req);
+    if (!auth || !auth.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
     const photo = await Photo.findByPk(req.params.id);
 
     if (!photo) {
       return res.status(404).json({ error: "Photo not found" });
     }
 
-    if (photo.userId !== req.auth.userId) {
+    if (photo.userId !== auth.userId) {
       return res
         .status(403)
         .json({ error: "Not authorized to edit this photo" });
@@ -304,16 +341,67 @@ router.put("/photos/:id", requireAuth(), async (req, res) => {
 // Delete photo
 router.delete("/photos/:id", requireAuth(), async (req, res) => {
   try {
-    const photo = await Photo.findByPk(req.params.id);
+    const auth = getAuthFromRequest(req);
+    if (!auth || !auth.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const photo = await Photo.findByPk(req.params.id, {
+      include: [
+        {
+          model: Contest,
+          as: "Contests",
+          through: { attributes: [] },
+        },
+      ],
+    });
 
     if (!photo) {
       return res.status(404).json({ error: "Photo not found" });
     }
 
-    if (photo.userId !== req.auth.userId) {
+    if (photo.userId !== auth.userId) {
       return res
         .status(403)
         .json({ error: "Not authorized to delete this photo" });
+    }
+
+    // Calculate XP to deduct based on contest submissions
+    let xpToDeduct = 0;
+    const contestCount = photo.Contests ? photo.Contests.length : 0;
+
+    // Also check legacy contest association
+    if (photo.ContestId) {
+      xpToDeduct += 25; // 25 XP per contest submission
+    }
+
+    // Add XP for new-style contest associations
+    xpToDeduct += contestCount * 25;
+
+    // Deduct XP if any contests were involved
+    if (xpToDeduct > 0) {
+      try {
+        await XPService.deductXP(
+          auth.userId,
+          xpToDeduct,
+          `Photo deletion (${
+            contestCount + (photo.ContestId ? 1 : 0)
+          } contest submissions)`,
+          "PHOTO_DELETION",
+          null,
+          photo.id
+        );
+        console.log(
+          `Deducted ${xpToDeduct} XP from user ${
+            auth.userId
+          } for deleting photo with ${
+            contestCount + (photo.ContestId ? 1 : 0)
+          } contest submissions`
+        );
+      } catch (xpError) {
+        console.error("Error deducting XP for photo deletion:", xpError);
+        // Don't fail the deletion if XP deduction fails
+      }
     }
 
     await deleteFromS3(photo.s3Url);
@@ -337,7 +425,7 @@ const ensurePhotoHasHash = async (photo) => {
     // Get the image buffer from S3
     const imageBuffer = await getHashFromS3(photo.s3Url);
 
-    // Generate the hash using our new helper function
+    // Generate the hash using our updated helper function (which now resizes before hashing)
     const photoHash = await generateImageHashFromBuffer(imageBuffer);
 
     // Update the photo record with the hash
@@ -353,13 +441,18 @@ const ensurePhotoHasHash = async (photo) => {
 // Submit existing photo to contest
 router.post("/photos/:id/submit", requireAuth(), async (req, res) => {
   try {
+    const auth = getAuthFromRequest(req);
+    if (!auth || !auth.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
     const photo = await Photo.findByPk(req.params.id);
 
     if (!photo) {
       return res.status(404).json({ error: "Photo not found" });
     }
 
-    if (photo.userId !== req.auth.userId) {
+    if (photo.userId !== auth.userId) {
       return res
         .status(403)
         .json({ error: "Not authorized to submit this photo" });
@@ -374,7 +467,7 @@ router.post("/photos/:id/submit", requireAuth(), async (req, res) => {
       return res.status(404).json({ error: "Contest not found" });
     }
 
-    const userId = req.auth.userId;
+    const userId = auth.userId;
 
     // Check submission limit
     if (contest.maxPhotosPerUser !== null) {
@@ -439,10 +532,39 @@ router.post("/photos/:id/submit", requireAuth(), async (req, res) => {
     }
 
     // Create a new entry in the PhotoContest join table
-    await PhotoContest.create({
+    const photoContestEntry = await PhotoContest.create({
       photoId: photo.id,
       contestId: req.body.contestId,
     });
+    console.log(
+      `[DEBUG] Created PhotoContest entry for existing photo:`,
+      photoContestEntry.toJSON()
+    );
+
+    // Award XP for submitting an existing photo to a contest
+    try {
+      const xpResult = await XPService.awardSubmissionXP(
+        userId,
+        req.body.contestId,
+        photo.id
+      );
+      if (xpResult.success) {
+        console.log(
+          `Awarded ${xpResult.xpAwarded} XP to user ${userId} for submitting existing photo to contest`
+        );
+        if (xpResult.leveledUp) {
+          console.log(
+            `User ${userId} leveled up to level ${xpResult.newLevel}!`
+          );
+        }
+      }
+    } catch (xpError) {
+      console.error(
+        "Error awarding submission XP for existing photo:",
+        xpError
+      );
+      // Don't fail the submission if XP fails
+    }
 
     // Fetch the updated photo with contests information
     const updatedPhoto = await Photo.findByPk(photo.id, {

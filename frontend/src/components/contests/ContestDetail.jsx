@@ -4,7 +4,7 @@ import { useContestService } from "../../hooks";
 import styles from "../../styles/components/Contest.module.css";
 import { ContestHeader } from "./ContestHeader";
 import { ContestSubmissions } from "./ContestSubmissions";
-import { ContestResults } from "./ContestResults";
+import { ContestPodium } from "./ContestPodium";
 import { UploadForm } from "../user/UploadForm";
 import { toast } from "react-toastify";
 import { useUser } from "@clerk/clerk-react";
@@ -224,7 +224,13 @@ export function ContestDetail(props) {
         );
 
       case "submission":
-        if (limitReached) {
+        if (!user) {
+          return (
+            <div className="text-center p-3 bg-blue-900/30 rounded-lg">
+              <p>Sign in to participate in this contest!</p>
+            </div>
+          );
+        } else if (limitReached) {
           return (
             <div className="text-center p-3 bg-yellow-900/30 rounded-lg">
               <p>You have reached the submission limit{limitText}.</p>
@@ -309,7 +315,7 @@ export function ContestDetail(props) {
 
       {contest.phase === "ended" && winners.length > 0 && (
         <div className="mb-8">
-          <ContestResults photos={winners} contestId={contestId} />
+          <ContestPodium photos={winners} contestId={contestId} />
         </div>
       )}
 

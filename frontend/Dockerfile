@@ -1,5 +1,5 @@
 # Stage 1: Build the Vite app
-FROM node:18.17-alpine as builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -9,7 +9,7 @@ ARG VITE_API_URL
 
 # Copy package files and install dependencies
 COPY package*.json ./
-RUN npm install --legacy-peer-deps
+RUN npm install 
 
 # Copy source code
 COPY . .

@@ -1,6 +1,7 @@
 import React from "react";
 import { EventList } from "../components/contests/ContestComponents";
-import { RecentWinners } from "../components/contests/RecentWinners";
+import { WinnerShowcase } from "../components/contests/WinnerShowcase";
+import { XPDashboard } from "../components/user/XPDisplay";
 import styles from "../styles/pages/HomePage.module.css";
 
 function HomePage() {
@@ -13,8 +14,12 @@ function HomePage() {
           Join exciting photo contests and showcase your photography skills!
         </p>
       </div>
-      <h2>Recent Winners</h2>
-      <RecentWinners />
+
+      {/* XP Dashboard */}
+      <XPDashboard className="mb-8" />
+
+      <h2>Winner Showcase</h2>
+      <WinnerShowcase />
       <h2>Active Contests</h2>
       <EventList showAllTypes={false} />
     </div>

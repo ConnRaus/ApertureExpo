@@ -89,6 +89,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
+  line-clamp: 2;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   word-wrap: break-word;
@@ -179,6 +180,7 @@
   display: -webkit-box;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  line-clamp: 3;
   -webkit-line-clamp: 3;
 }
 
@@ -281,54 +283,7 @@
   font-weight: 500;
 }
 
-/* Submissions */
-.submissionsGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-.contestPhotoCard {
-  position: relative;
-  border-radius: 0.5rem;
-  overflow: hidden;
-  transition: all 0.3s;
-}
-
-.contestSubmissionImage {
-  width: 100%;
-  height: 14rem;
-  object-fit: cover;
-  transition: transform 0.5s;
-}
-
-.contestPhotoCard:hover .contestSubmissionImage {
-  transform: scale(1.05);
-}
-
-/* Contest photo card with voting */
-.photoVoteContainer {
-  padding: 0.5rem;
-  background-color: rgba(31, 41, 55, 0.7);
-  border-top: 1px solid rgba(75, 85, 99, 0.4);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.photoTitle {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: rgb(229, 231, 235);
-  text-align: center;
-  margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  width: 100%;
-}
+/* Note: Contest submissions now use the unified photo grid system */
 
 /* Results display for ended contests */
 .resultsContainer {
@@ -362,18 +317,6 @@
   align-items: center;
   width: 280px;
   text-align: center;
-}
-
-.firstPlace {
-  /* width: 220px; */
-}
-
-.secondPlace {
-  /* width: 180px; */
-}
-
-.thirdPlace {
-  /* width: 160px; */
 }
 
 .podiumImage {
@@ -451,6 +394,7 @@
   .contestDescription {
     font-size: 0.9rem;
     line-height: 1.4rem;
+    line-clamp: 3;
     -webkit-line-clamp: 3;
     display: -webkit-box;
     -webkit-box-orient: vertical;
@@ -515,6 +459,7 @@
     font-size: 0.85rem;
     line-height: 1.3rem;
     max-height: 3.9rem; /* Increased to accommodate 3 lines */
+    line-clamp: 3;
     -webkit-line-clamp: 3; /* Changed from 2 to 3 lines */
   }
 

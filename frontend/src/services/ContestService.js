@@ -5,15 +5,13 @@ export class ContestService {
     this.getToken = getToken;
   }
 
+  // PUBLIC METHOD - No authentication required for viewing contests
   async fetchContests() {
     try {
-      const token = await this.getToken();
       const response = await fetch(`${API_URL}/contests`, {
         headers: {
-          Authorization: `Bearer ${token}`,
           Accept: "application/json",
         },
-        credentials: "include", // Include cookies in the request
       });
 
       if (!response.ok) {
@@ -30,17 +28,28 @@ export class ContestService {
     }
   }
 
+  // PUBLIC METHOD - No authentication required for viewing contest details, but includes auth if available
   async fetchContestDetails(contestId, page = 1) {
     try {
-      const token = await this.getToken();
+      // Try to get auth token if available (for user-specific data like submission counts)
+      let headers = {
+        Accept: "application/json",
+      };
+
+      try {
+        const token = await this.getToken();
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+      } catch (authError) {
+        // Auth not available, continue without it
+      }
+
       const response = await fetch(
         `${API_URL}/contests/${contestId}?page=${page}`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-          },
-          credentials: "include", // Include cookies in the request
+          headers,
+          credentials: "include",
         }
       );
 
@@ -58,17 +67,15 @@ export class ContestService {
     }
   }
 
+  // PUBLIC METHOD - No authentication required for viewing top photos
   async fetchTopPhotos(contestId, limit = 3) {
     try {
-      const token = await this.getToken();
       const response = await fetch(
         `${API_URL}/contests/${contestId}/top-photos?limit=${limit}`,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
             Accept: "application/json",
           },
-          credentials: "include", // Include cookies in the request
         }
       );
 
@@ -86,6 +93,7 @@ export class ContestService {
     }
   }
 
+  // PROTECTED METHOD - Requires authentication
   async submitPhoto(contestId, photoId) {
     try {
       const token = await this.getToken();
@@ -113,6 +121,7 @@ export class ContestService {
     }
   }
 
+  // PROTECTED METHOD - Requires authentication
   async uploadNewPhoto(contestId, formData, onProgress) {
     try {
       const token = await this.getToken();

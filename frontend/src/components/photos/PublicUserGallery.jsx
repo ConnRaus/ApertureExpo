@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from "@clerk/clerk-react";
 import { useSearchParams } from "react-router-dom";
-import { PhotoGrid } from "./PhotoGrid";
-import { PhotoLightbox } from "./PhotoLightbox";
+import {
+  PhotoGrid,
+  PhotoGridConfigs,
+  Lightbox,
+  LightboxConfigs,
+} from "./PhotoComponents";
 import { EditProfileModal } from "../user/EditProfileModal";
-import { PhotoSelector } from "./PhotoSelector";
+import { PhotoLibraryPicker } from "./PhotoLibraryPicker";
 import { ProfileHeader } from "../user/ProfileHeader";
+import { XPDashboard } from "../user/XPDisplay";
 import { Pagination } from "../common/Pagination";
 import {
   usePhotoService,
@@ -31,9 +35,8 @@ export function PublicUserGallery({ userId, isOwner }) {
   const [bannerImage, setBannerImage] = useState("");
   const [tempBannerImage, setTempBannerImage] = useState("");
   const [bannerFileToUpload, setBannerFileToUpload] = useState(null);
-  const [showPhotoSelector, setShowPhotoSelector] = useState(false);
+  const [showPhotoLibraryPicker, setShowPhotoLibraryPicker] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
-  const { getToken } = useAuth();
 
   const shouldShowLoading = useDelayedLoading(isLoading);
   const userService = useUserService();
@@ -182,7 +185,7 @@ export function PublicUserGallery({ userId, isOwner }) {
 
   const handlePhotoSelect = (photo) => {
     setTempBannerImage(photo.s3Url);
-    setShowPhotoSelector(false);
+    setShowPhotoLibraryPicker(false);
   };
 
   const handleBannerUpload = (e) => {
@@ -245,12 +248,14 @@ export function PublicUserGallery({ userId, isOwner }) {
 
       <PhotoGrid
         photos={photos}
+        config={
+          isOwner
+            ? PhotoGridConfigs.userProfile
+            : PhotoGridConfigs.publicProfile
+        }
         isOwner={isOwner}
-        isEditing={isOwner && isEditing}
-        onPhotoClick={setSelectedPhotoIndex}
+        onClick={setSelectedPhotoIndex}
         onDelete={handleDelete}
-        onEdit={handleEdit}
-        hideProfileLink={true}
       />
 
       {/* Show pagination if pagination data is available */}
@@ -272,20 +277,24 @@ export function PublicUserGallery({ userId, isOwner }) {
         bannerImage={tempBannerImage || bannerImage}
         uploadingBanner={uploadingBanner}
         handleBannerUpload={handleBannerUpload}
-        setShowPhotoSelector={setShowPhotoSelector}
+        setShowPhotoLibraryPicker={setShowPhotoLibraryPicker}
         handleProfileUpdate={handleProfileUpdate}
         profile={profile}
       />
 
-      <PhotoLightbox
+      <Lightbox
         photos={photos}
         selectedIndex={selectedPhotoIndex}
         onClose={() => setSelectedPhotoIndex(-1)}
+        config={
+          isOwner ? LightboxConfigs.userProfile : LightboxConfigs.publicProfile
+        }
+        onPhotoUpdate={isOwner ? handleEdit : null}
       />
 
-      <PhotoSelector
-        isOpen={showPhotoSelector}
-        onClose={() => setShowPhotoSelector(false)}
+      <PhotoLibraryPicker
+        isOpen={showPhotoLibraryPicker}
+        onClose={() => setShowPhotoLibraryPicker(false)}
         onSelect={handlePhotoSelect}
       />
     </div>

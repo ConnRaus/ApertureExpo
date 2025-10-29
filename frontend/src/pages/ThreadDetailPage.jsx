@@ -39,9 +39,9 @@ function ThreadDetailPage() {
     }
   };
 
-  const handleReply = async (threadId, content) => {
+  const handleReply = async (threadId, content, photoId) => {
     try {
-      await forumService.createPost(threadId, content);
+      await forumService.createPost(threadId, content, photoId);
       fetchThreadDetails(); // Refresh the thread details
     } catch (error) {
       console.error("Error posting reply:", error);

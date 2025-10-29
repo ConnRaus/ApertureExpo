@@ -26,5 +26,17 @@ export default defineConfig({
     // Configure how CSS modules are processed
     cssCodeSplit: true,
     cssMinify: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Split vendor libraries into separate chunks
+          vendor: ["react", "react-dom"],
+          clerk: ["@clerk/clerk-react"],
+          ui: ["react-router-dom"],
+        },
+      },
+    },
+    // Increase chunk size warning limit to 1000kb (from default 500kb)
+    chunkSizeWarningLimit: 1000,
   },
 });

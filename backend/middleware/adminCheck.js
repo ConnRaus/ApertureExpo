@@ -1,11 +1,16 @@
 import dotenv from "dotenv";
+import { getAuthFromRequest } from "../utils/auth.js";
 
 dotenv.config();
 
 export const adminCheck = (req, res, next) => {
   try {
     // Get the current authenticated user from Clerk middleware
-    const userId = req.auth.userId;
+    const auth = getAuthFromRequest(req);
+    if (!auth || !auth.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    const userId = auth.userId;
 
     // Get the admin user ID from env variable
     const adminUserId = process.env.ADMIN_USER_ID;

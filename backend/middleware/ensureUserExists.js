@@ -1,5 +1,6 @@
 import models from "../database/models/index.js";
 import { clerkClient } from "@clerk/express";
+import { getAuthFromRequest } from "../utils/auth.js";
 
 const { User } = models;
 
@@ -13,11 +14,19 @@ const creationLocks = new Map();
 export const ensureUserExists = async (req, res, next) => {
   try {
     // Skip if no authenticated user
-    if (!req.auth?.userId) {
+    let auth;
+    try {
+      auth = getAuthFromRequest(req);
+    } catch (authError) {
+      // If auth extraction fails, just continue without user context
       return next();
     }
 
-    const userId = req.auth.userId;
+    if (!auth?.userId) {
+      return next();
+    }
+
+    const userId = auth.userId;
 
     // Check if another request is already creating this user
     if (creationLocks.get(userId)) {
@@ -122,8 +131,13 @@ export const ensureUserExists = async (req, res, next) => {
   } catch (error) {
     console.error("Error in ensureUserExists middleware:", error);
     // Always clean up the lock in case of error
-    if (req.auth?.userId) {
-      creationLocks.delete(req.auth.userId);
+    try {
+      const auth = getAuthFromRequest(req);
+      if (auth?.userId) {
+        creationLocks.delete(auth.userId);
+      }
+    } catch (authError) {
+      // If auth extraction fails during cleanup, ignore
     }
     next(error);
   }

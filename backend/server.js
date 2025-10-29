@@ -10,6 +10,9 @@ import userRoutes from "./routes/users.js";
 import voteRoutes from "./routes/votes.js";
 import forumRoutes from "./routes/forum.js";
 import adminRoutes from "./routes/admin.js";
+import commentRoutes from "./routes/comments.js";
+import xpRoutes from "./routes/xp.js";
+import notificationRoutes from "./routes/notifications.js";
 import { ensureUserExists } from "./middleware/ensureUserExists.js";
 
 dotenv.config();
@@ -75,14 +78,20 @@ app.use(clerkMiddleware());
 // Admin routes - these routes check for admin access
 app.use("/admin", adminRoutes);
 
-// Routes with authentication
-app.use("/", requireAuth(), ensureUserExists, photoRoutes);
-app.use("/", requireAuth(), ensureUserExists, contestRoutes);
-app.use("/", requireAuth(), ensureUserExists, voteRoutes);
-app.use("/users", requireAuth(), userRoutes);
+// Comments routes - handle their own authentication per route
+app.use("/comments", commentRoutes);
 
-// Forum routes with user existence check
-app.use("/forum", requireAuth(), ensureUserExists, forumRoutes);
+// PUBLIC ROUTES - No authentication required for viewing content
+// These routes allow non-signed in users to browse the site
+app.use("/", contestRoutes); // Public contest viewing
+app.use("/forum", forumRoutes); // Public forum viewing
+app.use("/users", userRoutes); // Public user profile viewing
+app.use("/xp", xpRoutes); // XP stats and leaderboard (public and authenticated routes)
+
+// PROTECTED ROUTES - Authentication required for actions
+app.use("/", requireAuth(), ensureUserExists, photoRoutes);
+app.use("/", requireAuth(), ensureUserExists, voteRoutes);
+app.use("/notifications", notificationRoutes);
 
 // --- Global Error Handler ---
 // Must come after all routes and other middleware
