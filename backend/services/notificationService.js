@@ -201,7 +201,7 @@ class NotificationService {
         type: "forum_reply",
         title: "New Reply to Your Thread",
         message: `${postAuthor.nickname} replied to your thread "${thread.title}"`,
-        link: `/forum/thread/${threadId}`,
+        link: `/forum/threads/${threadId}`,
         threadId,
       });
 
