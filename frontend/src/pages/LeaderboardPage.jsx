@@ -5,6 +5,7 @@ import { useXPService } from "../hooks";
 import { XPBadge, XPDashboard } from "../components/user/XPDisplay";
 import { LoadingSpinner } from "../components/common/CommonComponents";
 import RecentXPActivity from "../components/user/RecentXPActivity";
+import styles from "../styles/pages/LeaderboardPage.module.css";
 
 const LeaderboardPage = () => {
   const [leaderboardData, setLeaderboardData] = useState({});
@@ -99,16 +100,17 @@ const LeaderboardPage = () => {
   };
 
   return (
-    <div className="min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-2">Community Leaderboard</h1>
-          <p className="text-gray-400">
+    <div className={styles.leaderboardPage}>
+      <div className={styles.heroBanner}>
+        <div className={styles.bannerContent}>
+          <h1 className={styles.bannerTitle}>Community Leaderboard</h1>
+          <p className={styles.bannerSubtitle}>
             Top photographers ranked by experience points and level
           </p>
         </div>
+      </div>
 
+      <div className={styles.contentWrapper}>
         {/* User's XP Dashboard */}
         <XPDashboard className="mb-8" />
 

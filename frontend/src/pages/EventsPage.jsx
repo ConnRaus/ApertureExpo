@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { EventList } from "../components/contests/ContestComponents";
-import styles from "../styles/components/Forum.module.css";
+import forumStyles from "../styles/components/Forum.module.css";
+import styles from "../styles/pages/EventsPage.module.css";
 
 function EventsPage() {
   const [selectedFilter, setSelectedFilter] = useState("all");
@@ -18,17 +19,22 @@ function EventsPage() {
   };
 
   return (
-    <div className="events-page">
-      <div className={styles.forumHeader}>
-        <h1>Photography Events</h1>
+    <div className={styles.eventsPage}>
+      <div className={styles.heroBanner}>
+        <div className={styles.headerContent}>
+          <div>
+            <h1 className={styles.title}>Photography Events</h1>
+            <p className={styles.subtitle}>Discover and join exciting photography contests and challenges</p>
+          </div>
+        </div>
       </div>
 
-      <div className={styles.categoryFilter}>
+      <div className={forumStyles.categoryFilter}>
         {filters.map((filter) => (
           <button
             key={filter.value}
-            className={`${styles.categoryPill} ${
-              selectedFilter === filter.value ? styles.categoryPillActive : ""
+            className={`${forumStyles.categoryPill} ${
+              selectedFilter === filter.value ? forumStyles.categoryPillActive : ""
             }`}
             onClick={() => handleFilterSelect(filter.value)}
           >
