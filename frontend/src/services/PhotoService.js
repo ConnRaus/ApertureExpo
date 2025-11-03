@@ -17,6 +17,16 @@ export class PhotoService {
     return response.json();
   }
 
+  async fetchPhotoById(photoId) {
+    const response = await fetch(`${API_URL}/photos/${photoId}`, {
+      headers: {
+        Accept: "application/json",
+      },
+    });
+    if (!response.ok) throw new Error("Failed to fetch photo");
+    return response.json();
+  }
+
   async updatePhoto(photoId, data) {
     const token = await this.getToken();
     const response = await fetch(`${API_URL}/photos/${photoId}`, {

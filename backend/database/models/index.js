@@ -194,6 +194,16 @@ Notification.belongsTo(ForumPost, {
   as: "ForumPost",
 });
 
+Notification.belongsTo(Photo, {
+  foreignKey: "photoId",
+  as: "Photo",
+});
+
+Notification.belongsTo(Comment, {
+  foreignKey: "commentId",
+  as: "Comment",
+});
+
 // Initialize models
 const models = {
   Photo,

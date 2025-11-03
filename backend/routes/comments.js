@@ -4,6 +4,7 @@ import { requireAuth, clerkClient } from "@clerk/express";
 import { ensureUserExists } from "../middleware/ensureUserExists.js";
 import { getUserIdFromRequest } from "../utils/auth.js";
 import { Op } from "sequelize";
+import NotificationService from "../services/notificationService.js";
 
 const { Comment, Photo, User } = models;
 const router = express.Router();
@@ -241,6 +242,26 @@ router.post("/", requireAuth(), ensureUserExists, async (req, res) => {
       content: content.trim(),
       parentCommentId: parentCommentId || null,
     });
+
+    // Send notification based on comment type
+    if (parentCommentId) {
+      // This is a reply to another comment
+      const parentComment = await Comment.findByPk(parentCommentId);
+      if (parentComment) {
+        await NotificationService.notifyCommentReply(
+          parentCommentId,
+          parentComment.userId,
+          userId
+        );
+      }
+    } else {
+      // This is a new comment on a photo
+      await NotificationService.notifyPhotoComment(
+        photoId,
+        photo.userId,
+        userId
+      );
+    }
 
     // Fetch the created comment with user info
     const commentWithUser = await Comment.findByPk(comment.id, {
