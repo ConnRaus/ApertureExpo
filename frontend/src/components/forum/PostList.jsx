@@ -120,10 +120,16 @@ export function PostList({
                     <img
                       src={
                         post.author?.avatarUrl ||
-                        "https://via.placeholder.com/50"
+                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Crect width='50' height='50' fill='%23374151'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='20' fill='%239CA3AF'%3E%3F%3C/text%3E%3C/svg%3E"
                       }
                       alt={post.author?.nickname || "User"}
                       className={styles.postAuthorAvatar}
+                      onError={(e) => {
+                        if (!e.target.dataset.errorHandled) {
+                          e.target.dataset.errorHandled = "true";
+                          e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Crect width='50' height='50' fill='%23374151'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='20' fill='%239CA3AF'%3E%3F%3C/text%3E%3C/svg%3E";
+                        }
+                      }}
                     />
                     <div className={styles.postAuthorInfo}>
                       <span className={styles.postAuthorName}>

@@ -270,10 +270,16 @@ export function ThreadDetail({
                   <img
                     src={
                       localThread.author?.avatarUrl ||
-                      "https://via.placeholder.com/50"
+                      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Crect width='50' height='50' fill='%23374151'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='20' fill='%239CA3AF'%3E%3F%3C/text%3E%3C/svg%3E"
                     }
                     alt={localThread.author?.nickname || "User"}
                     className={styles.authorAvatar}
+                    onError={(e) => {
+                      if (!e.target.dataset.errorHandled) {
+                        e.target.dataset.errorHandled = "true";
+                        e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Crect width='50' height='50' fill='%23374151'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='20' fill='%239CA3AF'%3E%3F%3C/text%3E%3C/svg%3E";
+                      }
+                    }}
                   />
                   <div>
                     <span className={styles.authorName}>

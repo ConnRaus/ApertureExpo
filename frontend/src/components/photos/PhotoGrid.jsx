@@ -15,7 +15,13 @@ function PhotoGridItem({
   style,
 }) {
   const handleImageError = (e) => {
-    e.target.src = "https://via.placeholder.com/300x200?text=Image+Not+Found";
+    // Prevent infinite loop if fallback also fails
+    if (e.target.dataset.errorHandled) return;
+    e.target.dataset.errorHandled = "true";
+
+    // Use a data URI for a simple gray placeholder
+    e.target.src =
+      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200'%3E%3Crect width='300' height='200' fill='%23374151'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%239CA3AF'%3EImage Not Found%3C/text%3E%3C/svg%3E";
   };
 
   return (
@@ -37,7 +43,7 @@ function PhotoGridItem({
         {/* Delete button for owner */}
         {config.showDeleteButton && isOwner && (
           <button
-            className="absolute top-3 right-3 w-8 h-8 opacity-0 group-hover:opacity-100 bg-red-600/80 text-white rounded-full flex items-center justify-center transition-all hover:bg-red-600 hover:scale-110 z-10"
+            className="absolute top-3 right-3 w-8 h-8 opacity-100 md:opacity-0 md:group-hover:opacity-100 bg-red-600/80 text-white rounded-full flex items-center justify-center transition-all hover:bg-red-600 hover:scale-110 z-10"
             onClick={(e) => {
               e.stopPropagation();
               onDelete && onDelete(photo.id);
