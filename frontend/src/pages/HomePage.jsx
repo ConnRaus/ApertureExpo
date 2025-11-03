@@ -20,10 +20,20 @@ function HomePage() {
       {/* XP Dashboard */}
       <XPDashboard className="mb-8" />
 
-      <h2>Winner Showcase</h2>
-      <WinnerShowcase />
-      <h2>Active Contests</h2>
-      <EventList showAllTypes={false} />
+      <div className={styles.section}>
+        <h2>Winner Showcase</h2>
+        <WinnerShowcase />
+      </div>
+
+      <div className={styles.section}>
+        <h2>Active Contests</h2>
+        <EventList showAllTypes={false} />
+      </div>
+
+      <div className={styles.section}>
+        <h2>Coming Soon</h2>
+        <EventList showAllTypes={true} selectedFilter="coming soon" />
+      </div>
     </div>
   );
 }
