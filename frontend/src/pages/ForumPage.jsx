@@ -95,18 +95,23 @@ function ForumPage() {
 
   return (
     <div className={styles.forumContainer}>
-      <div className={styles.forumHeader}>
-        <h1>Photography Forum</h1>
-        {user && (
-          <div className={styles.forumAction}>
-            <button
-              className="sign-in-button forum-new-thread"
-              onClick={() => setShowCreateForm(true)}
-            >
-              <span>New Thread</span>
-            </button>
+      <div className={styles.heroBanner}>
+        <div className={styles.forumHeader}>
+          <div>
+            <h1 className={styles.forumTitle}>Photography Forum</h1>
+            <p className={styles.forumSubtitle}>Connect with fellow photographers and share your knowledge</p>
           </div>
-        )}
+          {user && (
+            <div className={styles.forumAction}>
+              <button
+                className="sign-in-button forum-new-thread"
+                onClick={() => setShowCreateForm(true)}
+              >
+                <span>New Thread</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {categories.length > 0 && (

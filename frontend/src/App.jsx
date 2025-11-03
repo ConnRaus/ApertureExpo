@@ -18,6 +18,7 @@ import ThreadDetailPage from "./pages/ThreadDetailPage";
 import AdminPage from "./pages/AdminPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import LandingPage from "./components/landing/LandingPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 
 // Component to handle homepage logic
 function HomePageHandler() {
@@ -53,6 +54,7 @@ function App() {
               element={<ThreadDetailPage />}
             />
             <Route path="/leaderboard" element={<LeaderboardPage />} />
+            <Route path="/privacy" element={<PrivacyPolicyPage />} />
 
             {/* Routes that require authentication */}
             <Route

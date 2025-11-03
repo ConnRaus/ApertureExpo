@@ -7,12 +7,14 @@ import styles from "../styles/pages/HomePage.module.css";
 function HomePage() {
   return (
     <div className={styles.homePage}>
-      <div className={styles.welcomeSection}>
-        <h1>Aperture Expo</h1>
-        <h2>Welcome to Aperture Expo!</h2>
-        <p>
-          Join exciting photo contests and showcase your photography skills!
-        </p>
+      <div className={styles.heroBanner}>
+        <div className={styles.welcomeSection}>
+          <h1>Aperture Expo</h1>
+          <h2>Welcome to Aperture Expo!</h2>
+          <p>
+            Join exciting photo contests and showcase your photography skills!
+          </p>
+        </div>
       </div>
 
       {/* XP Dashboard */}

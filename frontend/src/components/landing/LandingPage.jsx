@@ -117,37 +117,37 @@ function LandingPage() {
       icon: "📸",
       title: "Photography Competitions",
       description:
-        "Submit your work to curated photography contests with diverse themes and categories. Each competition is judged by community voting.",
+        "Submit your photos to themed contests and let the community vote on them. New competitions launch regularly with different themes and categories.",
     },
     {
       icon: "🏆",
-      title: "Recognition & Awards",
+      title: "Earn XP & Level Up",
       description:
-        "Winners receive recognition for their photographic excellence. Build your reputation and showcase your achievements.",
+        "Win contests, get votes, and participate in the community to earn XP. Level up your profile and climb the leaderboard.",
     },
     {
       icon: "💬",
       title: "Photography Discussion",
       description:
-        "Engage in thoughtful discussions about technique, equipment, and artistic vision with fellow photographers.",
+        "Connect with other photographers in dedicated forums. Share tips about gear, techniques, and get feedback on your work.",
     },
     {
       icon: "🎯",
       title: "Constructive Feedback",
       description:
-        "Receive honest critique and learn from others' perspectives. Improve your craft through community interaction.",
+        "Get genuine feedback on your submissions through comments and voting. Learn what resonates with viewers and refine your photographic eye.",
     },
     {
       icon: "📁",
       title: "Portfolio Showcase",
       description:
-        "Display your photography portfolio and track your competition results. Document your growth as a photographer.",
+        "Build your profile gallery and track your contest history. Watch your portfolio grow as you submit to competitions and level up your account.",
     },
     {
       icon: "🔍",
       title: "Discover Talent",
       description:
-        "Explore outstanding photography from diverse artists and styles. Find inspiration in others' creative work.",
+        "Browse winning photos from past contests and see what other photographers are creating. Get inspired for your next shot.",
     },
   ];
 
@@ -176,9 +176,9 @@ function LandingPage() {
               <span className={styles.brandName}>Aperture Expo</span>
             </h1>
             <p className={styles.heroSubtitle}>
-              A photography competition platform where photographers submit
-              their work to themed contests, receive community feedback, and
-              compete for recognition.
+              Compete in themed photography contests, earn XP, level up your
+              profile, and showcase your best work to a community of passionate
+              photographers.
             </p>
 
             {/* CTA Buttons */}
@@ -233,8 +233,8 @@ function LandingPage() {
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>Competition Features</h2>
           <p className={styles.sectionSubtitle}>
-            Professional photography competitions with community-driven judging
-            and feedback
+            Everything you need to compete, improve, and connect with other
+            photographers
           </p>
         </div>
 
@@ -256,9 +256,9 @@ function LandingPage() {
       {/* How It Works Section */}
       <section className={styles.howItWorksSection}>
         <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>How Competitions Work</h2>
+          <h2 className={styles.sectionTitle}>How It Works</h2>
           <p className={styles.sectionSubtitle}>
-            Simple process for entering and judging photography contests
+            Three simple steps to start competing and earning XP
           </p>
         </div>
 
@@ -266,10 +266,10 @@ function LandingPage() {
           <div className={styles.step}>
             <div className={styles.stepNumber}>1</div>
             <div className={styles.stepContent}>
-              <h3 className={styles.stepTitle}>Submit Your Work</h3>
+              <h3 className={styles.stepTitle}>Submit Your Photos</h3>
               <p className={styles.stepDescription}>
-                Upload your photographs to active competitions that match your
-                style and interests
+                Choose from active themed contests and upload your best shots.
+                Each submission earns you XP and a chance to win.
               </p>
             </div>
           </div>
@@ -277,10 +277,10 @@ function LandingPage() {
           <div className={styles.step}>
             <div className={styles.stepNumber}>2</div>
             <div className={styles.stepContent}>
-              <h3 className={styles.stepTitle}>Community Voting</h3>
+              <h3 className={styles.stepTitle}>Vote & Get Voted On</h3>
               <p className={styles.stepDescription}>
-                Members rate submissions during the voting period to determine
-                winners
+                Vote on other submissions during the voting phase. Your votes
+                help determine winners and earn you XP too.
               </p>
             </div>
           </div>
@@ -288,10 +288,10 @@ function LandingPage() {
           <div className={styles.step}>
             <div className={styles.stepNumber}>3</div>
             <div className={styles.stepContent}>
-              <h3 className={styles.stepTitle}>Results & Recognition</h3>
+              <h3 className={styles.stepTitle}>Earn XP & Win</h3>
               <p className={styles.stepDescription}>
-                Winners are announced and featured. All participants receive
-                valuable feedback
+                Winners get featured and everyone earns XP based on their
+                performance. Use XP to level up and climb the leaderboard.
               </p>
             </div>
           </div>
@@ -305,8 +305,8 @@ function LandingPage() {
             Ready to Enter Your First Competition?
           </h2>
           <p className={styles.ctaDescription}>
-            Join photographers who are submitting their work and participating
-            in our contests
+            Join the community and start earning XP today. Your next great shot
+            could be a winner.
           </p>
 
           <div className={styles.finalCtaButtons}>

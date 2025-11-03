@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "main": "server.js",
+  "license": "CC-BY-NC-SA-4.0",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
