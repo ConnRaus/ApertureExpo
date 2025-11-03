@@ -227,3 +227,23 @@ docker system prune -a
 # Rebuild and start
 docker-compose up --build
 ```
+
+## License
+
+[![CC BY-NC-SA 4.0][cc-by-nc-sa-shield]][cc-by-nc-sa]
+
+This work is licensed under a
+[Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License][cc-by-nc-sa].
+
+[![CC BY-NC-SA 4.0][cc-by-nc-sa-image]][cc-by-nc-sa]
+
+[cc-by-nc-sa]: http://creativecommons.org/licenses/by-nc-sa/4.0/
+[cc-by-nc-sa-image]: https://licensebuttons.net/l/by-nc-sa/4.0/88x31.png
+[cc-by-nc-sa-shield]: https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg
+
+### What this means:
+
+- ✅ You can view, use, and modify this code for personal and educational purposes
+- ✅ You can share your modifications as long as you use the same license
+- ❌ You cannot use this code for commercial purposes
+- 📧 For commercial licensing inquiries, contact: connor.rauscher@gmail.com
