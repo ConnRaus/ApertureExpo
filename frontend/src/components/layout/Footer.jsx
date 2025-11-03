@@ -101,26 +101,27 @@ function Footer() {
               <h3 className="text-base font-semibold text-gray-200 mb-3">
                 Connect
               </h3>
-              <div className="space-y-2">
-                <p className="text-gray-400 text-sm">
-                  Have questions or suggestions?{" "}
-                  <a
-                    href="mailto:connor.rauscher@gmail.com"
-                    className="text-indigo-400 hover:text-indigo-300 transition-colors"
-                  >
-                    Contact us
-                  </a>
-                </p>
-                <div className="flex space-x-4 mt-2">
+              <ul className="space-y-2">
+                <li>
+                  <p className="text-gray-400 text-sm">
+                    Have questions or suggestions?{" "}
+                    <a
+                      href="mailto:connor.rauscher@gmail.com"
+                      className="text-indigo-400 hover:text-indigo-300 transition-colors"
+                    >
+                      Contact us
+                    </a>
+                  </p>
+                </li>
+                <li>
                   <a
                     href="https://github.com/ConnRaus"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-indigo-400 transition-colors"
-                    title="GitHub"
+                    className="text-gray-400 hover:text-indigo-400 transition-colors text-sm flex items-center"
                   >
                     <svg
-                      className="w-5 h-5"
+                      className="w-4 h-4 mr-2"
                       fill="currentColor"
                       viewBox="0 0 24 24"
                       aria-hidden="true"
@@ -131,9 +132,32 @@ function Footer() {
                         clipRule="evenodd"
                       />
                     </svg>
+                    GitHub
                   </a>
-                </div>
-              </div>
+                </li>
+                <li>
+                  <Link
+                    to="/privacy"
+                    className="text-gray-400 hover:text-indigo-400 transition-colors text-sm flex items-center"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 mr-2"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                      />
+                    </svg>
+                    Privacy Policy
+                  </Link>
+                </li>
+              </ul>
             </div>
           </div>
 
