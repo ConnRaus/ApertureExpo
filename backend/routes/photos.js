@@ -211,6 +211,35 @@ router.post(
   }
 );
 
+// Get a single photo by ID (public access for viewing)
+router.get("/photos/:id", async (req, res) => {
+  try {
+    const photo = await Photo.findByPk(req.params.id, {
+      include: [
+        {
+          model: User,
+          as: "User",
+          attributes: ["id", "nickname"],
+        },
+        {
+          model: Contest,
+          as: "Contests",
+          through: { attributes: [] },
+        },
+      ],
+    });
+
+    if (!photo) {
+      return res.status(404).json({ error: "Photo not found" });
+    }
+
+    res.json(photo);
+  } catch (error) {
+    console.error("Error fetching photo:", error);
+    res.status(500).json({ error: "Failed to fetch photo" });
+  }
+});
+
 // Get all photos for the authenticated user
 router.get("/photos", requireAuth(), async (req, res) => {
   try {

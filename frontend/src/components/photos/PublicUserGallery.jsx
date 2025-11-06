@@ -22,6 +22,7 @@ export function PublicUserGallery({ userId, isOwner }) {
   // Get page from URL query params
   const [searchParams, setSearchParams] = useSearchParams();
   const currentPage = parseInt(searchParams.get("page") || "1");
+  const photoIdFromUrl = searchParams.get("photoId");
 
   const [photos, setPhotos] = useState([]);
   const [pagination, setPagination] = useState(null);
@@ -45,6 +46,40 @@ export function PublicUserGallery({ userId, isOwner }) {
   useEffect(() => {
     fetchUserProfile(currentPage);
   }, [userId, currentPage]);
+
+  // Handle opening a specific photo from URL parameter
+  useEffect(() => {
+    const handlePhotoFromUrl = async () => {
+      if (photoIdFromUrl && photos.length > 0) {
+        const photoIndex = photos.findIndex((photo) => photo.id === photoIdFromUrl);
+        
+        if (photoIndex !== -1) {
+          // Photo is on current page, open it
+          setSelectedPhotoIndex(photoIndex);
+        } else {
+          // Photo might be on another page, try to fetch it
+          try {
+            const photo = await photoService.fetchPhotoById(photoIdFromUrl);
+            if (photo && photo.userId === userId) {
+              // Add the photo temporarily to the beginning of the array
+              setPhotos((prevPhotos) => [photo, ...prevPhotos]);
+              setSelectedPhotoIndex(0);
+            }
+          } catch (error) {
+            console.error("Error fetching specific photo:", error);
+            // Photo not found or not accessible, just ignore
+          }
+        }
+        
+        // Remove the photoId from URL after attempting to open
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete("photoId");
+        setSearchParams(newSearchParams, { replace: true });
+      }
+    };
+
+    handlePhotoFromUrl();
+  }, [photoIdFromUrl, photos]);
 
   useEffect(() => {
     return () => {

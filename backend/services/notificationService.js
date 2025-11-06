@@ -270,6 +270,108 @@ class NotificationService {
       console.error("Error creating general notification:", error);
     }
   }
+
+  /**
+   * Create a notification for a new comment on a photo
+   */
+  static async notifyPhotoComment(photoId, photoOwnerId, commentAuthorId) {
+    try {
+      // Don't notify if the photo owner is commenting on their own photo
+      if (photoOwnerId === commentAuthorId) {
+        return;
+      }
+
+      // Get the comment author's nickname
+      const commentAuthor = await User.findByPk(commentAuthorId);
+      if (!commentAuthor) {
+        console.error(`Comment author ${commentAuthorId} not found`);
+        return;
+      }
+
+      // Get the photo for additional context
+      const Photo = models.Photo;
+      const photo = await Photo.findByPk(photoId);
+      if (!photo) {
+        console.error(`Photo ${photoId} not found`);
+        return;
+      }
+
+      // Create notification for the photo owner
+      await Notification.create({
+        userId: photoOwnerId,
+        type: "photo_comment",
+        title: "New Comment on Your Photo",
+        message: `${commentAuthor.nickname} commented on your photo${
+          photo.title ? ` "${photo.title}"` : ""
+        }`,
+        link: `/users/${photoOwnerId}?photoId=${photoId}`,
+        photoId,
+      });
+
+      console.log(
+        `Created notification for user ${photoOwnerId} about comment on photo ${photoId}`
+      );
+    } catch (error) {
+      console.error("Error creating photo comment notification:", error);
+    }
+  }
+
+  /**
+   * Create a notification for a reply to a comment
+   */
+  static async notifyCommentReply(
+    parentCommentId,
+    parentCommentAuthorId,
+    replyAuthorId
+  ) {
+    try {
+      // Don't notify if replying to their own comment
+      if (parentCommentAuthorId === replyAuthorId) {
+        return;
+      }
+
+      // Get the reply author's nickname
+      const replyAuthor = await User.findByPk(replyAuthorId);
+      if (!replyAuthor) {
+        console.error(`Reply author ${replyAuthorId} not found`);
+        return;
+      }
+
+      // Get the parent comment for context
+      const Comment = models.Comment;
+      const parentComment = await Comment.findByPk(parentCommentId, {
+        include: [
+          {
+            model: models.Photo,
+            as: "Photo",
+            attributes: ["id", "title", "userId"],
+          },
+        ],
+      });
+
+      if (!parentComment) {
+        console.error(`Parent comment ${parentCommentId} not found`);
+        return;
+      }
+
+      // Create notification for the parent comment author
+      await Notification.create({
+        userId: parentCommentAuthorId,
+        type: "comment_reply",
+        title: "New Reply to Your Comment",
+        message: `${replyAuthor.nickname} replied to your comment`,
+        link: `/users/${parentComment.Photo.userId}?photoId=${parentComment.photoId}`,
+        photoId: parentComment.photoId,
+        commentId: parentCommentId,
+      });
+
+      console.log(
+        `Created notification for user ${parentCommentAuthorId} about reply to comment ${parentCommentId}`
+      );
+    } catch (error) {
+      console.error("Error creating comment reply notification:", error);
+    }
+  }
 }
 
 export default NotificationService;

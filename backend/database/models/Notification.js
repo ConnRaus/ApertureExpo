@@ -19,7 +19,9 @@ const Notification = sequelize.define(
         "contest_ended",
         "forum_reply",
         "contest_winner",
-        "general"
+        "general",
+        "photo_comment",
+        "comment_reply"
       ),
       allowNull: false,
       defaultValue: "general",
@@ -55,6 +57,16 @@ const Notification = sequelize.define(
       type: DataTypes.UUID,
       allowNull: true,
       field: "post_id",
+    },
+    photoId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: "photo_id",
+    },
+    commentId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: "comment_id",
     },
     createdAt: {
       type: DataTypes.DATE,

@@ -19,6 +19,7 @@ import AdminPage from "./pages/AdminPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import LandingPage from "./components/landing/LandingPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import TermsOfServicePage from "./pages/TermsOfServicePage";
 
 // Component to handle homepage logic
 function HomePageHandler() {
@@ -55,6 +56,7 @@ function App() {
             />
             <Route path="/leaderboard" element={<LeaderboardPage />} />
             <Route path="/privacy" element={<PrivacyPolicyPage />} />
+            <Route path="/terms" element={<TermsOfServicePage />} />
 
             {/* Routes that require authentication */}
             <Route
