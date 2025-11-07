@@ -79,10 +79,10 @@ export function EditProfileModal({
                   />
                   <label
                     htmlFor="banner-upload"
-                    className={`${formStyles.button} ${formStyles.secondaryButton} w-full flex items-center justify-center cursor-pointer text-center`}
+                    className={`${formStyles.button} ${formStyles.secondaryButton} w-full flex items-center justify-center cursor-pointer text-center ${uploadingBanner ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <span className="w-full text-center">
-                      {uploadingBanner ? "Uploading..." : "Upload New Banner"}
+                      Upload New Banner
                     </span>
                   </label>
                 </div>
@@ -177,14 +177,16 @@ export function EditProfileModal({
           <button
             onClick={() => setIsEditing(false)}
             className={`${formStyles.button} ${formStyles.secondaryButton}`}
+            disabled={uploadingBanner}
           >
             Cancel
           </button>
           <button
             onClick={handleProfileUpdate}
             className={`${formStyles.button} ${formStyles.primaryButton}`}
+            disabled={uploadingBanner}
           >
-            Save Changes
+            {uploadingBanner ? "Uploading Banner..." : "Save Changes"}
           </button>
         </div>
       </div>
