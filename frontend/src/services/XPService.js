@@ -180,9 +180,11 @@ export class XPService {
 
   /**
    * Calculate required XP for a given level (for client-side display)
+   * Uses exponential growth: level^2 * 50
+   * Cleaner numbers than fractional exponents while keeping progression achievable
    */
   static getXpForLevel(level) {
-    return Math.floor(Math.pow(level, 2) * 100);
+    return Math.floor(Math.pow(level, 2) * 50);
   }
 
   /**

@@ -108,15 +108,70 @@ router.get("/rewards", async (req, res) => {
   try {
     res.json({
       rewards: XPService.XP_REWARDS,
-      levelFormula: "level^2 * 100",
+      levelFormula: "level² × 50",
       description: {
-        SUBMIT_PHOTO: "XP awarded for submitting a photo to a contest",
-        VOTE: "XP awarded for voting on a photo",
-        PLACE_1ST: "XP awarded for winning 1st place in a contest",
-        PLACE_2ND: "XP awarded for winning 2nd place in a contest",
-        PLACE_3RD: "XP awarded for winning 3rd place in a contest",
-        TOP_10_PERCENT: "XP awarded for placing in top 10% of a contest",
-        TOP_25_PERCENT: "XP awarded for placing in top 25% of a contest",
+        SUBMIT_PHOTO: "Submit a photo to a contest",
+        VOTE: "Vote on a photo",
+        PLACE_1ST: "1st place",
+        PLACE_2ND: "2nd place",
+        PLACE_3RD: "3rd place",
+        TOP_10_PERCENT: "Top 10% placement",
+        TOP_25_PERCENT: "Top 25% placement",
+        TOP_50_PERCENT: "Top 50% placement",
+      },
+      stackingInfo: {
+        enabled: true,
+        explanation:
+          "Contest rewards stack! Winners receive placement bonuses PLUS all percentile rewards they qualify for.",
+        examples: [
+          {
+            placement: "1st Place",
+            rewards: ["1st place", "Top 10%", "Top 25%", "Top 50%"],
+            total:
+              XPService.XP_REWARDS.PLACE_1ST +
+              XPService.XP_REWARDS.TOP_10_PERCENT +
+              XPService.XP_REWARDS.TOP_25_PERCENT +
+              XPService.XP_REWARDS.TOP_50_PERCENT,
+          },
+          {
+            placement: "2nd Place",
+            rewards: ["2nd place", "Top 10%", "Top 25%", "Top 50%"],
+            total:
+              XPService.XP_REWARDS.PLACE_2ND +
+              XPService.XP_REWARDS.TOP_10_PERCENT +
+              XPService.XP_REWARDS.TOP_25_PERCENT +
+              XPService.XP_REWARDS.TOP_50_PERCENT,
+          },
+          {
+            placement: "3rd Place",
+            rewards: ["3rd place", "Top 10%", "Top 25%", "Top 50%"],
+            total:
+              XPService.XP_REWARDS.PLACE_3RD +
+              XPService.XP_REWARDS.TOP_10_PERCENT +
+              XPService.XP_REWARDS.TOP_25_PERCENT +
+              XPService.XP_REWARDS.TOP_50_PERCENT,
+          },
+          {
+            placement: "Top 10%",
+            rewards: ["Top 10%", "Top 25%", "Top 50%"],
+            total:
+              XPService.XP_REWARDS.TOP_10_PERCENT +
+              XPService.XP_REWARDS.TOP_25_PERCENT +
+              XPService.XP_REWARDS.TOP_50_PERCENT,
+          },
+          {
+            placement: "Top 25%",
+            rewards: ["Top 25%", "Top 50%"],
+            total:
+              XPService.XP_REWARDS.TOP_25_PERCENT +
+              XPService.XP_REWARDS.TOP_50_PERCENT,
+          },
+          {
+            placement: "Top 50%",
+            rewards: ["Top 50%"],
+            total: XPService.XP_REWARDS.TOP_50_PERCENT,
+          },
+        ],
       },
     });
   } catch (error) {
