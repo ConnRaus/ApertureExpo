@@ -246,4 +246,4 @@ This work is licensed under a
 - ✅ You can view, use, and modify this code for personal and educational purposes
 - ✅ You can share your modifications as long as you use the same license
 - ❌ You cannot use this code for commercial purposes
-- 📧 For commercial licensing inquiries, contact: connor.rauscher@gmail.com
+- 📧 For commercial licensing inquiries, contact: support@apertureexpo.com

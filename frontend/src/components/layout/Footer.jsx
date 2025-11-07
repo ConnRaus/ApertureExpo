@@ -120,7 +120,7 @@ function Footer() {
                   <p className="text-gray-400 text-sm">
                     Have questions or suggestions?{" "}
                     <a
-                      href="mailto:connor.rauscher@gmail.com"
+                      href="mailto:support@apertureexpo.com"
                       className="text-indigo-400 hover:text-indigo-300 transition-colors"
                     >
                       Contact us
@@ -178,8 +178,7 @@ function Footer() {
           {/* Copyright */}
           <div className="mt-6 pt-4 border-t border-gray-700/20 text-center">
             <p className="text-gray-500 text-sm">
-              © {currentYear} Aperture Expo by Connor Rauscher. All rights
-              reserved.
+              © {currentYear} Aperture Expo. All rights reserved.
             </p>
           </div>
         </div>
