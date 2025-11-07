@@ -295,102 +295,133 @@ const LeaderboardPage = () => {
             )}
 
             {activeTab === "rewards" && xpRewards && (
-              <div className="space-y-6">
-                {/* XP Rewards Info */}
-                <div className="bg-gray-800/50 backdrop-blur border border-gray-700/50 rounded-lg p-6">
-                  {/* Header with toggle */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-gray-700/50">
-                    <h2 className="text-xl font-semibold text-gray-100">
-                      XP Rewards
-                    </h2>
-                    
-                    {/* Tab Toggle */}
-                    <div className="bg-gray-700/50 rounded-lg p-1 flex">
-                      <button
-                        onClick={() => setActiveTab("leaderboard")}
-                        className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-                          activeTab === "leaderboard"
-                            ? "bg-indigo-600 text-white shadow-sm"
-                            : "text-gray-300 hover:text-white"
-                        }`}
-                      >
-                        Rankings
-                      </button>
-                      <button
-                        onClick={() => setActiveTab("rewards")}
-                        className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-                          activeTab === "rewards"
-                            ? "bg-indigo-600 text-white shadow-sm"
-                            : "text-gray-300 hover:text-white"
-                        }`}
-                      >
-                        Rewards
-                      </button>
-                    </div>
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-100 mb-4">
-                    How to Earn XP
-                  </h3>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {Object.entries(xpRewards.rewards).map(([action, xp]) => (
-                      <div
-                        key={action}
-                        className="flex justify-between items-center p-3 bg-gray-700/30 rounded-lg"
-                      >
-                        <div>
-                          <div className="font-medium text-gray-200">
-                            {xpRewards.description[action]}
-                          </div>
-                        </div>
-                        <div className="text-lg font-bold text-indigo-400">
-                          +{xp} XP
-                        </div>
-                      </div>
-                    ))}
+              <div className="bg-gray-800/50 backdrop-blur border border-gray-700/50 rounded-lg overflow-hidden">
+                {/* Header with toggle */}
+                <div className="px-6 py-4 border-b border-gray-700/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <h2 className="text-xl font-semibold text-gray-100">
+                    XP Rewards
+                  </h2>
+                  
+                  {/* Tab Toggle */}
+                  <div className="bg-gray-700/50 rounded-lg p-1 flex">
+                    <button
+                      onClick={() => setActiveTab("leaderboard")}
+                      className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                        activeTab === "leaderboard"
+                          ? "bg-indigo-600 text-white shadow-sm"
+                          : "text-gray-300 hover:text-white"
+                      }`}
+                    >
+                      Rankings
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("rewards")}
+                      className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                        activeTab === "rewards"
+                          ? "bg-indigo-600 text-white shadow-sm"
+                          : "text-gray-300 hover:text-white"
+                      }`}
+                    >
+                      Rewards
+                    </button>
                   </div>
                 </div>
 
-                {/* Level Formula */}
-                <div className="bg-gray-800/50 backdrop-blur border border-gray-700/50 rounded-lg p-6">
-                  <h2 className="text-xl font-semibold text-gray-100 mb-4">
-                    Level Progression
-                  </h2>
-                  <p className="text-gray-300 mb-4">
-                    The XP required for each level follows the formula:{" "}
-                    <code className="bg-gray-700/50 px-2 py-1 rounded text-indigo-300">
-                      {xpRewards.levelFormula}
-                    </code>
-                  </p>
-
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {[1, 5, 10, 20, 30, 50].map((level) => (
-                      <div
-                        key={level}
-                        className="text-center p-3 bg-gray-700/30 rounded-lg"
-                      >
+                <div className="p-6 space-y-8">
+                  {/* Individual Rewards */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-100 mb-4">
+                      Individual XP Rewards
+                    </h3>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {Object.entries(xpRewards.rewards).map(([action, xp]) => (
                         <div
-                          className="w-8 h-8 mx-auto mb-2 rounded-full flex items-center justify-center text-white font-bold text-sm"
-                          style={{
-                            backgroundColor:
-                              XPServiceStatic.getLevelColor(level),
-                          }}
+                          key={action}
+                          className="flex justify-between items-center p-3 bg-gray-700/30 rounded-lg"
                         >
-                          {level}
+                          <div className="font-medium text-gray-200">
+                            {xpRewards.description[action]}
+                          </div>
+                          <div className="text-lg font-bold text-indigo-400">
+                            +{xp} XP
+                          </div>
                         </div>
-                        <div className="text-sm font-medium text-gray-200">
-                          Level {level}
-                        </div>
-                        <div className="text-xs text-gray-400">
-                          {XPServiceStatic.formatXP(
-                            XPServiceStatic.getXpForLevel(level)
-                          )}{" "}
-                          XP
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {XPServiceStatic.getLevelTitle(level)}
-                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Contest Placement Rewards */}
+                  {xpRewards.stackingInfo && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-100 mb-2">
+                        How Contest Rewards Stack
+                      </h3>
+                      <p className="text-sm text-gray-400 mb-4">
+                        {xpRewards.stackingInfo.explanation}
+                      </p>
+                      
+                      <div className="grid gap-3">
+                        {xpRewards.stackingInfo.examples.map((example, idx) => (
+                          <div
+                            key={idx}
+                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-gray-700/30 rounded-lg"
+                          >
+                            <div className="flex-1">
+                              <div className="font-medium text-gray-200 mb-1">
+                                {example.placement}
+                              </div>
+                              <div className="text-xs text-gray-400">
+                                {example.rewards.join(" + ")}
+                              </div>
+                            </div>
+                            <div className="text-lg font-bold text-indigo-400">
+                              +{example.total.toLocaleString()} XP
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                ))}
+                    </div>
+                  )}
+
+                  {/* Level Progression */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-100 mb-2">
+                      Level Progression
+                    </h3>
+                    <p className="text-sm text-gray-400 mb-4">
+                      XP required per level:{" "}
+                      <code className="bg-gray-700/50 px-2 py-0.5 rounded text-indigo-300 font-mono text-xs">
+                        {xpRewards.levelFormula}
+                      </code>
+                    </p>
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                      {[1, 5, 10, 20, 30, 50].map((level) => (
+                        <div
+                          key={level}
+                          className="text-center p-3 bg-gray-700/30 rounded-lg"
+                        >
+                          <div
+                            className="w-8 h-8 mx-auto mb-2 rounded-full flex items-center justify-center text-white font-bold text-sm"
+                            style={{
+                              backgroundColor:
+                                XPServiceStatic.getLevelColor(level),
+                            }}
+                          >
+                            {level}
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            {XPServiceStatic.formatXP(
+                              XPServiceStatic.getXpForLevel(level)
+                            )}{" "}
+                            XP
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {XPServiceStatic.getLevelTitle(level)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>

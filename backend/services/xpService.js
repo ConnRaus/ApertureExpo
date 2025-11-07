@@ -4,21 +4,23 @@ import XPTransaction from "../database/models/XPTransaction.js";
 class XPService {
   // XP reward amounts for different actions
   static XP_REWARDS = {
-    SUBMIT_PHOTO: 25, // Submitting a photo to a contest
-    VOTE: 5, // Voting on a photo
-    PLACE_1ST: 200, // Winning 1st place
-    PLACE_2ND: 150, // Winning 2nd place
-    PLACE_3RD: 100, // Winning 3rd place
-    TOP_10_PERCENT: 50, // Placing in top 10% of contest
-    TOP_25_PERCENT: 25, // Placing in top 25% of contest
+    SUBMIT_PHOTO: 75, // Submitting a photo to a contest
+    VOTE: 10, // Voting on a photo
+    PLACE_1ST: 1500, // Winning 1st place (bonus on top of percentile rewards)
+    PLACE_2ND: 900, // Winning 2nd place (bonus on top of percentile rewards)
+    PLACE_3RD: 600, // Winning 3rd place (bonus on top of percentile rewards)
+    TOP_10_PERCENT: 300, // Placing in top 10% of contest
+    TOP_25_PERCENT: 250, // Placing in top 25% of contest
+    TOP_50_PERCENT: 250, // Placing in top 50% of contest
   };
 
   /**
    * Calculate required XP for a given level
-   * Uses exponential growth: level^2 * 100
+   * Uses exponential growth: level^2 * 50
+   * Cleaner numbers than fractional exponents while keeping progression achievable
    */
   static getXpForLevel(level) {
-    return Math.floor(Math.pow(level, 2) * 100);
+    return Math.floor(Math.pow(level, 2) * 50);
   }
 
   /**
@@ -216,7 +218,8 @@ class XPService {
   }
 
   /**
-   * Award XP based on contest placement
+   * Award XP based on contest placement with stacking rewards
+   * Winners get placement bonus + all percentile bonuses they qualify for
    */
   static async awardPlacementXP(
     userId,
@@ -225,42 +228,73 @@ class XPService {
     contestId = null,
     photoId = null
   ) {
-    let xpAmount = 0;
-    let reason = "";
-    let actionType = "";
+    const rewards = [];
+    let totalXP = 0;
 
+    // Calculate percentile for bracket rewards
+    const percentile = (placement / totalParticipants) * 100;
+
+    // Award placement bonuses for top 3 (these stack with percentile rewards)
     if (placement === 1) {
-      xpAmount = this.XP_REWARDS.PLACE_1ST;
-      reason = "1st place finish";
-      actionType = "PLACE_1ST";
+      rewards.push({
+        type: "PLACE_1ST",
+        xp: this.XP_REWARDS.PLACE_1ST,
+        reason: "1st place",
+      });
+      totalXP += this.XP_REWARDS.PLACE_1ST;
     } else if (placement === 2) {
-      xpAmount = this.XP_REWARDS.PLACE_2ND;
-      reason = "2nd place finish";
-      actionType = "PLACE_2ND";
+      rewards.push({
+        type: "PLACE_2ND",
+        xp: this.XP_REWARDS.PLACE_2ND,
+        reason: "2nd place",
+      });
+      totalXP += this.XP_REWARDS.PLACE_2ND;
     } else if (placement === 3) {
-      xpAmount = this.XP_REWARDS.PLACE_3RD;
-      reason = "3rd place finish";
-      actionType = "PLACE_3RD";
-    } else {
-      // Calculate percentage-based rewards
-      const percentile = (placement / totalParticipants) * 100;
-
-      if (percentile <= 10) {
-        xpAmount = this.XP_REWARDS.TOP_10_PERCENT;
-        reason = "Top 10% finish";
-        actionType = "TOP_10_PERCENT";
-      } else if (percentile <= 25) {
-        xpAmount = this.XP_REWARDS.TOP_25_PERCENT;
-        reason = "Top 25% finish";
-        actionType = "TOP_25_PERCENT";
-      }
+      rewards.push({
+        type: "PLACE_3RD",
+        xp: this.XP_REWARDS.PLACE_3RD,
+        reason: "3rd place",
+      });
+      totalXP += this.XP_REWARDS.PLACE_3RD;
     }
 
-    if (xpAmount > 0) {
+    // Award stacking percentile bonuses
+    if (percentile <= 10) {
+      rewards.push({
+        type: "TOP_10_PERCENT",
+        xp: this.XP_REWARDS.TOP_10_PERCENT,
+        reason: "Top 10%",
+      });
+      totalXP += this.XP_REWARDS.TOP_10_PERCENT;
+    }
+
+    if (percentile <= 25) {
+      rewards.push({
+        type: "TOP_25_PERCENT",
+        xp: this.XP_REWARDS.TOP_25_PERCENT,
+        reason: "Top 25%",
+      });
+      totalXP += this.XP_REWARDS.TOP_25_PERCENT;
+    }
+
+    if (percentile <= 50) {
+      rewards.push({
+        type: "TOP_50_PERCENT",
+        xp: this.XP_REWARDS.TOP_50_PERCENT,
+        reason: "Top 50%",
+      });
+      totalXP += this.XP_REWARDS.TOP_50_PERCENT;
+    }
+
+    // Award all XP at once with combined reason
+    if (totalXP > 0) {
+      const reasonText = rewards.map((r) => r.reason).join(" + ");
+      const actionType = rewards[0].type; // Use the highest reward type for the action type
+
       return await this.awardXP(
         userId,
-        xpAmount,
-        reason,
+        totalXP,
+        reasonText,
         actionType,
         contestId,
         photoId
