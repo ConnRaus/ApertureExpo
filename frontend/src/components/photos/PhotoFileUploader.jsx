@@ -143,7 +143,9 @@ export function PhotoFileUploader({
       onClose();
       if (onUploadSuccess) onUploadSuccess();
     } catch (error) {
-      setErrorMessage(error.message || "Failed to upload photo. Please try again.");
+      setErrorMessage(
+        error.message || "Failed to upload photo. Please try again."
+      );
     } finally {
       setUploading(false);
       setUploadProgress(0);

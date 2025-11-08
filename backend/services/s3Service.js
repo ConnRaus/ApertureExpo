@@ -191,100 +191,27 @@ const filterEssentialMetadata = (metadata) => {
 };
 
 const processAndUploadImage = async (buffer, options) => {
-  const {
-    maxWidth,
-    maxHeight,
-    quality,
-    isThumbnail = false,
-    maxSizeInMB = 2,
-  } = options;
+  const { isThumbnail = false } = options;
 
-  // Get the image metadata to determine dimensions
-  const metadata = await sharp(buffer).metadata();
-  const { width: originalWidth, height: originalHeight } = metadata;
-
-  // Calculate the aspect ratio
-  const aspectRatio = originalWidth / originalHeight;
-
-  // Calculate scaling factors for both dimensions
-  const widthScale = maxWidth / originalWidth;
-  const heightScale = maxHeight / originalHeight;
-
-  // Use the larger scaling factor to ensure the smaller dimension fits within bounds
-  const scale = Math.max(widthScale, heightScale);
-
-  // Only scale down, never up
-  const finalScale = Math.min(scale, 1);
-
-  // Calculate new dimensions
-  const newWidth = Math.round(originalWidth * finalScale);
-  const newHeight = Math.round(originalHeight * finalScale);
-
-  // Only resize if the image needs to be scaled down
-  const shouldResize = finalScale < 1;
-
-  let processedImage = sharp(buffer);
-
-  if (shouldResize) {
-    processedImage = processedImage.resize(newWidth, newHeight, {
-      fit: "inside",
-      withoutEnlargement: true,
-      // Use better kernel for thumbnails to maintain sharpness
-      kernel: isThumbnail ? "lanczos3" : "cubic",
-    });
-  }
-
-  // Strip all metadata to save space (we store metadata separately in database)
-  processedImage = processedImage.withMetadata({});
-
-  // Aggressive compression to guarantee size target - will reduce quality and dimensions as needed
-  let currentQuality = quality;
-  let currentWidth = newWidth;
-  let currentHeight = newHeight;
-  let processedBuffer;
-  const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
-
-  // Keep trying until we're under the size limit
-  while (true) {
-    processedBuffer = await sharp(buffer)
-      .resize(currentWidth, currentHeight, {
+  // For thumbnails, resize them properly
+  if (isThumbnail) {
+    return await sharp(buffer)
+      .resize(600, 600, {
         fit: "inside",
         withoutEnlargement: true,
-        kernel: isThumbnail ? "lanczos3" : "cubic",
       })
-      .withMetadata({}) // Strip metadata
+      .withMetadata({})
       .jpeg({
-        quality: currentQuality,
+        quality: 80,
         mozjpeg: true,
-        chromaSubsampling: isThumbnail ? "4:4:4" : "4:2:0",
         force: true,
       })
       .toBuffer();
-
-    // If we're under the size limit, we're done!
-    if (processedBuffer.length <= maxSizeInBytes) {
-      break;
-    }
-
-    // Try reducing quality first (faster than resizing)
-    if (currentQuality > 1) {
-      currentQuality = Math.max(currentQuality - 5, 1);
-    } else {
-      // Quality is at minimum, so reduce dimensions by 10%
-      currentWidth = Math.round(currentWidth * 0.9);
-      currentHeight = Math.round(currentHeight * 0.9);
-
-      // Reset quality to a reasonable level when we reduce dimensions
-      currentQuality = Math.max(quality - 20, 30);
-
-      // Safety check: if image gets too small, break with what we have
-      if (currentWidth < 50 || currentHeight < 50) {
-        break;
-      }
-    }
   }
 
-  return processedBuffer;
+  // For main images, trust the client compression and just ensure JPEG format
+  // Strip metadata and pass through
+  return await sharp(buffer).withMetadata({}).jpeg({ force: true }).toBuffer();
 };
 
 export const uploadToS3 = async (
@@ -310,6 +237,14 @@ export const uploadToS3 = async (
       throw new Error("File buffer is required");
     }
 
+    // Validate file size (reject if over 5MB)
+    const fileSizeMB = mainBuffer.length / 1024 / 1024;
+    if (fileSizeMB > 5) {
+      throw new Error(
+        `File too large (${fileSizeMB.toFixed(2)}MB). Maximum size is 5MB.`
+      );
+    }
+
     // Extract metadata if possible
     try {
       const imageMetadata = await sharp(mainBuffer).metadata();
@@ -329,7 +264,6 @@ export const uploadToS3 = async (
           metadata.hasAlpha = imageMetadata.hasAlpha;
           metadata.isProgressive = imageMetadata.isProgressive;
         } catch (exifError) {
-          console.log("Error parsing EXIF data:", exifError);
           // Provide basic metadata even if EXIF parsing fails
           metadata = {
             format: imageMetadata.format,
@@ -358,19 +292,15 @@ export const uploadToS3 = async (
         };
       }
     } catch (metadataError) {
-      console.log("Error getting image metadata:", metadataError);
       // Continue without metadata if extraction fails
     }
 
     // Always use .jpg since we're converting everything to JPEG format
     const fileExtension = "jpg";
 
-    // Process main image (max 4K resolution, 85% quality, max 1MB)
+    // Process main image (just strip metadata and ensure JPEG)
     const processedMainBuffer = await processAndUploadImage(mainBuffer, {
-      maxWidth: 3840,
-      maxHeight: 2160,
-      quality: 85,
-      maxSizeInMB: 1,
+      isThumbnail: false,
     });
 
     // Upload main image
@@ -387,7 +317,6 @@ export const uploadToS3 = async (
 
     if (!options.generateThumbnail) {
       const result = await mainUpload.done();
-      // Construct the URL manually since result.Location may not be available
       const mainUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${mainKey}`;
       return {
         mainUrl,
@@ -398,12 +327,8 @@ export const uploadToS3 = async (
       };
     }
 
-    // Process thumbnail (max 600px on longest side, 80% quality, max 100KB)
+    // Process thumbnail (resize to 600px)
     const thumbnailBuffer = await processAndUploadImage(mainBuffer, {
-      maxWidth: 600,
-      maxHeight: 600,
-      quality: 80,
-      maxSizeInMB: 0.1,
       isThumbnail: true,
     });
 
