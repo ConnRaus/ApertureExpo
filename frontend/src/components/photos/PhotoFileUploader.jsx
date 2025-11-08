@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
+import imageCompression from "browser-image-compression";
 import formStyles from "../../styles/components/Form.module.css";
 import { useContestService } from "../../hooks";
 
@@ -17,6 +18,7 @@ export function PhotoFileUploader({
   const [description, setDescription] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [compressing, setCompressing] = useState(false);
   const [photoSelected, setPhotoSelected] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -36,6 +38,7 @@ export function PhotoFileUploader({
       setShowError(false);
       setErrorMessage("");
       setUploading(false);
+      setCompressing(false);
       setUploadProgress(0);
       // Reset file input visually if possible
       if (fileRef.current) {
@@ -127,12 +130,34 @@ export function PhotoFileUploader({
 
   const uploadPhoto = async () => {
     try {
-      setUploading(true);
-      setUploadProgress(0);
       setErrorMessage("");
 
+      // Step 1: Compress the image on client side
+      setCompressing(true);
+      const originalSize = (selectedFile.size / 1024 / 1024).toFixed(2);
+      console.log(`Original image size: ${originalSize}MB`);
+
+      const options = {
+        maxSizeMB: 2, // Max 2MB after compression
+        maxWidthOrHeight: 3840, // 4K max resolution
+        useWebWorker: true, // Use web worker to avoid blocking UI
+        fileType: "image/jpeg", // Always convert to JPEG
+      };
+
+      const compressedFile = await imageCompression(selectedFile, options);
+      const compressedSize = (compressedFile.size / 1024 / 1024).toFixed(2);
+      console.log(
+        `Compressed image size: ${compressedSize}MB (${Math.round((compressedSize / originalSize) * 100)}% of original)`
+      );
+
+      setCompressing(false);
+
+      // Step 2: Upload the compressed image
+      setUploading(true);
+      setUploadProgress(0);
+
       const formData = new FormData();
-      formData.append("photo", selectedFile);
+      formData.append("photo", compressedFile, selectedFile.name);
       formData.append("title", title);
       formData.append("description", description);
 
@@ -148,6 +173,7 @@ export function PhotoFileUploader({
       );
     } finally {
       setUploading(false);
+      setCompressing(false);
       setUploadProgress(0);
     }
   };
@@ -253,7 +279,7 @@ export function PhotoFileUploader({
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-white transition-colors"
-              disabled={uploading}
+              disabled={uploading || compressing}
             >
               ✕
             </button>
@@ -281,7 +307,7 @@ export function PhotoFileUploader({
                 onDrop={handleDrop}
                 // Make the whole div clickable if no preview
                 onClick={() => {
-                  if (!previewUrl && !uploading) {
+                  if (!previewUrl && !uploading && !compressing) {
                     document.getElementById("photoUpload").click();
                   }
                 }}
@@ -293,13 +319,13 @@ export function PhotoFileUploader({
                   ref={fileRef}
                   onChange={handleFileChange}
                   className="hidden"
-                  disabled={uploading}
+                  disabled={uploading || compressing}
                 />
                 {previewUrl ? (
                   <div
                     className="absolute inset-0 w-full h-full rounded-lg bg-gray-900 overflow-hidden cursor-pointer group"
                     onClick={(e) => {
-                      if (!uploading) {
+                      if (!uploading && !compressing) {
                         e.stopPropagation(); // Prevent triggering parent div's onClick if needed
                         document.getElementById("photoUpload").click();
                       }
@@ -341,7 +367,7 @@ export function PhotoFileUploader({
                   placeholder="Enter photo title"
                   className={formStyles.input}
                   maxLength={25}
-                  disabled={uploading}
+                  disabled={uploading || compressing}
                 />
                 <span className="absolute right-2 bottom-2 text-xs text-gray-500">
                   {title.length}/25
@@ -361,7 +387,7 @@ export function PhotoFileUploader({
                   placeholder="Enter photo description"
                   className={formStyles.textarea}
                   maxLength={150}
-                  disabled={uploading}
+                  disabled={uploading || compressing}
                 />
                 <span className="absolute right-2 bottom-2 text-xs text-gray-500">
                   {description.length}/150
@@ -386,9 +412,11 @@ export function PhotoFileUploader({
               <button
                 type="submit"
                 className={`${formStyles.button} ${formStyles.primaryButton} w-full`}
-                disabled={uploading || !photoSelected}
+                disabled={uploading || compressing || !photoSelected}
               >
-                {uploading
+                {compressing
+                  ? "Compressing..."
+                  : uploading
                   ? `Uploading... ${Math.round(uploadProgress)}%`
                   : "Upload Photo"}
               </button>
