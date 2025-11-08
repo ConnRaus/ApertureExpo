@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import imageCompression from "browser-image-compression";
 import {
   PhotoGrid,
   PhotoGridConfigs,
@@ -51,8 +52,10 @@ export function PublicUserGallery({ userId, isOwner }) {
   useEffect(() => {
     const handlePhotoFromUrl = async () => {
       if (photoIdFromUrl && photos.length > 0) {
-        const photoIndex = photos.findIndex((photo) => photo.id === photoIdFromUrl);
-        
+        const photoIndex = photos.findIndex(
+          (photo) => photo.id === photoIdFromUrl
+        );
+
         if (photoIndex !== -1) {
           // Photo is on current page, open it
           setSelectedPhotoIndex(photoIndex);
@@ -70,7 +73,7 @@ export function PublicUserGallery({ userId, isOwner }) {
             // Photo not found or not accessible, just ignore
           }
         }
-        
+
         // Remove the photoId from URL after attempting to open
         const newSearchParams = new URLSearchParams(searchParams);
         newSearchParams.delete("photoId");
@@ -131,9 +134,23 @@ export function PublicUserGallery({ userId, isOwner }) {
       if (bannerFileToUpload) {
         setUploadingBanner(true);
 
+        // Compress the banner image before uploading
+        const options = {
+          maxSizeMB: 1.0, // Target under 1MB
+          maxWidthOrHeight: undefined, // Don't touch resolution
+          useWebWorker: true,
+          fileType: "image/jpeg",
+          initialQuality: 0.8,
+        };
+
+        const compressedFile = await imageCompression(
+          bannerFileToUpload,
+          options
+        );
+
         // Create form data for the file upload
         const formData = new FormData();
-        formData.append("banner", bannerFileToUpload);
+        formData.append("banner", compressedFile, bannerFileToUpload.name);
 
         // Upload the banner file to S3
         const uploadResponse = await userService.uploadBanner(userId, formData);
