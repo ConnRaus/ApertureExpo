@@ -236,6 +236,15 @@ export function PublicUserGallery({ userId, isOwner }) {
   };
 
   const handlePhotoSelect = (photo) => {
+    // Clean up the previous blob URL if it exists
+    if (tempBannerImage && tempBannerImage.startsWith("blob:")) {
+      URL.revokeObjectURL(tempBannerImage);
+    }
+
+    // Clear any file that was selected for upload
+    setBannerFileToUpload(null);
+
+    // Set the selected existing photo as the new banner
     setTempBannerImage(photo.s3Url);
     setShowPhotoLibraryPicker(false);
   };
