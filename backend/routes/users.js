@@ -278,6 +278,23 @@ router.put("/:userId/profile", requireAuth(), async (req, res) => {
     // This allows users to remove their banner image if desired
     if (req.body.bannerImage !== undefined) {
       updateData.bannerImage = req.body.bannerImage;
+
+      // If we're updating the banner image and there's an old one, clean it up
+      if (user.bannerImage && user.bannerImage !== req.body.bannerImage) {
+        // Check if the current banner is from the banners directory
+        const isBannerImage = user.bannerImage.includes(
+          `/photos/${req.params.userId}/banners/`
+        );
+        if (isBannerImage) {
+          try {
+            await deleteFromS3(user.bannerImage);
+            console.log(`Deleted old banner: ${user.bannerImage}`);
+          } catch (deleteError) {
+            // Continue with update even if delete fails
+            console.error("Error deleting old banner:", deleteError);
+          }
+        }
+      }
     }
 
     // Update the user record
