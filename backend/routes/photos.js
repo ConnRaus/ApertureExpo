@@ -110,8 +110,11 @@ router.post(
         }
       }
 
-      // Generate a hash of the uploaded image for duplicate detection
-      const photoHash = await generateImageHashFromBuffer(req.file.buffer);
+      // Run hash generation and S3 upload in parallel for better performance
+      const [photoHash, s3Result] = await Promise.all([
+        generateImageHashFromBuffer(req.file.buffer),
+        uploadToS3(req.file, `photos/${userId}`),
+      ]);
 
       // Check if this user has already uploaded this exact image
       const existingPhoto = await Photo.findOne({
@@ -125,10 +128,7 @@ router.post(
         throw new DuplicatePhotoError(existingPhoto.id);
       }
 
-      const { mainUrl, thumbnailUrl, metadata } = await uploadToS3(
-        req.file,
-        `photos/${userId}`
-      );
+      const { mainUrl, thumbnailUrl, metadata } = s3Result;
 
       // Create the photo first without the contest association
       const photo = await Photo.create({
@@ -142,53 +142,51 @@ router.post(
       });
 
       // If a contest ID was provided, associate the photo with that contest using the join table
+      let contestData = null;
       if (contestId) {
-        const photoContestEntry = await PhotoContest.create({
-          photoId: photo.id,
-          contestId: contestId,
-          // Ensure userId is set in PhotoContest if the model supports it
-          // userId: userId,
-        });
+        const [photoContestEntry, contest] = await Promise.all([
+          PhotoContest.create({
+            photoId: photo.id,
+            contestId: contestId,
+          }),
+          Contest.findByPk(contestId),
+        ]);
+
+        contestData = contest;
         console.log(
           `[DEBUG] Created PhotoContest entry:`,
           photoContestEntry.toJSON()
         );
 
-        // Award XP for submitting a photo to a contest
-        try {
-          const xpResult = await XPService.awardSubmissionXP(
-            userId,
-            contestId,
-            photo.id
-          );
-          if (xpResult.success) {
-            console.log(
-              `Awarded ${xpResult.xpAwarded} XP to user ${userId} for contest submission`
-            );
-            if (xpResult.leveledUp) {
+        // Award XP for submitting a photo to a contest (don't await, let it happen async)
+        XPService.awardSubmissionXP(userId, contestId, photo.id)
+          .then((xpResult) => {
+            if (xpResult.success) {
               console.log(
-                `User ${userId} leveled up to level ${xpResult.newLevel}!`
+                `Awarded ${xpResult.xpAwarded} XP to user ${userId} for contest submission`
               );
+              if (xpResult.leveledUp) {
+                console.log(
+                  `User ${userId} leveled up to level ${xpResult.newLevel}!`
+                );
+              }
             }
-          }
-        } catch (xpError) {
-          console.error("Error awarding submission XP:", xpError);
-          // Don't fail the photo upload if XP fails
-        }
+          })
+          .catch((xpError) => {
+            console.error("Error awarding submission XP:", xpError);
+          });
       }
 
-      // Fetch the created photo with the related contests
-      const createdPhoto = await Photo.findByPk(photo.id, {
-        include: [
-          {
-            model: Contest,
-            as: "Contests",
-            through: { attributes: [] },
-          },
-        ],
-      });
+      // Return the photo with contest data attached (no need to refetch from DB)
+      const responsePhoto = photo.toJSON();
+      if (contestData) {
+        responsePhoto.Contests = [contestData];
+      }
 
-      res.json({ message: "Photo uploaded successfully", photo: createdPhoto });
+      res.json({
+        message: "Photo uploaded successfully",
+        photo: responsePhoto,
+      });
     } catch (error) {
       console.error("Upload error:", error);
 
@@ -210,35 +208,6 @@ router.post(
     }
   }
 );
-
-// Get a single photo by ID (public access for viewing)
-router.get("/photos/:id", async (req, res) => {
-  try {
-    const photo = await Photo.findByPk(req.params.id, {
-      include: [
-        {
-          model: User,
-          as: "User",
-          attributes: ["id", "nickname"],
-        },
-        {
-          model: Contest,
-          as: "Contests",
-          through: { attributes: [] },
-        },
-      ],
-    });
-
-    if (!photo) {
-      return res.status(404).json({ error: "Photo not found" });
-    }
-
-    res.json(photo);
-  } catch (error) {
-    console.error("Error fetching photo:", error);
-    res.status(500).json({ error: "Failed to fetch photo" });
-  }
-});
 
 // Get all photos for the authenticated user
 router.get("/photos", requireAuth(), async (req, res) => {
@@ -395,37 +364,52 @@ router.delete("/photos/:id", requireAuth(), async (req, res) => {
         .json({ error: "Not authorized to delete this photo" });
     }
 
-    // Calculate XP to deduct based on contest submissions
+    // Calculate XP to deduct based on active contest submissions only
+    // No penalty for deleting photos from completed/expired contests
     let xpToDeduct = 0;
-    const contestCount = photo.Contests ? photo.Contests.length : 0;
+    let activeContestCount = 0;
+
+    // Check each contest's status to determine the correct XP deduction
+    if (photo.Contests && photo.Contests.length > 0) {
+      for (const contest of photo.Contests) {
+        // Only deduct XP for active contests (open or voting)
+        // No penalty for completed/upcoming contests - user already got placement XP
+        if (contest.status === "open" || contest.status === "voting") {
+          xpToDeduct += 75; // Full XP for active contest submissions
+          activeContestCount++;
+        }
+      }
+    }
 
     // Also check legacy contest association
     if (photo.ContestId) {
-      xpToDeduct += 25; // 25 XP per contest submission
+      const legacyContest = await Contest.findByPk(photo.ContestId);
+      if (legacyContest) {
+        if (
+          legacyContest.status === "open" ||
+          legacyContest.status === "voting"
+        ) {
+          xpToDeduct += 75;
+          activeContestCount++;
+        }
+      }
     }
 
-    // Add XP for new-style contest associations
-    xpToDeduct += contestCount * 25;
-
-    // Deduct XP if any contests were involved
+    // Deduct XP only if there are active contests
     if (xpToDeduct > 0) {
       try {
         await XPService.deductXP(
           auth.userId,
           xpToDeduct,
-          `Photo deletion (${
-            contestCount + (photo.ContestId ? 1 : 0)
-          } contest submissions)`,
+          `Photo deletion from ${activeContestCount} active contest${
+            activeContestCount > 1 ? "s" : ""
+          }`,
           "PHOTO_DELETION",
           null,
           photo.id
         );
         console.log(
-          `Deducted ${xpToDeduct} XP from user ${
-            auth.userId
-          } for deleting photo with ${
-            contestCount + (photo.ContestId ? 1 : 0)
-          } contest submissions`
+          `Deducted ${xpToDeduct} XP from user ${auth.userId} for deleting photo from ${activeContestCount} active contest(s)`
         );
       } catch (xpError) {
         console.error("Error deducting XP for photo deletion:", xpError);

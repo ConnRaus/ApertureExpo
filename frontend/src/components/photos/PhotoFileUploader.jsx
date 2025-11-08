@@ -1,7 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import formStyles from "../../styles/components/Form.module.css";
 import { useContestService } from "../../hooks";
 
@@ -23,6 +21,7 @@ export function PhotoFileUploader({
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const contestService = useContestService();
 
@@ -35,6 +34,7 @@ export function PhotoFileUploader({
       setPreviewUrl(null);
       setPhotoSelected(false);
       setShowError(false);
+      setErrorMessage("");
       setUploading(false);
       setUploadProgress(0);
       // Reset file input visually if possible
@@ -84,7 +84,7 @@ export function PhotoFileUploader({
       const acceptedExtensions = Object.values(ACCEPTED_TYPES)
         .flat()
         .join(", ");
-      toast.error(
+      setErrorMessage(
         `Unsupported file type. Please upload one of the following: ${acceptedExtensions}`
       );
       return false;
@@ -97,7 +97,7 @@ export function PhotoFileUploader({
       !file.type.startsWith("image/png") &&
       !file.type.startsWith("image/webp")
     ) {
-      toast.error(
+      setErrorMessage(
         "Currently only JPEG, PNG, and WebP files are supported. RAW file support coming soon!"
       );
       return false;
@@ -111,16 +111,17 @@ export function PhotoFileUploader({
 
     if (!previewUrl || !selectedFile) {
       setShowError(true);
-      toast.error("Please select a photo to upload");
+      setErrorMessage("Please select a photo to upload");
       return;
     }
 
     // Check title state
     if (!title) {
-      toast.error("Please enter a title for your photo");
+      setErrorMessage("Please enter a title for your photo");
       return;
     }
 
+    setErrorMessage("");
     uploadPhoto();
   };
 
@@ -128,7 +129,7 @@ export function PhotoFileUploader({
     try {
       setUploading(true);
       setUploadProgress(0);
-      const toastId = toast.loading("Preparing to upload...");
+      setErrorMessage("");
 
       const formData = new FormData();
       formData.append("photo", selectedFile);
@@ -137,22 +138,12 @@ export function PhotoFileUploader({
 
       await contestService.uploadNewPhoto(contestId, formData, (progress) => {
         setUploadProgress(progress);
-        toast.update(toastId, {
-          render: `Uploading: ${Math.round(progress)}%`,
-        });
-      });
-
-      toast.update(toastId, {
-        render: "Photo uploaded successfully!",
-        type: "success",
-        isLoading: false,
-        autoClose: 3000,
       });
 
       onClose();
       if (onUploadSuccess) onUploadSuccess();
     } catch (error) {
-      toast.error(error.message || "Failed to upload photo. Please try again.");
+      setErrorMessage(error.message || "Failed to upload photo. Please try again.");
     } finally {
       setUploading(false);
       setUploadProgress(0);
@@ -253,8 +244,6 @@ export function PhotoFileUploader({
         }}
       >
         <div className="bg-gray-800/90 backdrop-blur-md rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-auto flex flex-col border border-gray-700/50">
-          <ToastContainer position="bottom-right" />
-
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-semibold text-white">
               Upload New Photo
@@ -379,6 +368,11 @@ export function PhotoFileUploader({
             </div>
 
             <div className="mt-6">
+              {errorMessage && (
+                <div className="mb-4 p-3 bg-red-900/30 border border-red-500/50 rounded-lg text-red-200 text-sm">
+                  {errorMessage}
+                </div>
+              )}
               {uploading && (
                 <div className="w-full bg-gray-600 rounded-full h-2.5 mb-4">
                   <div
