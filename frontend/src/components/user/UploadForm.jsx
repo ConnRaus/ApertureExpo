@@ -1,6 +1,4 @@
 import React, { useState } from "react";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import formStyles from "../../styles/components/Form.module.css";
 import { PhotoLibraryPicker } from "../photos/PhotoLibraryPicker";
 import { PhotoFileUploader } from "../photos/PhotoFileUploader";
@@ -10,23 +8,18 @@ export function UploadForm({ onUploadSuccess, contestId }) {
   const [showPhotoLibraryPicker, setShowPhotoLibraryPicker] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
   const contestService = useContestService();
 
   const handleExistingPhotoSelect = async (photo) => {
     try {
       setUploading(true);
-      const toastId = toast.loading("Submitting photo to contest...");
+      setError("");
       await contestService.submitPhoto(contestId, photo.id);
-      toast.update(toastId, {
-        render: "Photo submitted successfully!",
-        type: "success",
-        isLoading: false,
-        autoClose: 3000,
-      });
       setShowPhotoLibraryPicker(false);
       if (onUploadSuccess) onUploadSuccess();
     } catch (error) {
-      toast.error(error.message || "Failed to submit photo. Please try again.");
+      setError(error.message || "Failed to submit photo. Please try again.");
     } finally {
       setUploading(false);
     }
@@ -34,7 +27,11 @@ export function UploadForm({ onUploadSuccess, contestId }) {
 
   return (
     <div className="space-y-6">
-      <ToastContainer position="bottom-right" />
+      {error && (
+        <div className="p-3 bg-red-900/30 border border-red-500/50 rounded-lg text-red-200 text-sm">
+          {error}
+        </div>
+      )}
 
       <div className="flex gap-4">
         <button

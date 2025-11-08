@@ -20,11 +20,6 @@ function NotificationBell() {
     const fetchUnreadCount = async () => {
       try {
         const token = await getToken();
-        console.log(
-          "[NotificationBell] Token retrieved:",
-          token ? "✓ Token exists" : "✗ No token"
-        );
-        console.log("[NotificationBell] Token length:", token?.length);
         const count = await NotificationService.getUnreadCount(token);
         setUnreadCount(count);
       } catch (error) {
