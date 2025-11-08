@@ -139,7 +139,7 @@ export function PhotoFileUploader({
 
       const options = {
         maxSizeMB: 2, // Max 2MB after compression
-        maxWidthOrHeight: 3840, // 4K max resolution
+        maxWidthOrHeight: undefined, // Don't touch resolution
         useWebWorker: true, // Use web worker to avoid blocking UI
         fileType: "image/jpeg", // Always convert to JPEG
       };
@@ -147,7 +147,9 @@ export function PhotoFileUploader({
       const compressedFile = await imageCompression(selectedFile, options);
       const compressedSize = (compressedFile.size / 1024 / 1024).toFixed(2);
       console.log(
-        `Compressed image size: ${compressedSize}MB (${Math.round((compressedSize / originalSize) * 100)}% of original)`
+        `Compressed image size: ${compressedSize}MB (${Math.round(
+          (compressedSize / originalSize) * 100
+        )}% of original)`
       );
 
       setCompressing(false);
