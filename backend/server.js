@@ -13,6 +13,7 @@ import adminRoutes from "./routes/admin.js";
 import commentRoutes from "./routes/comments.js";
 import xpRoutes from "./routes/xp.js";
 import notificationRoutes from "./routes/notifications.js";
+import reportRoutes from "./routes/reports.js";
 import { ensureUserExists } from "./middleware/ensureUserExists.js";
 
 dotenv.config();
@@ -91,6 +92,7 @@ app.use("/xp", xpRoutes); // XP stats and leaderboard (public and authenticated 
 // PROTECTED ROUTES - Authentication required for actions
 app.use("/", requireAuth(), ensureUserExists, photoRoutes);
 app.use("/", requireAuth(), ensureUserExists, voteRoutes);
+app.use("/", requireAuth(), ensureUserExists, reportRoutes);
 app.use("/notifications", notificationRoutes);
 
 // --- Global Error Handler ---

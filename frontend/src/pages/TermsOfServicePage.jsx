@@ -28,10 +28,14 @@ function TermsOfServicePage() {
             account. You agree to:
           </p>
           <ul className="list-disc list-inside space-y-2 ml-4">
-            <li>Provide accurate and complete information during registration</li>
+            <li>
+              Provide accurate and complete information during registration
+            </li>
             <li>Maintain the security of your account credentials</li>
             <li>Accept responsibility for all activities under your account</li>
-            <li>Notify us immediately of any unauthorized use of your account</li>
+            <li>
+              Notify us immediately of any unauthorized use of your account
+            </li>
           </ul>
         </section>
 
@@ -44,9 +48,7 @@ function TermsOfServicePage() {
             to:
           </p>
           <ul className="list-disc list-inside space-y-2 ml-4">
-            <li>
-              Only upload photos that you own or have permission to use
-            </li>
+            <li>Only upload photos that you own or have permission to use</li>
             <li>
               Not upload content that is illegal, offensive, harmful, or
               violates others' rights
@@ -59,7 +61,9 @@ function TermsOfServicePage() {
               Not engage in spamming, manipulation of votes, or other fraudulent
               activities
             </li>
-            <li>Respect other users and maintain a positive community atmosphere</li>
+            <li>
+              Respect other users and maintain a positive community atmosphere
+            </li>
           </ul>
         </section>
 
@@ -99,8 +103,8 @@ function TermsOfServicePage() {
               Violate any applicable laws or regulations while using the service
             </li>
             <li>
-              Attempt to gain unauthorized access to the platform or other users'
-              accounts
+              Attempt to gain unauthorized access to the platform or other
+              users' accounts
             </li>
             <li>
               Use automated systems (bots) to manipulate votes or create fake
@@ -132,9 +136,7 @@ function TermsOfServicePage() {
           <h2 className="text-xl font-semibold text-gray-100 mb-3">
             7. Moderation and Enforcement
           </h2>
-          <p className="leading-relaxed mb-3">
-            We reserve the right to:
-          </p>
+          <p className="leading-relaxed mb-3">We reserve the right to:</p>
           <ul className="list-disc list-inside space-y-2 ml-4">
             <li>
               Remove any content that violates these terms or is deemed
@@ -202,10 +204,10 @@ function TermsOfServicePage() {
             If you have questions about these Terms of Service, please contact
             us at:{" "}
             <a
-              href="mailto:connor.rauscher@gmail.com"
+              href="mailto:support@apertureexpo.com"
               className="text-indigo-400 hover:text-indigo-300"
             >
-              connor.rauscher@gmail.com
+              support@apertureexpo.com
             </a>
           </p>
         </section>
@@ -221,4 +223,3 @@ function TermsOfServicePage() {
 }
 
 export default TermsOfServicePage;
-
