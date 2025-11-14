@@ -5,6 +5,7 @@ import { useAuth } from "@clerk/clerk-react";
 import { CommentSection } from "./CommentSection";
 import { PhotoVoteButton } from "../contests/PhotoVoteButton";
 import { PhotoService } from "../../services/PhotoService";
+import { ReportModal } from "./ReportModal";
 
 export function Lightbox({
   photos = [],
@@ -30,6 +31,9 @@ export function Lightbox({
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
+
+  // Report modal state
+  const [showReportModal, setShowReportModal] = useState(false);
 
   // Zoom and pan state
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -70,6 +74,14 @@ export function Lightbox({
   // Auth and photo service for editing
   const { getToken } = useAuth();
   const photoService = new PhotoService(getToken);
+
+  // Handle photo report
+  const handleReport = useCallback(
+    async (photoId, reason, customReason, contestId) => {
+      await photoService.reportPhoto(photoId, reason, customReason, contestId);
+    },
+    [photoService]
+  );
 
   // Reset zoom when image changes
   const resetZoom = useCallback(() => {
@@ -691,6 +703,35 @@ export function Lightbox({
             </svg>
           </button>
         )}
+
+        {/* Report Button */}
+        <button
+          onClick={() => setShowReportModal(true)}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setShowReportModal(true);
+          }}
+          className={`absolute top-4 ${
+            showInfoButton ? "right-28" : "right-16"
+          } z-30 text-white/70 hover:text-white transition-colors duration-200 w-10 h-10 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50`}
+          aria-label="Report photo"
+          style={{ touchAction: "manipulation" }}
+        >
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+        </button>
 
         {/* Zoom Controls */}
         {enableZoom && (
@@ -1423,6 +1464,17 @@ export function Lightbox({
           />
         )}
       </div>
+
+      {/* Report Modal */}
+      {currentPhoto && (
+        <ReportModal
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          onReport={handleReport}
+          photoId={currentPhoto.id}
+          contestId={contestId}
+        />
+      )}
 
       {/* Custom CSS for slide animations */}
       <style jsx>{`

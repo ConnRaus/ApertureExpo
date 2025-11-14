@@ -67,4 +67,21 @@ export class PhotoService {
     }
     return response.json();
   }
+
+  async reportPhoto(photoId, reason, customReason, contestId) {
+    const token = await this.getToken();
+    const response = await fetch(`${API_URL}/photos/${photoId}/report`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ reason, customReason, contestId }),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to report photo");
+    }
+    return response.json();
+  }
 }
