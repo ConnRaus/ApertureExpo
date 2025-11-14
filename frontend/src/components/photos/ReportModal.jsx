@@ -57,18 +57,32 @@ export function ReportModal({ isOpen, onClose, onReport, photoId, contestId }) {
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
       onClick={handleClose}
+      onTouchStart={(e) => e.stopPropagation()}
+      onTouchMove={(e) => e.stopPropagation()}
+      onTouchEnd={(e) => e.stopPropagation()}
+      style={{ touchAction: "manipulation" }}
     >
       <div
         className="bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 p-6"
         onClick={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.stopPropagation()}
+        onTouchEnd={(e) => e.stopPropagation()}
+        style={{ touchAction: "manipulation" }}
       >
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-white">Report Photo</h2>
           <button
             onClick={handleClose}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleClose();
+            }}
             disabled={isSubmitting}
             className="text-gray-400 hover:text-white transition-colors disabled:opacity-50"
             aria-label="Close"
+            style={{ touchAction: "manipulation" }}
           >
             <svg
               className="w-6 h-6"
@@ -91,12 +105,22 @@ export function ReportModal({ isOpen, onClose, onReport, photoId, contestId }) {
           your report.
         </p>
 
-        <form onSubmit={handleSubmit}>
+        <form
+          onSubmit={handleSubmit}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
+          style={{ touchAction: "manipulation" }}
+        >
           <div className="space-y-3 mb-4">
             {REPORT_REASONS.map((reason) => (
               <label
                 key={reason.value}
                 className="flex items-center p-3 rounded-lg bg-gray-700 hover:bg-gray-600 cursor-pointer transition-colors"
+                onTouchStart={(e) => e.stopPropagation()}
+                onTouchMove={(e) => e.stopPropagation()}
+                onTouchEnd={(e) => e.stopPropagation()}
+                style={{ touchAction: "manipulation" }}
               >
                 <input
                   type="radio"
@@ -104,8 +128,23 @@ export function ReportModal({ isOpen, onClose, onReport, photoId, contestId }) {
                   value={reason.value}
                   checked={selectedReason === reason.value}
                   onChange={(e) => setSelectedReason(e.target.value)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedReason(reason.value);
+                  }}
+                  onTouchStart={(e) => {
+                    e.stopPropagation();
+                  }}
+                  onTouchEnd={(e) => {
+                    e.stopPropagation();
+                    // Explicitly set state on touch for mobile compatibility
+                    if (!isSubmitting) {
+                      setSelectedReason(reason.value);
+                    }
+                  }}
                   disabled={isSubmitting}
                   className="mr-3 w-4 h-4 text-blue-600 focus:ring-blue-500"
+                  style={{ touchAction: "manipulation" }}
                 />
                 <span className="text-white">{reason.label}</span>
               </label>
@@ -120,11 +159,15 @@ export function ReportModal({ isOpen, onClose, onReport, photoId, contestId }) {
               <textarea
                 value={customReason}
                 onChange={(e) => setCustomReason(e.target.value)}
+                onTouchStart={(e) => e.stopPropagation()}
+                onTouchMove={(e) => e.stopPropagation()}
+                onTouchEnd={(e) => e.stopPropagation()}
                 disabled={isSubmitting}
                 className="w-full bg-gray-700 text-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 rows="3"
                 placeholder="Describe the issue..."
                 maxLength={500}
+                style={{ touchAction: "manipulation" }}
               />
               <div className="text-xs text-gray-400 mt-1 text-right">
                 {customReason.length}/500
@@ -142,15 +185,25 @@ export function ReportModal({ isOpen, onClose, onReport, photoId, contestId }) {
             <button
               type="button"
               onClick={handleClose}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleClose();
+              }}
               disabled={isSubmitting}
               className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ touchAction: "manipulation" }}
             >
               Cancel
             </button>
             <button
               type="submit"
+              onTouchEnd={(e) => {
+                e.stopPropagation();
+              }}
               disabled={isSubmitting || !selectedReason}
               className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ touchAction: "manipulation" }}
             >
               {isSubmitting ? "Submitting..." : "Submit Report"}
             </button>
