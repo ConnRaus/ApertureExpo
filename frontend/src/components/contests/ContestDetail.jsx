@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import { useContestService } from "../../hooks";
+import { useContestService, useVoteService } from "../../hooks";
 import styles from "../../styles/components/Contest.module.css";
 import { ContestHeader } from "./ContestHeader";
 import { ContestSubmissions } from "./ContestSubmissions";
@@ -34,9 +34,11 @@ export function ContestDetail(props) {
     props.showUploadForm || false
   );
   const contestService = useContestService();
+  const voteService = useVoteService();
   const { user, isLoaded: userLoaded } = useUser();
   const previousPhaseRef = useRef(null);
   const phaseTransitionTimersRef = useRef([]);
+  const [userVotesMap, setUserVotesMap] = useState({});
 
   useEffect(() => {
     fetchContestDetails(true, currentPage);
@@ -52,6 +54,32 @@ export function ContestDetail(props) {
       phaseTransitionTimersRef.current.forEach((timer) => clearTimeout(timer));
     };
   }, [contestId, currentPage]);
+
+  // Fetch all user votes for this contest once and cache them in a map
+  useEffect(() => {
+    const fetchUserVotes = async () => {
+      if (!user || !contestId) {
+        setUserVotesMap({});
+        return;
+      }
+
+      try {
+        const userVotes = await voteService.getUserVotes(contestId);
+        const votesMap = {};
+        userVotes.forEach((vote) => {
+          if (vote.photoId && typeof vote.value === "number") {
+            votesMap[vote.photoId] = vote.value;
+          }
+        });
+        setUserVotesMap(votesMap);
+      } catch (err) {
+        console.error("Failed to fetch user votes for contest:", err);
+        // Don't block the rest of the page if this fails
+      }
+    };
+
+    fetchUserVotes();
+  }, [user, contestId, voteService]);
 
   // Effect to fetch winners separately when contest ends
   useEffect(() => {
@@ -177,6 +205,14 @@ export function ContestDetail(props) {
   // Handle page change for submissions pagination
   const handlePageChange = (page) => {
     setSearchParams({ page: page.toString() });
+  };
+
+  // Keep a single source of truth for the user's vote per photo in this contest
+  const handleUserVoteChange = (photoId, value) => {
+    setUserVotesMap((prev) => ({
+      ...prev,
+      [photoId]: value,
+    }));
   };
 
   // Calculate user's submission count (using the count provided by the API)
@@ -325,6 +361,8 @@ export function ContestDetail(props) {
         contestPhase={contest.phase}
         pagination={contest.pagination}
         onPageChange={handlePageChange}
+        userVotesMap={userVotesMap}
+        onUserVoteChange={handleUserVoteChange}
       />
     </div>
   );

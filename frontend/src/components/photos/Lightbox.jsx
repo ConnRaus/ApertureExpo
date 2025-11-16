@@ -16,6 +16,8 @@ export function Lightbox({
   contestPhase = null,
   onVoteSuccess = null,
   onPhotoUpdate = null,
+  userVotesMap = {},
+  onUserVoteChange = () => {},
 }) {
   const location = useLocation();
   const [currentIndex, setCurrentIndex] = useState(selectedIndex);
@@ -829,6 +831,8 @@ export function Lightbox({
                 showStars={showVotingStars}
                 showCount={false}
                 onVoteSuccess={onVoteSuccess}
+                initialUserVote={userVotesMap[currentPhoto.id]}
+                onUserVoteChange={onUserVoteChange}
               />
             </div>
           </div>
