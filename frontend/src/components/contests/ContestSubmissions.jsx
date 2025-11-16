@@ -13,6 +13,8 @@ export function ContestSubmissions({
   contestPhase = "submission",
   pagination = null,
   onPageChange,
+  userVotesMap = {},
+  onUserVoteChange = () => {},
 }) {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(-1);
   const [displayPhotos, setDisplayPhotos] = useState([]);
@@ -52,7 +54,9 @@ export function ContestSubmissions({
   }, [photos, contestPhase]);
 
   const handleVoteSuccess = (photoId, newVoteValue) => {
-    // Trigger a re-render of PhotoVoteButton components by updating the trigger
+    // Update shared user vote state so all components stay in sync
+    onUserVoteChange(photoId, newVoteValue);
+    // Still bump the trigger to force re-render in any places relying on the key
     setVoteUpdateTrigger((prev) => prev + 1);
   };
 
@@ -92,6 +96,8 @@ export function ContestSubmissions({
         contestId={contestId}
         contestPhase={contestPhase}
         voteUpdateTrigger={voteUpdateTrigger}
+        userVotesMap={userVotesMap}
+        onUserVoteChange={onUserVoteChange}
       />
 
       {/* Show pagination if pagination data is available */}
@@ -117,6 +123,8 @@ export function ContestSubmissions({
         contestId={contestId}
         contestPhase={contestPhase}
         onVoteSuccess={handleVoteSuccess}
+        userVotesMap={userVotesMap}
+        onUserVoteChange={onUserVoteChange}
       />
     </>
   );

@@ -13,6 +13,8 @@ function PhotoGridItem({
   contestPhase,
   voteUpdateTrigger,
   style,
+  userVotesMap = {},
+  onUserVoteChange = () => {},
 }) {
   const handleImageError = (e) => {
     // Prevent infinite loop if fallback also fails
@@ -137,6 +139,8 @@ function PhotoGridItem({
                 contestPhase={contestPhase}
                 showStars={true}
                 key={`grid-vote-${photo.id}-${voteUpdateTrigger}`}
+                initialUserVote={userVotesMap[photo.id]}
+                onUserVoteChange={onUserVoteChange}
               />
             </div>
           )}
@@ -274,6 +278,8 @@ export function PhotoGrid({
   contestId,
   contestPhase,
   voteUpdateTrigger = 0,
+  userVotesMap = {},
+  onUserVoteChange = () => {},
 }) {
   const [processedPhotos, setProcessedPhotos] = useState([]);
   const [justifiedRows, setJustifiedRows] = useState([]);
@@ -406,6 +412,8 @@ export function PhotoGrid({
                 contestId={contestId}
                 contestPhase={contestPhase}
                 voteUpdateTrigger={voteUpdateTrigger}
+                userVotesMap={userVotesMap}
+                onUserVoteChange={onUserVoteChange}
                 style={{
                   width: row.isSingleColumn ? "100%" : `${width}px`,
                   height: `${row.height}px`,

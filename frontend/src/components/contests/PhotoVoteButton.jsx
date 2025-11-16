@@ -10,9 +10,11 @@ export function PhotoVoteButton({
   showCount = true,
   showStars = false,
   onVoteSuccess = null,
+  initialUserVote = null,
+  onUserVoteChange = () => {},
 }) {
   const [voteCount, setVoteCount] = useState(photo.voteCount || 0);
-  const [userVote, setUserVote] = useState(null);
+  const [userVote, setUserVote] = useState(initialUserVote);
   const [isVoting, setIsVoting] = useState(false);
   const [hoverRating, setHoverRating] = useState(0);
   const voteService = useVoteService();
@@ -32,32 +34,13 @@ export function PhotoVoteButton({
     ) : null;
   }
 
-  // Reset state when photo changes and check if user has already voted
+  // Reset state when photo changes and sync with any initial user vote
   useEffect(() => {
-    // Reset all state when photo changes
     setVoteCount(photo.voteCount || 0);
-    setUserVote(null);
-    setHoverRating(0);
+    setUserVote(initialUserVote);
     setIsVoting(false);
-
-    if (contestId && photo.id && isVotingPhase && user) {
-      const checkUserVote = async () => {
-        try {
-          const userVotes = await voteService.getUserVotes(contestId);
-          const existingVote = userVotes.find(
-            (vote) => vote.photoId === photo.id
-          );
-          if (existingVote) {
-            setUserVote(existingVote.value);
-          }
-        } catch (error) {
-          console.error("Error checking user votes:", error);
-        }
-      };
-
-      checkUserVote();
-    }
-  }, [contestId, photo.id, isVotingPhase, photo.voteCount, user]);
+    setHoverRating(0);
+  }, [photo.id, photo.voteCount, initialUserVote]);
 
   const handleVote = async (value = 1) => {
     if (!isVotingPhase) {
@@ -73,7 +56,17 @@ export function PhotoVoteButton({
     if (isVoting) return;
 
     try {
+      const previousVote = userVote;
+      const isNewVote = !previousVote;
+
+      // Optimistically update UI immediately
       setIsVoting(true);
+      setUserVote(value);
+      onUserVoteChange(photo.id, value);
+      if (isNewVote) {
+        setVoteCount((prevCount) => prevCount + 1);
+      }
+
       const response = await voteService.voteForPhoto(
         photo.id,
         contestId,
@@ -81,16 +74,8 @@ export function PhotoVoteButton({
       );
 
       if (response) {
-        // Update the UI
-        setUserVote(value);
-
-        // If this is a new vote, increment the count
-        if (!userVote) {
-          setVoteCount((prevCount) => prevCount + 1);
-        }
-
         toast.success(
-          userVote
+          previousVote
             ? "Your vote has been updated!"
             : "Your vote has been counted!"
         );
@@ -100,6 +85,17 @@ export function PhotoVoteButton({
         }
       }
     } catch (error) {
+      // Roll back optimistic UI on error
+      const hadPrevious = userVote != null;
+      setUserVote((prev) => {
+        const fallback = prev != null ? prev : null;
+        return fallback;
+      });
+      onUserVoteChange(photo.id, userVote);
+      if (!hadPrevious) {
+        setVoteCount((prevCount) => Math.max(0, prevCount - 1));
+      }
+
       toast.error(error.message || "Failed to vote. Please try again.");
     } finally {
       setIsVoting(false);
@@ -134,11 +130,17 @@ export function PhotoVoteButton({
           {[1, 2, 3, 4, 5].map((star) => (
             <button
               key={star}
-              className={`text-2xl transition-all ${
-                (hoverRating || userVote) >= star
+              className={`text-2xl transition-all cursor-pointer ${
+                hoverRating >= star
+                  ? "text-yellow-200 drop-shadow-[0_0_6px_rgba(250,204,21,0.7)]"
+                  : userVote >= star
                   ? "text-yellow-400"
                   : "text-gray-400"
-              } ${!isVotingPhase && "opacity-50 cursor-not-allowed"}`}
+              } ${
+                isVotingPhase
+                  ? "hover:scale-110"
+                  : "opacity-50 cursor-not-allowed"
+              }`}
               onClick={() => handleVote(star)}
               onMouseEnter={() => isVotingPhase && setHoverRating(star)}
               onMouseLeave={() => isVotingPhase && setHoverRating(0)}
