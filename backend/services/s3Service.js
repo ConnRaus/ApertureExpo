@@ -19,6 +19,48 @@ const s3Client = new S3Client({
   },
 });
 
+// Utility function to convert S3 URL to CloudFront URL
+const convertToCloudFrontUrl = (s3Url) => {
+  if (!s3Url || !process.env.CLOUDFRONT_DOMAIN) {
+    return s3Url; // Return original if CloudFront not configured
+  }
+
+  // Extract the key from S3 URL
+  // Handles both formats:
+  // - https://bucket.s3.region.amazonaws.com/key
+  // - https://bucket.s3-region.amazonaws.com/key
+  const keyMatch = s3Url.match(/\.com\/(.+)$/);
+  if (!keyMatch) {
+    return s3Url; // Return original if we can't parse it
+  }
+
+  const key = keyMatch[1];
+  const cloudfrontDomain = process.env.CLOUDFRONT_DOMAIN.replace(
+    /^https?:\/\//,
+    ""
+  ); // Remove protocol if present
+  return `https://${cloudfrontDomain}/${key}`;
+};
+
+// Utility function to extract S3 key from either S3 or CloudFront URL
+const extractS3Key = (url) => {
+  // Try to extract key from CloudFront URL first
+  if (url.includes("cloudfront.net")) {
+    const keyMatch = url.match(/cloudfront\.net\/(.+)$/);
+    if (keyMatch) {
+      return keyMatch[1];
+    }
+  }
+
+  // Fall back to S3 URL format
+  const keyMatch = url.match(/\.com\/(.+)$/);
+  if (keyMatch) {
+    return keyMatch[1];
+  }
+
+  throw new Error(`Unable to extract S3 key from URL: ${url}`);
+};
+
 // Function to recursively sanitize metadata by removing null characters
 const sanitizeMetadata = (obj) => {
   if (obj === null || obj === undefined) {
@@ -317,7 +359,8 @@ export const uploadToS3 = async (
 
     if (!options.generateThumbnail) {
       const result = await mainUpload.done();
-      const mainUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${mainKey}`;
+      const s3Url = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${mainKey}`;
+      const mainUrl = convertToCloudFrontUrl(s3Url);
       return {
         mainUrl,
         thumbnailUrl: null,
@@ -350,9 +393,13 @@ export const uploadToS3 = async (
       thumbnailUpload.done(),
     ]);
 
+    // Convert S3 URLs to CloudFront URLs
+    const mainUrl = convertToCloudFrontUrl(mainResult.Location);
+    const thumbnailUrl = convertToCloudFrontUrl(thumbnailResult.Location);
+
     return {
-      mainUrl: mainResult.Location,
-      thumbnailUrl: thumbnailResult.Location,
+      mainUrl,
+      thumbnailUrl,
       metadata: metadata
         ? sanitizeMetadata(filterEssentialMetadata(metadata))
         : null,
@@ -364,8 +411,8 @@ export const uploadToS3 = async (
 };
 
 export const deleteFromS3 = async (photoUrl) => {
-  // Extract the key from the full S3 URL
-  const key = photoUrl.split(".com/")[1];
+  // Extract the key from either S3 or CloudFront URL
+  const key = extractS3Key(photoUrl);
   const thumbnailKey = key.replace(/^photos\//, "photos/thumbnails/");
 
   try {
@@ -388,15 +435,11 @@ export const deleteFromS3 = async (photoUrl) => {
   }
 };
 
-// New function to calculate image hash from an existing S3 URL
+// New function to calculate image hash from an existing S3 or CloudFront URL
 export const getHashFromS3 = async (s3Url) => {
   try {
-    // Extract the key from the URL
-    const key = s3Url.split(".com/")[1];
-
-    if (!key) {
-      throw new Error("Invalid S3 URL format");
-    }
+    // Extract the key from either S3 or CloudFront URL
+    const key = extractS3Key(s3Url);
 
     // Get the object from S3
     const getObjectCommand = new GetObjectCommand({
