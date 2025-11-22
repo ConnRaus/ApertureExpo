@@ -118,60 +118,12 @@ router.get("/rewards", async (req, res) => {
         TOP_10_PERCENT: "Top 10% placement",
         TOP_25_PERCENT: "Top 25% placement",
         TOP_50_PERCENT: "Top 50% placement",
+        PARTICIPATION: "Contest contribution (below top 50%)",
       },
       stackingInfo: {
         enabled: true,
         explanation:
           "Contest rewards stack! Winners receive placement bonuses PLUS all percentile rewards they qualify for.",
-        examples: [
-          {
-            placement: "1st Place",
-            rewards: ["1st place", "Top 10%", "Top 25%", "Top 50%"],
-            total:
-              XPService.XP_REWARDS.PLACE_1ST +
-              XPService.XP_REWARDS.TOP_10_PERCENT +
-              XPService.XP_REWARDS.TOP_25_PERCENT +
-              XPService.XP_REWARDS.TOP_50_PERCENT,
-          },
-          {
-            placement: "2nd Place",
-            rewards: ["2nd place", "Top 10%", "Top 25%", "Top 50%"],
-            total:
-              XPService.XP_REWARDS.PLACE_2ND +
-              XPService.XP_REWARDS.TOP_10_PERCENT +
-              XPService.XP_REWARDS.TOP_25_PERCENT +
-              XPService.XP_REWARDS.TOP_50_PERCENT,
-          },
-          {
-            placement: "3rd Place",
-            rewards: ["3rd place", "Top 10%", "Top 25%", "Top 50%"],
-            total:
-              XPService.XP_REWARDS.PLACE_3RD +
-              XPService.XP_REWARDS.TOP_10_PERCENT +
-              XPService.XP_REWARDS.TOP_25_PERCENT +
-              XPService.XP_REWARDS.TOP_50_PERCENT,
-          },
-          {
-            placement: "Top 10%",
-            rewards: ["Top 10%", "Top 25%", "Top 50%"],
-            total:
-              XPService.XP_REWARDS.TOP_10_PERCENT +
-              XPService.XP_REWARDS.TOP_25_PERCENT +
-              XPService.XP_REWARDS.TOP_50_PERCENT,
-          },
-          {
-            placement: "Top 25%",
-            rewards: ["Top 25%", "Top 50%"],
-            total:
-              XPService.XP_REWARDS.TOP_25_PERCENT +
-              XPService.XP_REWARDS.TOP_50_PERCENT,
-          },
-          {
-            placement: "Top 50%",
-            rewards: ["Top 50%"],
-            total: XPService.XP_REWARDS.TOP_50_PERCENT,
-          },
-        ],
       },
     });
   } catch (error) {

@@ -12,6 +12,7 @@ class XPService {
     TOP_10_PERCENT: 300, // Placing in top 10% of contest
     TOP_25_PERCENT: 250, // Placing in top 25% of contest
     TOP_50_PERCENT: 250, // Placing in top 50% of contest
+    PARTICIPATION: 125, // Participation reward for photos not in top 50%
   };
 
   /**
@@ -231,9 +232,6 @@ class XPService {
     const rewards = [];
     let totalXP = 0;
 
-    // Calculate percentile for bracket rewards
-    const percentile = (placement / totalParticipants) * 100;
-
     // Award placement bonuses for top 3 (these stack with percentile rewards)
     if (placement === 1) {
       rewards.push({
@@ -259,7 +257,13 @@ class XPService {
     }
 
     // Award stacking percentile bonuses
-    if (percentile <= 10) {
+    // Check if placement is in the top X% of participants
+    // Use Math.ceil to round up (e.g., top 10% of 5 = top 1, top 25% of 5 = top 2, top 50% of 5 = top 3)
+    const top10PercentThreshold = Math.ceil(totalParticipants * 0.1);
+    const top25PercentThreshold = Math.ceil(totalParticipants * 0.25);
+    const top50PercentThreshold = Math.ceil(totalParticipants * 0.5);
+
+    if (placement <= top10PercentThreshold) {
       rewards.push({
         type: "TOP_10_PERCENT",
         xp: this.XP_REWARDS.TOP_10_PERCENT,
@@ -268,7 +272,7 @@ class XPService {
       totalXP += this.XP_REWARDS.TOP_10_PERCENT;
     }
 
-    if (percentile <= 25) {
+    if (placement <= top25PercentThreshold) {
       rewards.push({
         type: "TOP_25_PERCENT",
         xp: this.XP_REWARDS.TOP_25_PERCENT,
@@ -277,13 +281,23 @@ class XPService {
       totalXP += this.XP_REWARDS.TOP_25_PERCENT;
     }
 
-    if (percentile <= 50) {
+    if (placement <= top50PercentThreshold) {
       rewards.push({
         type: "TOP_50_PERCENT",
         xp: this.XP_REWARDS.TOP_50_PERCENT,
         reason: "Top 50%",
       });
       totalXP += this.XP_REWARDS.TOP_50_PERCENT;
+    }
+
+    // Award participation reward for photos not in top 50%
+    if (placement > top50PercentThreshold) {
+      rewards.push({
+        type: "PARTICIPATION",
+        xp: this.XP_REWARDS.PARTICIPATION,
+        reason: "Contest contribution",
+      });
+      totalXP += this.XP_REWARDS.PARTICIPATION;
     }
 
     // Award all XP at once with combined reason
@@ -436,23 +450,44 @@ class XPService {
         return b.voteCount - a.voteCount;
       });
 
-      // Award XP based on placement
-      const results = [];
-      const totalParticipants = photoScores.length;
+      // Assign ranks with proper tie handling
+      // Photos with the same average rating get the same rank
+      let currentRank = 0;
+      let lastRating = -Infinity;
+      const rankedPhotos = photoScores.map((photo, index) => {
+        if (photo.averageRating < lastRating) {
+          // Rating decreased, so this is a new rank
+          currentRank = index + 1;
+        } else if (lastRating === -Infinity) {
+          // First photo always gets rank 1
+          currentRank = 1;
+        }
+        // If rating is same as last, currentRank remains unchanged (tie)
 
-      for (let i = 0; i < photoScores.length; i++) {
-        const placement = i + 1;
-        const { userId } = photoScores[i];
+        lastRating = photo.averageRating;
+        return {
+          ...photo,
+          placement: currentRank, // Use calculated rank that handles ties
+        };
+      });
+
+      // Award XP based on placement (each photo gets its own reward)
+      const results = [];
+      const totalParticipants = rankedPhotos.length;
+
+      for (const photo of rankedPhotos) {
+        const { userId, photoId, placement } = photo;
 
         const xpResult = await this.awardPlacementXP(
           userId,
           placement,
           totalParticipants,
           contestId,
-          photoScores[i].photoId
+          photoId
         );
         results.push({
           userId,
+          photoId,
           placement,
           ...xpResult,
         });
