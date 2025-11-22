@@ -411,24 +411,27 @@ class XPService {
         return { success: true, message: "No photos in contest" };
       }
 
-      // Calculate total votes for each photo
+      // Calculate average rating for each photo
       const photoScores = uniquePhotos.map((photo) => {
+        const voteCount = photo.Votes.length;
         const totalVotes = photo.Votes.reduce(
           (sum, vote) => sum + vote.value,
           0
         );
+        const averageRating = voteCount > 0 ? totalVotes / voteCount : 0;
         return {
           userId: photo.userId,
           photoId: photo.id,
-          totalVotes,
-          voteCount: photo.Votes.length,
+          averageRating,
+          voteCount,
+          totalVotes, // Keep for reference but don't use for sorting
         };
       });
 
-      // Sort by total votes (descending), then by vote count as tiebreaker
+      // Sort by average rating (descending), then by vote count as tiebreaker
       photoScores.sort((a, b) => {
-        if (b.totalVotes !== a.totalVotes) {
-          return b.totalVotes - a.totalVotes;
+        if (b.averageRating !== a.averageRating) {
+          return b.averageRating - a.averageRating;
         }
         return b.voteCount - a.voteCount;
       });
