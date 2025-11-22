@@ -334,54 +334,31 @@ const LeaderboardPage = () => {
                       Individual XP Rewards
                     </h3>
                     <div className="grid gap-3 md:grid-cols-2">
-                      {Object.entries(xpRewards.rewards).map(([action, xp]) => (
-                        <div
-                          key={action}
-                          className="flex justify-between items-center p-3 bg-gray-700/30 rounded-lg"
-                        >
-                          <div className="font-medium text-gray-200">
-                            {xpRewards.description[action]}
-                          </div>
-                          <div className="text-lg font-bold text-indigo-400">
-                            +{xp} XP
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Contest Placement Rewards */}
-                  {xpRewards.stackingInfo && (
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-100 mb-2">
-                        How Contest Rewards Stack
-                      </h3>
-                      <p className="text-sm text-gray-400 mb-4">
-                        {xpRewards.stackingInfo.explanation}
-                      </p>
-                      
-                      <div className="grid gap-3">
-                        {xpRewards.stackingInfo.examples.map((example, idx) => (
+                      {Object.entries(xpRewards.rewards).map(([action, xp]) => {
+                        const isParticipation = action === "PARTICIPATION";
+                        return (
                           <div
-                            key={idx}
-                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-gray-700/30 rounded-lg"
+                            key={action}
+                            className={`flex justify-between items-center p-3 bg-gray-700/30 rounded-lg ${
+                              isParticipation ? "md:col-span-2" : ""
+                            }`}
                           >
-                            <div className="flex-1">
-                              <div className="font-medium text-gray-200 mb-1">
-                                {example.placement}
-                              </div>
-                              <div className="text-xs text-gray-400">
-                                {example.rewards.join(" + ")}
-                              </div>
+                            <div className="font-medium text-gray-200">
+                              {xpRewards.description[action]}
                             </div>
                             <div className="text-lg font-bold text-indigo-400">
-                              +{example.total.toLocaleString()} XP
+                              +{xp} XP
                             </div>
                           </div>
-                        ))}
-                      </div>
+                        );
+                      })}
                     </div>
-                  )}
+                    {xpRewards.stackingInfo && (
+                      <p className="text-sm text-gray-400 mt-4">
+                        *{xpRewards.stackingInfo.explanation}
+                      </p>
+                    )}
+                  </div>
 
                   {/* Level Progression */}
                   <div>

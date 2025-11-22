@@ -44,6 +44,8 @@ XPTransaction.init(
         "PLACE_3RD",
         "TOP_10_PERCENT",
         "TOP_25_PERCENT",
+        "TOP_50_PERCENT",
+        "PARTICIPATION",
         "PHOTO_DELETION"
       ),
       allowNull: false,
