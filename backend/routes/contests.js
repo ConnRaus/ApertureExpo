@@ -445,11 +445,15 @@ router.get("/contests/:id", async (req, res) => {
         // Sort photos based on phase
         contestData.Photos.sort((a, b) => {
           if (contestData.phase === "voting") {
-            // During voting, sort by lowest score first
-            return (a.totalScore || 0) - (b.totalScore || 0);
+            // During voting, sort by lowest average rating first
+            return (a.averageRating || 0) - (b.averageRating || 0);
           } else {
-            // After voting (ended phase), sort by highest score first
-            return (b.totalScore || 0) - (a.totalScore || 0);
+            // After voting (ended phase), sort by highest average rating first
+            // Secondary sort by vote count for tie-breaking
+            if (b.averageRating !== a.averageRating) {
+              return (b.averageRating || 0) - (a.averageRating || 0);
+            }
+            return (b.voteCount || 0) - (a.voteCount || 0);
           }
         });
       } catch (error) {
@@ -630,28 +634,32 @@ router.get("/contests/:contestId/top-photos", async (req, res) => {
       };
     });
 
-    // Sort ALL photos by score and vote count
+    // Sort ALL photos by average rating (descending), then by vote count as tiebreaker
     allPhotosWithStats.sort((a, b) => {
-      if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
-      return b.voteCount - a.voteCount; // Secondary sort by vote count
+      // Primary sort by average rating (higher is better)
+      if (b.averageRating !== a.averageRating) {
+        return b.averageRating - a.averageRating;
+      }
+      // Secondary sort by vote count (more votes break ties)
+      return b.voteCount - a.voteCount;
     });
 
     // Assign ranks correctly, handling ties
     let currentRank = 0;
-    let lastScore = -Infinity; // Use -Infinity to handle potential zero/negative scores correctly
+    let lastRating = -Infinity; // Use -Infinity to handle potential zero/negative ratings correctly
     let photosProcessedForRank = 0;
     const rankedPhotos = allPhotosWithStats.map((photo) => {
       photosProcessedForRank++;
-      if (photo.totalScore < lastScore) {
-        // Only update rank if the score is lower than the previous photo's score
+      if (photo.averageRating < lastRating) {
+        // Only update rank if the average rating is lower than the previous photo's rating
         currentRank = photosProcessedForRank;
-      } else if (lastScore === -Infinity) {
+      } else if (lastRating === -Infinity) {
         // First photo always gets rank 1
         currentRank = 1;
       }
-      // If score is same as last, currentRank remains unchanged
+      // If rating is same as last, currentRank remains unchanged (tie)
 
-      lastScore = photo.totalScore;
+      lastRating = photo.averageRating;
       return { ...photo, rank: currentRank };
     });
 

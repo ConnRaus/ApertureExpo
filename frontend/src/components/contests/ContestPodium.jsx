@@ -4,24 +4,25 @@ import { Link } from "react-router-dom";
 import { Lightbox, LightboxConfigs } from "../photos/PhotoComponents";
 
 export function ContestPodium({ photos, contestId }) {
-  // Sort photos by score (totalScore or voteCount)
+  // Sort photos by average rating (descending), then by vote count as tiebreaker
   const sortedPhotos = [...photos].sort((a, b) => {
-    const scoreA = a.totalScore ?? -Infinity;
-    const scoreB = b.totalScore ?? -Infinity;
-    // Fallback to voteCount if scores are equal or absent
-    if (scoreB !== scoreA) return scoreB - scoreA;
+    const ratingA = a.averageRating ?? -Infinity;
+    const ratingB = b.averageRating ?? -Infinity;
+    // Primary sort by average rating
+    if (ratingB !== ratingA) return ratingB - ratingA;
+    // Secondary sort by vote count for tie-breaking
     return (b.voteCount || 0) - (a.voteCount || 0);
   });
 
   // Assign ranks with tie handling
   let currentRank = 0;
-  let lastScore = Infinity;
+  let lastRating = Infinity;
   const rankedPhotos = sortedPhotos.map((photo, index) => {
-    const currentScore = photo.totalScore ?? -Infinity;
-    if (currentScore < lastScore) {
+    const currentRating = photo.averageRating ?? -Infinity;
+    if (currentRating < lastRating) {
       currentRank = index + 1;
     }
-    lastScore = currentScore;
+    lastRating = currentRating;
     return { ...photo, rank: currentRank }; // Add rank property
   });
 

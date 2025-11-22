@@ -25,7 +25,8 @@
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.7",
     "sharp": "^0.34.2",
-    "sharp-phash": "^2.2.0"
+    "sharp-phash": "^2.2.0",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
