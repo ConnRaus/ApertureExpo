@@ -410,10 +410,29 @@ export const uploadToS3 = async (
   }
 };
 
-export const deleteFromS3 = async (photoUrl) => {
+export const deleteFromS3 = async (photoUrl, thumbnailUrl = null) => {
   // Extract the key from either S3 or CloudFront URL
   const key = extractS3Key(photoUrl);
-  const thumbnailKey = key.replace(/^photos\//, "photos/thumbnails/");
+  
+  // Construct thumbnail key - thumbnails are in user_id/thumbnails/filename format
+  // Main photo: photos/user_id/timestamp.ext
+  // Thumbnail: photos/user_id/thumbnails/timestamp.ext
+  let thumbnailKey = null;
+  if (thumbnailUrl) {
+    // If thumbnail URL is provided, use it directly
+    thumbnailKey = extractS3Key(thumbnailUrl);
+  } else {
+    // Otherwise, construct it from the main photo key
+    // Replace the last part (filename) with thumbnails/filename
+    const keyParts = key.split('/');
+    if (keyParts.length >= 3) {
+      // photos/user_id/filename.ext -> photos/user_id/thumbnails/filename.ext
+      const filename = keyParts[keyParts.length - 1];
+      keyParts[keyParts.length - 1] = 'thumbnails';
+      keyParts.push(filename);
+      thumbnailKey = keyParts.join('/');
+    }
+  }
 
   try {
     const deleteCommands = [
@@ -421,14 +440,20 @@ export const deleteFromS3 = async (photoUrl) => {
         Bucket: process.env.AWS_BUCKET_NAME,
         Key: key,
       }),
-      new DeleteObjectCommand({
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Key: thumbnailKey,
-      }),
     ];
 
+    // Add thumbnail deletion if we have a thumbnail key
+    if (thumbnailKey) {
+      deleteCommands.push(
+        new DeleteObjectCommand({
+          Bucket: process.env.AWS_BUCKET_NAME,
+          Key: thumbnailKey,
+        })
+      );
+    }
+
     await Promise.all(deleteCommands.map((command) => s3Client.send(command)));
-    console.log("Successfully deleted images from S3");
+    console.log(`Successfully deleted ${deleteCommands.length} image(s) from S3 (main + ${thumbnailKey ? 'thumbnail' : 'no thumbnail'})`);
   } catch (error) {
     console.error("Error deleting from S3:", error);
     throw new Error(`S3 Delete failed: ${error.message}`);
