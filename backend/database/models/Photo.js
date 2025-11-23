@@ -35,16 +35,30 @@ Photo.init(
       type: DataTypes.STRING,
       allowNull: false,
       validate: {
-        isUrl: true,
-        notEmpty: true,
+        isUrlOrEmpty(value) {
+          // Allow empty string for hash-only deleted records
+          if (value === "") return;
+          // Use a simple URL validation regex
+          const urlPattern = /^https?:\/\/.+/;
+          if (!urlPattern.test(value)) {
+            throw new Error("s3Url must be a valid URL or empty string");
+          }
+        },
       },
     },
     thumbnailUrl: {
       type: DataTypes.STRING,
       allowNull: false,
       validate: {
-        isUrl: true,
-        notEmpty: true,
+        isUrlOrEmpty(value) {
+          // Allow empty string for hash-only deleted records
+          if (value === "") return;
+          // Use a simple URL validation regex
+          const urlPattern = /^https?:\/\/.+/;
+          if (!urlPattern.test(value)) {
+            throw new Error("thumbnailUrl must be a valid URL or empty string");
+          }
+        },
       },
     },
     metadata: {

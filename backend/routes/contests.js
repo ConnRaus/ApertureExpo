@@ -11,6 +11,7 @@ import User from "../database/models/User.js";
 import { getAuthFromRequest } from "../utils/auth.js";
 import XPService from "../services/xpService.js";
 import NotificationService from "../services/notificationService.js";
+import { deleteFromS3 } from "../services/s3Service.js";
 
 const router = express.Router();
 
@@ -45,6 +46,10 @@ router.get("/contests", async (req, res) => {
           model: Photo,
           as: "Photos",
           through: { attributes: [] },
+          where: {
+            s3Url: { [Op.ne]: "" }, // Exclude hash-only deleted records
+          },
+          required: false, // LEFT JOIN so contests without photos still appear
           attributes: ["id", "title", "s3Url", "thumbnailUrl", "userId"],
           include: [
             {
@@ -114,10 +119,11 @@ router.get("/contests", async (req, res) => {
           }
         }
 
-        // Get any legacy photos for this contest
+        // Get any legacy photos for this contest (exclude hash-only deleted records)
         const legacyPhotos = await Photo.findAll({
           where: {
             ContestId: contest.id,
+            s3Url: { [Op.ne]: "" }, // Exclude hash-only deleted records
           },
           attributes: ["id", "title", "s3Url", "thumbnailUrl", "userId"],
           include: [
@@ -176,6 +182,10 @@ router.get("/contests/:id", async (req, res) => {
           model: Photo,
           as: "Photos",
           through: { attributes: [] },
+          where: {
+            s3Url: { [Op.ne]: "" }, // Exclude hash-only deleted records
+          },
+          required: false, // LEFT JOIN so contest appears even if no photos
           attributes: [
             "id",
             "title",
@@ -269,6 +279,7 @@ router.get("/contests/:id", async (req, res) => {
     const legacyPhotos = await Photo.findAll({
       where: {
         ContestId: contest.id,
+        s3Url: { [Op.ne]: "" }, // Exclude hash-only deleted records
       },
       attributes: [
         "id",

@@ -4,6 +4,7 @@ import User from "../database/models/User.js";
 import Photo from "../database/models/Photo.js";
 import Contest from "../database/models/Contest.js";
 import { requireAuth, clerkClient } from "@clerk/express";
+import { Op } from "sequelize";
 import { uploadToS3, deleteFromS3 } from "../services/s3Service.js";
 import { ensureUserExists } from "../middleware/ensureUserExists.js";
 import { getAuthFromRequest } from "../utils/auth.js";
@@ -135,14 +136,20 @@ router.get("/:userId/photos", async (req, res) => {
     const limit = parseInt(req.query.limit) || 25; // 25 photos per page
     const offset = (page - 1) * limit;
 
-    // First get total count
+    // First get total count (exclude hash-only deleted records)
     const totalPhotos = await Photo.count({
-      where: { userId },
+      where: {
+        userId,
+        s3Url: { [Op.ne]: "" }, // Exclude hash-only deleted records
+      },
     });
 
-    // Then get paginated photos
+    // Then get paginated photos (exclude hash-only deleted records)
     const photos = await Photo.findAll({
-      where: { userId },
+      where: {
+        userId,
+        s3Url: { [Op.ne]: "" }, // Exclude hash-only deleted records
+      },
       attributes: [
         "id",
         "title",
@@ -201,14 +208,20 @@ router.get("/:userId/profile", async (req, res) => {
       userProfile.avatarUrl = null;
     }
 
-    // Get total photo count for pagination
+    // Get total photo count for pagination (exclude hash-only records)
     const totalPhotos = await Photo.count({
-      where: { userId: req.params.userId },
+      where: {
+        userId: req.params.userId,
+        s3Url: { [Op.ne]: "" }, // Exclude hash-only records (empty s3Url)
+      },
     });
 
-    // Get paginated photos
+    // Get paginated photos (exclude shadow-deleted photos)
     const photos = await Photo.findAll({
-      where: { userId: req.params.userId },
+      where: {
+        userId: req.params.userId,
+        s3Url: { [Op.ne]: "" }, // Exclude hash-only records (empty s3Url)
+      },
       attributes: [
         "id",
         "title",
