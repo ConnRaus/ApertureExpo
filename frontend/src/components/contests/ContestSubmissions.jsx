@@ -75,6 +75,10 @@ export function ContestSubmissions({
   };
 
   if (!photos || photos.length === 0) {
+    // Don't show message for upcoming contests (coming soon phase)
+    if (contestPhase === "upcoming") {
+      return null;
+    }
     return <p>No submissions yet. Be the first to submit!</p>;
   }
 
