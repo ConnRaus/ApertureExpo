@@ -47,8 +47,24 @@ export class PhotoService {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!response.ok) throw new Error("Failed to delete photo");
-    return true;
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || "Failed to delete photo");
+    }
+    return response.json();
+  }
+
+  async permabanPhoto(photoId) {
+    const token = await this.getToken();
+    const response = await fetch(`${API_URL}/photos/${photoId}/permaban`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || "Failed to permaban photo");
+    }
+    return response.json();
   }
 
   async submitToContest(photoId, contestId) {

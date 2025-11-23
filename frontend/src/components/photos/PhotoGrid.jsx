@@ -8,7 +8,9 @@ function PhotoGridItem({
   config,
   onClick,
   onDelete,
+  onPermaban,
   isOwner,
+  isAdmin,
   contestId,
   contestPhase,
   voteUpdateTrigger,
@@ -43,6 +45,48 @@ function PhotoGridItem({
         />
 
         {/* Delete button for owner */}
+        {config.showDeleteButton && isOwner && !isAdmin && (
+          <button
+            className="absolute top-3 right-3 w-8 h-8 opacity-100 md:opacity-0 md:group-hover:opacity-100 bg-red-600/80 text-white rounded-full flex items-center justify-center transition-all hover:bg-red-600 hover:scale-110 z-10"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete && onDelete(photo.id);
+            }}
+            aria-label="Delete photo"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+        )}
+
+        {/* Admin buttons: Delete (for own photos) and Permaban (for others) */}
+        {/* Show permaban button if admin viewing someone else's photo, regardless of config */}
+        {isAdmin && !isOwner && onPermaban && (
+          <button
+            className="absolute top-3 right-3 w-8 h-8 opacity-100 md:opacity-0 md:group-hover:opacity-100 bg-purple-600/80 text-white rounded-full flex items-center justify-center transition-all hover:bg-purple-600 hover:scale-110 z-10"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPermaban(photo.id);
+            }}
+            aria-label="Permaban photo"
+            title="Permaban (admin only - prevents re-upload)"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+        )}
+
+        {/* Delete button for owner (or admin on own photos) */}
         {config.showDeleteButton && isOwner && (
           <button
             className="absolute top-3 right-3 w-8 h-8 opacity-100 md:opacity-0 md:group-hover:opacity-100 bg-red-600/80 text-white rounded-full flex items-center justify-center transition-all hover:bg-red-600 hover:scale-110 z-10"
@@ -273,8 +317,10 @@ export function PhotoGrid({
   photos = [],
   config = PhotoGridConfigs.userProfile,
   isOwner = false,
+  isAdmin = false,
   onClick,
   onDelete,
+  onPermaban,
   contestId,
   contestPhase,
   voteUpdateTrigger = 0,
@@ -408,7 +454,9 @@ export function PhotoGrid({
                 config={config}
                 onClick={() => onClick && onClick(originalIndex)}
                 onDelete={onDelete}
+                onPermaban={onPermaban}
                 isOwner={isOwner}
+                isAdmin={isAdmin}
                 contestId={contestId}
                 contestPhase={contestPhase}
                 voteUpdateTrigger={voteUpdateTrigger}

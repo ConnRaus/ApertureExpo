@@ -18,6 +18,8 @@ import {
   useDelayedLoading,
 } from "../../hooks";
 import { LoadingSpinner } from "../common/CommonComponents";
+import { AdminService } from "../../services/AdminService";
+import { useUser } from "@clerk/clerk-react";
 
 export function PublicUserGallery({ userId, isOwner }) {
   // Get page from URL query params
@@ -39,7 +41,10 @@ export function PublicUserGallery({ userId, isOwner }) {
   const [bannerFileToUpload, setBannerFileToUpload] = useState(null);
   const [showPhotoLibraryPicker, setShowPhotoLibraryPicker] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminCheckDone, setAdminCheckDone] = useState(false);
 
+  const { isSignedIn } = useUser();
   const shouldShowLoading = useDelayedLoading(isLoading);
   const userService = useUserService();
   const photoService = usePhotoService();
@@ -47,6 +52,42 @@ export function PublicUserGallery({ userId, isOwner }) {
   useEffect(() => {
     fetchUserProfile(currentPage);
   }, [userId, currentPage]);
+
+  // Check if current user is admin
+  useEffect(() => {
+    const checkIfAdmin = async () => {
+      if (!isSignedIn) {
+        setIsAdmin(false);
+        setAdminCheckDone(true);
+        return;
+      }
+
+      try {
+        // Make sure we wait for the Clerk session to be fully initialized
+        if (window.Clerk && !window.Clerk.session) {
+          await new Promise((resolve) => {
+            const checkSession = setInterval(() => {
+              if (window.Clerk.session) {
+                clearInterval(checkSession);
+                resolve();
+              }
+            }, 100);
+          });
+        }
+
+        // Try to access an admin endpoint - if it succeeds, the user is an admin
+        await AdminService.getContests();
+        setIsAdmin(true);
+      } catch (err) {
+        // If we get a 403 Forbidden, the user is not an admin
+        setIsAdmin(false);
+      } finally {
+        setAdminCheckDone(true);
+      }
+    };
+
+    checkIfAdmin();
+  }, [isSignedIn]);
 
   // Handle opening a specific photo from URL parameter
   useEffect(() => {
@@ -113,7 +154,9 @@ export function PublicUserGallery({ userId, isOwner }) {
   };
 
   const handleDelete = async (photoId) => {
-    if (!window.confirm("Are you sure you want to delete this photo?")) return;
+    // Regular user or owner: simple confirmation
+    if (!window.confirm("Are you sure you want to delete this photo?"))
+      return;
 
     try {
       await photoService.deletePhoto(photoId);
@@ -121,6 +164,24 @@ export function PublicUserGallery({ userId, isOwner }) {
     } catch (error) {
       console.error("Error deleting photo:", error);
       alert("Failed to delete photo. Please try again.");
+    }
+  };
+
+  const handlePermaban = async (photoId) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to permaban this photo? This will permanently delete it and prevent the user from re-uploading it. This action cannot be undone."
+      )
+    )
+      return;
+
+    try {
+      await photoService.permabanPhoto(photoId);
+      setPhotos((prevPhotos) => prevPhotos.filter((p) => p.id !== photoId));
+      alert("Photo permabanned successfully. Hash preserved to prevent re-upload.");
+    } catch (error) {
+      console.error("Error permabanning photo:", error);
+      alert("Failed to permaban photo: " + (error.message || "Unknown error"));
     }
   };
 
@@ -310,13 +371,15 @@ export function PublicUserGallery({ userId, isOwner }) {
       <PhotoGrid
         photos={photos}
         config={
-          isOwner
+          isOwner || (isAdmin && adminCheckDone)
             ? PhotoGridConfigs.userProfile
             : PhotoGridConfigs.publicProfile
         }
         isOwner={isOwner}
+        isAdmin={isAdmin && adminCheckDone}
         onClick={setSelectedPhotoIndex}
         onDelete={handleDelete}
+        onPermaban={isAdmin && adminCheckDone && !isOwner ? handlePermaban : undefined}
       />
 
       {/* Show pagination if pagination data is available */}
