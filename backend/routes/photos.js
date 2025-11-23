@@ -8,6 +8,7 @@ import {
 import Photo from "../database/models/Photo.js";
 import Contest from "../database/models/Contest.js";
 import PhotoContest from "../database/models/PhotoContest.js";
+import Vote from "../database/models/Vote.js";
 import { requireAuth } from "@clerk/express";
 import { Op } from "sequelize";
 import phash from "sharp-phash";
@@ -15,6 +16,9 @@ import sharp from "sharp";
 import User from "../database/models/User.js";
 import { getAuthFromRequest } from "../utils/auth.js";
 import XPService from "../services/xpService.js";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -110,13 +114,12 @@ router.post(
         }
       }
 
-      // Run hash generation and S3 upload in parallel for better performance
-      const [photoHash, s3Result] = await Promise.all([
-        generateImageHashFromBuffer(req.file.buffer),
-        uploadToS3(req.file, `photos/${userId}`),
-      ]);
+      // Generate hash FIRST before uploading to S3
+      // This way we can check for duplicates before wasting S3 storage
+      const photoHash = await generateImageHashFromBuffer(req.file.buffer);
 
       // Check if this user has already uploaded this exact image
+      // This includes deleted photos (which have empty s3Url but preserved hash)
       const existingPhoto = await Photo.findOne({
         where: {
           userId: userId,
@@ -127,6 +130,9 @@ router.post(
       if (existingPhoto) {
         throw new DuplicatePhotoError(existingPhoto.id);
       }
+
+      // Only upload to S3 if it's not a duplicate
+      const s3Result = await uploadToS3(req.file, `photos/${userId}`);
 
       const { mainUrl, thumbnailUrl, metadata } = s3Result;
 
@@ -336,13 +342,21 @@ router.put("/photos/:id", requireAuth(), async (req, res) => {
   }
 });
 
-// Delete photo
+// Helper function to check if user is admin
+const isAdmin = (userId) => {
+  const adminUserId = process.env.ADMIN_USER_ID;
+  return userId === adminUserId;
+};
+
+// Delete photo (normal deletion - no hash preservation for owners)
 router.delete("/photos/:id", requireAuth(), async (req, res) => {
   try {
     const auth = getAuthFromRequest(req);
     if (!auth || !auth.userId) {
       return res.status(401).json({ error: "Authentication required" });
     }
+
+    const isAdminUser = isAdmin(auth.userId);
 
     const photo = await Photo.findByPk(req.params.id, {
       include: [
@@ -358,18 +372,19 @@ router.delete("/photos/:id", requireAuth(), async (req, res) => {
       return res.status(404).json({ error: "Photo not found" });
     }
 
-    if (photo.userId !== auth.userId) {
+    // Check authorization: owner or admin
+    if (photo.userId !== auth.userId && !isAdminUser) {
       return res
         .status(403)
         .json({ error: "Not authorized to delete this photo" });
     }
 
+    const photoOwnerId = photo.userId;
+
     // Calculate XP to deduct based on active contest submissions only
-    // No penalty for deleting photos from completed/expired contests
     let xpToDeduct = 0;
     let activeContestCount = 0;
 
-    // Check each contest's status to determine the correct XP deduction
     if (photo.Contests && photo.Contests.length > 0) {
       for (const contest of photo.Contests) {
         // Only deduct XP for active contests (open or voting)
@@ -395,21 +410,41 @@ router.delete("/photos/:id", requireAuth(), async (req, res) => {
       }
     }
 
-    // Deduct XP only if there are active contests
+    // Delete votes for this photo in all contests
+    const contestIds = photo.Contests ? photo.Contests.map((c) => c.id) : [];
+    if (photo.ContestId) {
+      contestIds.push(photo.ContestId);
+    }
+
+    if (contestIds.length > 0) {
+      await Vote.destroy({
+        where: {
+          photoId: photo.id,
+          contestId: { [Op.in]: contestIds },
+        },
+      });
+    }
+
+    // Remove from all contests
+    await PhotoContest.destroy({
+      where: { photoId: photo.id },
+    });
+
+    // Deduct XP only if there are active contests (from photo owner, not admin)
     if (xpToDeduct > 0) {
       try {
         await XPService.deductXP(
-          auth.userId,
+          photoOwnerId,
           xpToDeduct,
           `Photo deletion from ${activeContestCount} active contest${
             activeContestCount > 1 ? "s" : ""
-          }`,
+          }${isAdminUser ? " (admin action)" : ""}`,
           "PHOTO_DELETION",
           null,
           photo.id
         );
         console.log(
-          `Deducted ${xpToDeduct} XP from user ${auth.userId} for deleting photo from ${activeContestCount} active contest(s)`
+          `Deducted ${xpToDeduct} XP from user ${photoOwnerId} for deleting photo from ${activeContestCount} active contest(s)`
         );
       } catch (xpError) {
         console.error("Error deducting XP for photo deletion:", xpError);
@@ -417,13 +452,160 @@ router.delete("/photos/:id", requireAuth(), async (req, res) => {
       }
     }
 
-    await deleteFromS3(photo.s3Url);
+    // Normal deletion - completely delete, no hash preservation
+    // Users should be able to delete and re-upload their own photos
+    if (photo.s3Url) {
+      await deleteFromS3(photo.s3Url, photo.thumbnailUrl);
+    }
     await photo.destroy();
 
-    res.json({ message: "Photo deleted successfully" });
+    res.json({
+      message: "Photo deleted successfully",
+    });
   } catch (error) {
     console.error("Error deleting photo:", error);
     res.status(500).json({ error: "Failed to delete photo" });
+  }
+});
+
+// Permaban photo (admin only - deletes and preserves hash to prevent re-upload)
+router.delete("/photos/:id/permaban", requireAuth(), async (req, res) => {
+  try {
+    const auth = getAuthFromRequest(req);
+    if (!auth || !auth.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const isAdminUser = isAdmin(auth.userId);
+    if (!isAdminUser) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    const photo = await Photo.findByPk(req.params.id, {
+      include: [
+        {
+          model: Contest,
+          as: "Contests",
+          through: { attributes: [] },
+        },
+      ],
+    });
+
+    if (!photo) {
+      return res.status(404).json({ error: "Photo not found" });
+    }
+
+    // Don't allow admin to permaban their own photos
+    if (photo.userId === auth.userId) {
+      return res.status(400).json({
+        error: "Cannot permaban your own photo. Use normal delete instead.",
+      });
+    }
+
+    const photoOwnerId = photo.userId;
+    const photoHash = photo.imageHash;
+
+    // Calculate XP to deduct based on active contest submissions
+    let xpToDeduct = 0;
+    let activeContestCount = 0;
+
+    if (photo.Contests && photo.Contests.length > 0) {
+      for (const contest of photo.Contests) {
+        if (contest.status === "open" || contest.status === "voting") {
+          xpToDeduct += 75;
+          activeContestCount++;
+        }
+      }
+    }
+
+    if (photo.ContestId) {
+      const legacyContest = await Contest.findByPk(photo.ContestId);
+      if (legacyContest) {
+        if (
+          legacyContest.status === "open" ||
+          legacyContest.status === "voting"
+        ) {
+          xpToDeduct += 75;
+          activeContestCount++;
+        }
+      }
+    }
+
+    // Delete votes for this photo in all contests
+    const contestIds = photo.Contests ? photo.Contests.map((c) => c.id) : [];
+    if (photo.ContestId) {
+      contestIds.push(photo.ContestId);
+    }
+
+    if (contestIds.length > 0) {
+      await Vote.destroy({
+        where: {
+          photoId: photo.id,
+          contestId: { [Op.in]: contestIds },
+        },
+      });
+    }
+
+    // Remove from all contests
+    await PhotoContest.destroy({
+      where: { photoId: photo.id },
+    });
+
+    // Deduct XP from photo owner
+    if (xpToDeduct > 0) {
+      try {
+        await XPService.deductXP(
+          photoOwnerId,
+          xpToDeduct,
+          `Photo permabanned (admin action) from ${activeContestCount} active contest${
+            activeContestCount > 1 ? "s" : ""
+          }`,
+          "PHOTO_DELETION",
+          null,
+          photo.id
+        );
+        console.log(
+          `Deducted ${xpToDeduct} XP from user ${photoOwnerId} for permabanning photo from ${activeContestCount} active contest(s)`
+        );
+      } catch (xpError) {
+        console.error("Error deducting XP for permaban:", xpError);
+      }
+    }
+
+    // Delete from S3
+    if (photo.s3Url) {
+      await deleteFromS3(photo.s3Url, photo.thumbnailUrl);
+    }
+
+    // Destroy photo record
+    await photo.destroy();
+
+    // Create hash-only record to prevent re-upload
+    if (photoHash) {
+      await Photo.create({
+        userId: photoOwnerId,
+        title: "DELETED",
+        description: "",
+        s3Url: "",
+        thumbnailUrl: "",
+        imageHash: photoHash,
+        metadata: null,
+      });
+      console.log(
+        `Created hash-only record for permabanned photo (hash: ${photoHash.substring(
+          0,
+          8
+        )}...)`
+      );
+    }
+
+    res.json({
+      message:
+        "Photo permabanned successfully. Hash preserved to prevent re-upload.",
+    });
+  } catch (error) {
+    console.error("Error permabanning photo:", error);
+    res.status(500).json({ error: "Failed to permaban photo" });
   }
 });
 
