@@ -3,15 +3,20 @@ import nodemailer from "nodemailer";
 class EmailService {
   constructor() {
     // Create transporter - using environment variables for SMTP configuration
-    // For production, you'll need to set these in your .env file
-    if (process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
-      const port = parseInt(process.env.SMTP_PORT || "465");
-      const secure = process.env.SMTP_SECURE !== "false"; // Default to true (SSL) for port 465
+    // All SMTP settings must be provided via environment variables
+    if (
+      process.env.SMTP_HOST &&
+      process.env.SMTP_PORT &&
+      process.env.SMTP_USER &&
+      process.env.SMTP_PASSWORD
+    ) {
+      const port = parseInt(process.env.SMTP_PORT);
+      const secure = process.env.SMTP_SECURE === "true"; // true for 465 (SSL), false for 587 (STARTTLS)
 
       this.transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || "smtppro.zoho.com",
+        host: process.env.SMTP_HOST,
         port: port,
-        secure: secure, // true for 465 (SSL), false for 587 (TLS)
+        secure: secure, // true for 465 (SSL), false for 587 (STARTTLS)
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASSWORD,
@@ -20,16 +25,14 @@ class EmailService {
         connectionTimeout: 60000, // 60 seconds
         greetingTimeout: 30000, // 30 seconds
         socketTimeout: 60000, // 60 seconds
-        // For SSL connections (port 465)
-        ...(secure && {
-          tls: {
-            rejectUnauthorized: false, // Allow self-signed certificates if needed
-          },
-        }),
+        // TLS configuration for both SSL (port 465) and STARTTLS (port 587)
+        tls: {
+          rejectUnauthorized: false, // Allow self-signed certificates if needed
+        },
       });
     } else {
       console.warn(
-        "SMTP credentials not configured. Email service will not be available."
+        "SMTP configuration incomplete. Required: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD. Email service will not be available."
       );
       this.transporter = null;
     }
