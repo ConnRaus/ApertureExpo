@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useVoteService } from "../../hooks";
 import { toast } from "react-toastify";
 import { useUser } from "@clerk/clerk-react";
@@ -17,6 +17,8 @@ export function PhotoVoteButton({
   const [userVote, setUserVote] = useState(initialUserVote);
   const [isVoting, setIsVoting] = useState(false);
   const [hoverRating, setHoverRating] = useState(0);
+  const lastPhotoIdRef = useRef(photo.id);
+  const optimisticIncrementRef = useRef(0);
   const voteService = useVoteService();
   const { user } = useUser();
 
@@ -34,13 +36,19 @@ export function PhotoVoteButton({
     ) : null;
   }
 
-  // Reset state when photo changes and sync with any initial user vote
+  // Reset state when photo changes (by ID only) and sync with any initial user vote
+  // We don't reset on photo.voteCount changes to preserve optimistic updates
   useEffect(() => {
-    setVoteCount(photo.voteCount || 0);
+    // Only reset if this is actually a different photo
+    if (lastPhotoIdRef.current !== photo.id) {
+      setVoteCount(photo.voteCount || 0);
+      optimisticIncrementRef.current = 0;
+      lastPhotoIdRef.current = photo.id;
+    }
     setUserVote(initialUserVote);
     setIsVoting(false);
     setHoverRating(0);
-  }, [photo.id, photo.voteCount, initialUserVote]);
+  }, [photo.id, initialUserVote]);
 
   const handleVote = async (value = 1) => {
     if (!isVotingPhase) {
@@ -64,6 +72,7 @@ export function PhotoVoteButton({
       setUserVote(value);
       onUserVoteChange(photo.id, value);
       if (isNewVote) {
+        optimisticIncrementRef.current += 1;
         setVoteCount((prevCount) => prevCount + 1);
       }
 
@@ -93,6 +102,7 @@ export function PhotoVoteButton({
       });
       onUserVoteChange(photo.id, userVote);
       if (!hadPrevious) {
+        optimisticIncrementRef.current = Math.max(0, optimisticIncrementRef.current - 1);
         setVoteCount((prevCount) => Math.max(0, prevCount - 1));
       }
 
