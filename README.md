@@ -28,8 +28,8 @@ Before you begin, you'll need:
 1. **Clone the repository:**
 
    ```bash
-   git clone git@github.com:ConnRaus/PhotoContests.git
-   cd PhotoContests
+   git clone git@github.com:ConnRaus/ApertureExpo.git
+   cd ApertureExpo
    ```
 
 2. **Set up environment variables:**
@@ -47,7 +47,7 @@ Before you begin, you'll need:
 3. **Configure AWS S3:**
 
    - Create a new S3 bucket
-   - Enable public access (for photo URLs)
+   - Enable public read access (for photo URLs)
    - Add a CORS configuration in your S3 bucket:
      ```json
      [
@@ -70,7 +70,7 @@ Before you begin, you'll need:
 5. **Start the application:**
 
    ```bash
-   docker-compose up --build
+   docker compose up --build
    ```
 
    This will:
@@ -93,44 +93,17 @@ Before you begin, you'll need:
 - Data persists between container restarts in the `pgdata` volume
 - To reset the database:
   ```bash
-  docker-compose down -v  # Removes volumes
-  docker-compose up --build
+  docker compose down -v  # Removes volumes
+  docker compose up --build
   ```
-
-### Database Commands
-
-For managing contest data:
-
-```bash
-# Delete all existing contests
-docker compose exec db psql -U photo_contest_admin -d photo_contest_db -c "DELETE FROM \"Contests\";"
-
-# Run the seed script to create test contests
-docker compose exec backend node database/seeders/testContests.js
-
-# View all contests (basic info)
-docker compose exec db psql -U photo_contest_admin -d photo_contest_db -c "SELECT id, title, status FROM \"Contests\";"
-
-# View a specific contest details
-docker compose exec db psql -U photo_contest_admin -d photo_contest_db -c "SELECT * FROM \"Contests\" WHERE id = 'contest-id-here';"
-
-# Delete a specific contest by ID
-docker compose exec db psql -U photo_contest_admin -d photo_contest_db -c "DELETE FROM \"Contests\" WHERE id = 'contest-id-here';"
-```
-
-These commands can be useful for:
-
-- Resetting just the contest data without affecting other tables
-- Testing different contest scenarios with the pre-configured test contests
-- Setting up demo data quickly
-- Inspecting or modifying specific contests in the database
 
 ### Seeding Test Data
 
 To seed the database with test contests of various durations (past, active, upcoming):
 
-```bash
-docker-compose exec backend npm run seed-test-contests
+```
+docker compose exec backend node database/seeders/testContests.js
+
 ```
 
 This will create:
@@ -169,12 +142,12 @@ To access the app from other devices on your network:
 
    ```
    VITE_API_URL=http://YOUR_IP:3000
-   CORS_ORIGINS=http://localhost,http://localhost:80,http://YOUR_IP,http://YOUR_IP:80
+   CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:80,http://YOUR_IP,http://YOUR_IP:80
    ```
 
 3. Restart the containers:
    ```bash
-   docker-compose down && docker-compose up --build
+   docker compose down && docker compose up --build
    ```
 
 ## Feature Overview
@@ -185,48 +158,6 @@ To access the app from other devices on your network:
 - **Photo Gallery**: View photos submitted by all users
 - **User Profiles**: View your own profile and profiles of other users
 - **Contest Timeline**: Contests automatically change status based on start/end dates with countdown timers
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Database Connection Issues:**
-
-   - Ensure Docker is running
-   - Check if the database container is up: `docker-compose ps`
-   - View database logs: `docker-compose logs db`
-
-2. **Photo Upload Issues:**
-
-   - Verify AWS credentials
-   - Check S3 bucket permissions
-   - Ensure CORS is configured in S3
-
-3. **Authentication Issues:**
-
-   - Verify Clerk API keys
-   - Check Clerk dashboard for allowed origins
-   - Clear browser cache/cookies
-
-4. **Network Access Issues:**
-   - Check firewall settings
-   - Verify IP address in `.env`
-   - Ensure devices are on the same network
-
-### Resetting Everything
-
-If you need a fresh start:
-
-```bash
-# Stop all containers and remove volumes
-docker-compose down -v
-
-# Remove all containers and images
-docker system prune -a
-
-# Rebuild and start
-docker-compose up --build
-```
 
 ## License
 
