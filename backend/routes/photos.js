@@ -136,6 +136,71 @@ router.post(
 
       const { mainUrl, thumbnailUrl, metadata } = s3Result;
 
+      // Parse EXIF data sent from frontend (extracted before compression)
+      // and restructure it to match the expected format for the Lightbox
+      let finalMetadata = metadata || {};
+      if (req.body.exifData) {
+        try {
+          const frontendExif = JSON.parse(req.body.exifData);
+
+          // Restructure flat exifr format to nested Image/Photo format expected by Lightbox
+          finalMetadata = {
+            ...finalMetadata,
+            // Image metadata (camera info)
+            Image: {
+              Make: frontendExif.Make,
+              Model: frontendExif.Model,
+              Software: frontendExif.Software,
+              Orientation: frontendExif.Orientation,
+            },
+            // Photo metadata (exposure settings)
+            Photo: {
+              FNumber: frontendExif.FNumber,
+              ExposureTime: frontendExif.ExposureTime,
+              ISOSpeedRatings: frontendExif.ISO || frontendExif.ISOSpeedRatings,
+              FocalLength: frontendExif.FocalLength,
+              FocalLengthIn35mmFilm:
+                frontendExif.FocalLengthIn35mmFormat ||
+                frontendExif.FocalLengthIn35mmFilm,
+              LensModel: frontendExif.LensModel,
+              LensMake: frontendExif.LensMake,
+              Flash: frontendExif.Flash,
+              ExposureMode: frontendExif.ExposureMode,
+              WhiteBalance: frontendExif.WhiteBalance,
+              ExposureProgram: frontendExif.ExposureProgram,
+              MeteringMode: frontendExif.MeteringMode,
+              ExposureBiasValue: frontendExif.ExposureBiasValue,
+              MaxApertureValue: frontendExif.MaxApertureValue,
+              DateTimeOriginal: frontendExif.DateTimeOriginal,
+            },
+          };
+
+          // Clean up undefined values from Image
+          Object.keys(finalMetadata.Image).forEach((key) => {
+            if (finalMetadata.Image[key] === undefined) {
+              delete finalMetadata.Image[key];
+            }
+          });
+
+          // Clean up undefined values from Photo
+          Object.keys(finalMetadata.Photo).forEach((key) => {
+            if (finalMetadata.Photo[key] === undefined) {
+              delete finalMetadata.Photo[key];
+            }
+          });
+
+          // Remove empty objects
+          if (Object.keys(finalMetadata.Image).length === 0) {
+            delete finalMetadata.Image;
+          }
+          if (Object.keys(finalMetadata.Photo).length === 0) {
+            delete finalMetadata.Photo;
+          }
+        } catch (parseError) {
+          console.error("Failed to parse frontend EXIF data:", parseError);
+        }
+      }
+
       // Create the photo first without the contest association
       const photo = await Photo.create({
         userId: userId,
@@ -143,7 +208,7 @@ router.post(
         description: req.body.description,
         s3Url: mainUrl,
         thumbnailUrl: thumbnailUrl,
-        metadata: metadata || null,
+        metadata: finalMetadata || null,
         imageHash: photoHash, // Save the hash for future duplicate checks
       });
 

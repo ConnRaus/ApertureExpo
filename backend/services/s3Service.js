@@ -413,7 +413,7 @@ export const uploadToS3 = async (
 export const deleteFromS3 = async (photoUrl, thumbnailUrl = null) => {
   // Extract the key from either S3 or CloudFront URL
   const key = extractS3Key(photoUrl);
-  
+
   // Construct thumbnail key - thumbnails are in user_id/thumbnails/filename format
   // Main photo: photos/user_id/timestamp.ext
   // Thumbnail: photos/user_id/thumbnails/timestamp.ext
@@ -424,13 +424,13 @@ export const deleteFromS3 = async (photoUrl, thumbnailUrl = null) => {
   } else {
     // Otherwise, construct it from the main photo key
     // Replace the last part (filename) with thumbnails/filename
-    const keyParts = key.split('/');
+    const keyParts = key.split("/");
     if (keyParts.length >= 3) {
       // photos/user_id/filename.ext -> photos/user_id/thumbnails/filename.ext
       const filename = keyParts[keyParts.length - 1];
-      keyParts[keyParts.length - 1] = 'thumbnails';
+      keyParts[keyParts.length - 1] = "thumbnails";
       keyParts.push(filename);
-      thumbnailKey = keyParts.join('/');
+      thumbnailKey = keyParts.join("/");
     }
   }
 
@@ -453,7 +453,11 @@ export const deleteFromS3 = async (photoUrl, thumbnailUrl = null) => {
     }
 
     await Promise.all(deleteCommands.map((command) => s3Client.send(command)));
-    console.log(`Successfully deleted ${deleteCommands.length} image(s) from S3 (main + ${thumbnailKey ? 'thumbnail' : 'no thumbnail'})`);
+    console.log(
+      `Successfully deleted ${deleteCommands.length} image(s) from S3 (main + ${
+        thumbnailKey ? "thumbnail" : "no thumbnail"
+      })`
+    );
   } catch (error) {
     console.error("Error deleting from S3:", error);
     throw new Error(`S3 Delete failed: ${error.message}`);

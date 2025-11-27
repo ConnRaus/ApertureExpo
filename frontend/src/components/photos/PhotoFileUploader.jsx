@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import imageCompression from "browser-image-compression";
+import exifr from "exifr";
 import formStyles from "../../styles/components/Form.module.css";
 import { useContestService } from "../../hooks";
 
@@ -132,10 +133,51 @@ export function PhotoFileUploader({
     try {
       setErrorMessage("");
 
-      // Step 1: Compress the image on client side
+      // Step 1: Extract EXIF from the ORIGINAL file before compression
+      // (compression strips EXIF data, so we need to grab it first)
       setCompressing(true);
-      const originalSize = (selectedFile.size / 1024 / 1024).toFixed(2);
-      console.log(`Original image size: ${originalSize}MB`);
+      let exifData = null;
+      try {
+        exifData = await exifr.parse(selectedFile, {
+          // Pick specific tags we care about
+          pick: [
+            // Camera info
+            "Make",
+            "Model",
+            "LensMake",
+            "LensModel",
+            "LensSpecification",
+            // Exposure settings
+            "FNumber",
+            "ExposureTime",
+            "ISO",
+            "ISOSpeedRatings",
+            "FocalLength",
+            "FocalLengthIn35mmFormat",
+            // Other useful info
+            "Flash",
+            "ExposureMode",
+            "WhiteBalance",
+            "ExposureProgram",
+            "MeteringMode",
+            "ExposureBiasValue",
+            "MaxApertureValue",
+            "DateTimeOriginal",
+            "CreateDate",
+            "Software",
+            "Orientation",
+            // Image dimensions (from EXIF)
+            "ImageWidth",
+            "ImageHeight",
+            "ExifImageWidth",
+            "ExifImageHeight",
+          ],
+        });
+      } catch (exifError) {
+        // Continue without EXIF - not all images have it
+      }
+
+      // Step 2: Compress the image on client side
 
       const options = {
         maxSizeMB: 2, // Max 2MB after compression
@@ -145,16 +187,10 @@ export function PhotoFileUploader({
       };
 
       const compressedFile = await imageCompression(selectedFile, options);
-      const compressedSize = (compressedFile.size / 1024 / 1024).toFixed(2);
-      console.log(
-        `Compressed image size: ${compressedSize}MB (${Math.round(
-          (compressedSize / originalSize) * 100
-        )}% of original)`
-      );
 
       setCompressing(false);
 
-      // Step 2: Upload the compressed image
+      // Step 3: Upload the compressed image with EXIF data
       setUploading(true);
       setUploadProgress(0);
 
@@ -162,6 +198,11 @@ export function PhotoFileUploader({
       formData.append("photo", compressedFile, selectedFile.name);
       formData.append("title", title);
       formData.append("description", description);
+
+      // Send extracted EXIF data as JSON string
+      if (exifData) {
+        formData.append("exifData", JSON.stringify(exifData));
+      }
 
       await contestService.uploadNewPhoto(contestId, formData, (progress) => {
         setUploadProgress(progress);
