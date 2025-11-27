@@ -29,6 +29,7 @@ lerna-debug.log*
 !.vscode/extensions.json
 .cursor/
 .cursor/*
+.cursorignore
 .idea
 .DS_Store
 *.suo

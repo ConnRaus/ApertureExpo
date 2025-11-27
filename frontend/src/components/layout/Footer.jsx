@@ -169,7 +169,7 @@ function Footer() {
                 </li>
                 <li>
                   <a
-                    href="https://github.com/ConnRaus"
+                    href="https://github.com/ConnRaus/ApertureExpo"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-gray-400 hover:text-indigo-400 transition-colors text-sm flex items-center"
