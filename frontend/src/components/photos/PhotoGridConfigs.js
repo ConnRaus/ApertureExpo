@@ -38,7 +38,7 @@ export const PhotoGridConfigs = {
     showDeleteButton: false,
     showProfileLink: false,
     showVoting: false,
-    showAuthor: true,
+    showAuthor: false,
     showRating: false,
     enableHoverEffects: true,
     aspectRatio: "flexible",

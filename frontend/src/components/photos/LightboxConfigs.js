@@ -34,9 +34,10 @@ export const LightboxConfigs = {
   },
 
   // For contest submissions during submission phase - show title and description
+  // Note: showAuthor is false to prevent friends from identifying each other's submissions
   contestSubmission: {
     showTitle: true,
-    showAuthor: true,
+    showAuthor: false,
     showDescription: true,
     showRating: false, // No ratings during submission
     showVotes: false, // No votes during submission
