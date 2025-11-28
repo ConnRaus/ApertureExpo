@@ -1,6 +1,16 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/config.js";
 
+// Dynamic import to avoid circular dependency
+let PushNotificationService = null;
+const getPushService = async () => {
+  if (!PushNotificationService) {
+    const module = await import("../../services/pushNotificationService.js");
+    PushNotificationService = module.default;
+  }
+  return PushNotificationService;
+};
+
 const Notification = sequelize.define(
   "Notification",
   {
@@ -85,6 +95,31 @@ const Notification = sequelize.define(
     tableName: "notifications",
     timestamps: true,
     underscored: true,
+    hooks: {
+      afterCreate: async (notification) => {
+        try {
+          const PushService = await getPushService();
+
+          // Automatically send push notification when a notification is created
+          await PushService.sendNotification(notification.userId, {
+            title: notification.title,
+            body: notification.message,
+            link: notification.link || "/",
+            tag: `${notification.type}-${notification.id}`,
+          });
+
+          console.log(
+            `[Notification] Auto-sent push notification for notification ${notification.id}`
+          );
+        } catch (error) {
+          // Don't fail the notification creation if push fails
+          console.error(
+            "[Notification] Failed to send push notification:",
+            error.message
+          );
+        }
+      },
+    },
   }
 );
 

@@ -58,6 +58,7 @@ class NotificationService {
       );
 
       // Create notifications for all participants
+      // Using individualHooks: true so afterCreate hook fires for each notification
       const notifications = uniqueUserIds.map((userId) => ({
         userId,
         type: "contest_ended",
@@ -67,7 +68,7 @@ class NotificationService {
         contestId,
       }));
 
-      await Notification.bulkCreate(notifications);
+      await Notification.bulkCreate(notifications, { individualHooks: true });
 
       console.log(
         `[NotificationService] ✓ Created ${notifications.length} notifications for contest ${contestId} ending`
@@ -138,6 +139,7 @@ class NotificationService {
       );
 
       // Create notifications for all participants
+      // Using individualHooks: true so afterCreate hook fires for each notification
       const notifications = uniqueUserIds.map((userId) => ({
         userId,
         type: "contest_ended", // Using same type for now
@@ -147,7 +149,7 @@ class NotificationService {
         contestId,
       }));
 
-      await Notification.bulkCreate(notifications);
+      await Notification.bulkCreate(notifications, { individualHooks: true });
 
       console.log(
         `[NotificationService] ✓ Created ${notifications.length} voting notifications for contest ${contestId}`
@@ -195,7 +197,7 @@ class NotificationService {
         return;
       }
 
-      // Create notification for the thread author
+      // Create notification - push notification is sent automatically via hook
       await Notification.create({
         userId: thread.userId,
         type: "forum_reply",
@@ -235,10 +237,11 @@ class NotificationService {
         placementText = `${placement}th place`;
       }
 
+      // Create notification - push notification is sent automatically via hook
       await Notification.create({
         userId,
         type: "contest_winner",
-        title: `${placementText} in Contest!`,
+        title: `🏆 ${placementText} in Contest!`,
         message: `Congratulations! You placed ${placementText} in "${contest.title}"`,
         link: `/events/${contestId}`,
         contestId,
@@ -257,6 +260,7 @@ class NotificationService {
    */
   static async notifyUser(userId, title, message, link = null) {
     try {
+      // Create notification - push notification is sent automatically via hook
       await Notification.create({
         userId,
         type: "general",
@@ -296,15 +300,18 @@ class NotificationService {
         return;
       }
 
-      // Create notification for the photo owner
+      const notificationMessage = `${
+        commentAuthor.nickname
+      } commented on your photo${photo.title ? ` "${photo.title}"` : ""}`;
+      const notificationLink = `/users/${photoOwnerId}?photoId=${photoId}`;
+
+      // Create notification - push notification is sent automatically via hook
       await Notification.create({
         userId: photoOwnerId,
         type: "photo_comment",
         title: "New Comment on Your Photo",
-        message: `${commentAuthor.nickname} commented on your photo${
-          photo.title ? ` "${photo.title}"` : ""
-        }`,
-        link: `/users/${photoOwnerId}?photoId=${photoId}`,
+        message: notificationMessage,
+        link: notificationLink,
         photoId,
       });
 
@@ -354,13 +361,15 @@ class NotificationService {
         return;
       }
 
-      // Create notification for the parent comment author
+      const notificationLink = `/users/${parentComment.Photo.userId}?photoId=${parentComment.photoId}`;
+
+      // Create notification - push notification is sent automatically via hook
       await Notification.create({
         userId: parentCommentAuthorId,
         type: "comment_reply",
         title: "New Reply to Your Comment",
         message: `${replyAuthor.nickname} replied to your comment`,
-        link: `/users/${parentComment.Photo.userId}?photoId=${parentComment.photoId}`,
+        link: notificationLink,
         photoId: parentComment.photoId,
         commentId: parentCommentId,
       });
