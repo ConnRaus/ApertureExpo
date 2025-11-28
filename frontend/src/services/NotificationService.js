@@ -162,25 +162,33 @@ class NotificationService {
     }
 
     // Push notifications require HTTPS (except on localhost)
-    const isSecure = window.location.protocol === "https:" || 
-                     window.location.hostname === "localhost" ||
-                     window.location.hostname === "127.0.0.1";
-    
+    const isSecure =
+      window.location.protocol === "https:" ||
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1";
+
     if (!isSecure) {
-      console.log("[NotificationService] Push requires HTTPS. Current protocol:", window.location.protocol);
+      console.log(
+        "[NotificationService] Push requires HTTPS. Current protocol:",
+        window.location.protocol
+      );
       return false;
     }
 
     // On iOS, we allow showing the toggle even if PushManager isn't available yet
     // because it becomes available once the service worker is registered
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isStandalone = window.matchMedia("(display-mode: standalone)").matches || 
-                         window.navigator.standalone === true;
-    
+    const isStandalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      window.navigator.standalone === true;
+
     if (isIOS) {
       // On iOS, only show if installed as PWA (standalone mode)
       // PushManager may not be available until SW is ready
-      console.log("[NotificationService] iOS detected. Standalone:", isStandalone);
+      console.log(
+        "[NotificationService] iOS detected. Standalone:",
+        isStandalone
+      );
       return isStandalone && "Notification" in window;
     }
 
@@ -238,7 +246,9 @@ class NotificationService {
    */
   static async getVapidPublicKey() {
     try {
-      const response = await fetch(`${API_BASE_URL}/notifications/push/vapid-public-key`);
+      const response = await fetch(
+        `${API_BASE_URL}/notifications/push/vapid-public-key`
+      );
 
       if (!response.ok) {
         const data = await response.json();
@@ -266,7 +276,10 @@ class NotificationService {
         scope: "/",
       });
 
-      console.log("[NotificationService] Service worker registered:", registration.scope);
+      console.log(
+        "[NotificationService] Service worker registered:",
+        registration.scope
+      );
 
       // Wait for the service worker to be ready
       await navigator.serviceWorker.ready;
@@ -323,20 +336,26 @@ class NotificationService {
         applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
       });
 
-      console.log("[NotificationService] Push subscription created:", subscription.endpoint);
+      console.log(
+        "[NotificationService] Push subscription created:",
+        subscription.endpoint
+      );
 
       // Send the subscription to the server
-      const response = await fetch(`${API_BASE_URL}/notifications/push/subscribe`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          subscription: subscription.toJSON(),
-          deviceId: this.getDeviceId(),
-        }),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/notifications/push/subscribe`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            subscription: subscription.toJSON(),
+            deviceId: this.getDeviceId(),
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to save subscription to server");
@@ -413,13 +432,16 @@ class NotificationService {
    */
   static async getPushStatus(token) {
     try {
-      const response = await fetch(`${API_BASE_URL}/notifications/push/status`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/notifications/push/status`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to get push status");

@@ -76,11 +76,24 @@ if (process.env.NODE_ENV !== "production") {
 // Clerk middleware setup
 app.use(clerkMiddleware());
 
+// Health check / root endpoint
+app.get("/", (req, res) => {
+  res.json({
+    status: "ok",
+    service: "aperture-expo-backend",
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // Admin routes - these routes check for admin access
 app.use("/admin", adminRoutes);
 
 // Comments routes - handle their own authentication per route
 app.use("/comments", commentRoutes);
+
+// NOTIFICATION ROUTES - Must come before protected routes at "/"
+// These handle their own auth internally per-route
+app.use("/notifications", notificationRoutes);
 
 // PUBLIC ROUTES - No authentication required for viewing content
 // These routes allow non-signed in users to browse the site
@@ -93,7 +106,16 @@ app.use("/xp", xpRoutes); // XP stats and leaderboard (public and authenticated 
 app.use("/", requireAuth(), ensureUserExists, photoRoutes);
 app.use("/", requireAuth(), ensureUserExists, voteRoutes);
 app.use("/", requireAuth(), ensureUserExists, reportRoutes);
-app.use("/notifications", notificationRoutes);
+
+// --- 404 Handler ---
+// Catch any routes that didn't match
+app.use((req, res, next) => {
+  res.status(404).json({
+    error: "Not found",
+    path: req.path,
+    method: req.method,
+  });
+});
 
 // --- Global Error Handler ---
 // Must come after all routes and other middleware

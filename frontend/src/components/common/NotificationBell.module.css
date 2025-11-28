@@ -256,6 +256,13 @@
   background: rgba(55, 65, 81, 0.6);
   border: 1px solid rgba(75, 85, 99, 0.6);
   color: rgb(156, 163, 175);
+  /* Prevent iOS tap highlight and double-tap zoom */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+  user-select: none;
+  /* Ensure no outline conflicts */
+  outline: none;
 }
 
 .pushToggleButton:hover {
@@ -268,14 +275,30 @@
   cursor: not-allowed;
 }
 
+.pushToggleButton:focus {
+  outline: none;
+}
+
+.pushToggleButton:active {
+  transform: scale(0.95);
+}
+
 .pushToggleButton.pushEnabled {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.4) 0%, rgba(118, 75, 162, 0.4) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(102, 126, 234, 0.4) 0%,
+    rgba(118, 75, 162, 0.4) 100%
+  );
   border-color: rgba(102, 126, 234, 0.6);
   color: rgb(229, 231, 235);
 }
 
 .pushToggleButton.pushEnabled:hover {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.5) 0%, rgba(118, 75, 162, 0.5) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(102, 126, 234, 0.5) 0%,
+    rgba(118, 75, 162, 0.5) 100%
+  );
 }
 
 .pushDenied {

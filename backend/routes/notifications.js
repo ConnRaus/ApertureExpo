@@ -6,7 +6,14 @@ import NotificationService from "../services/notificationService.js";
 import PushNotificationService from "../services/pushNotificationService.js";
 import { getUserIdFromRequest } from "../utils/auth.js";
 
-const { Notification, Contest, ForumThread, ForumPost, User, PushSubscription } = models;
+const {
+  Notification,
+  Contest,
+  ForumThread,
+  ForumPost,
+  User,
+  PushSubscription,
+} = models;
 const router = express.Router();
 
 // Get all notifications for the authenticated user
@@ -279,7 +286,9 @@ router.post(
       const { subscription, deviceId } = req.body;
 
       if (!subscription) {
-        return res.status(400).json({ error: "Subscription object is required" });
+        return res
+          .status(400)
+          .json({ error: "Subscription object is required" });
       }
 
       const userAgent = req.headers["user-agent"] || null;
@@ -298,7 +307,9 @@ router.post(
       });
     } catch (error) {
       console.error("Error subscribing to push notifications:", error);
-      res.status(500).json({ error: "Failed to subscribe to push notifications" });
+      res
+        .status(500)
+        .json({ error: "Failed to subscribe to push notifications" });
     }
   }
 );
@@ -316,7 +327,9 @@ router.post(
         return res.status(400).json({ error: "Endpoint is required" });
       }
 
-      const removed = await PushNotificationService.removeSubscription(endpoint);
+      const removed = await PushNotificationService.removeSubscription(
+        endpoint
+      );
 
       res.json({
         success: true,
@@ -327,7 +340,9 @@ router.post(
       });
     } catch (error) {
       console.error("Error unsubscribing from push notifications:", error);
-      res.status(500).json({ error: "Failed to unsubscribe from push notifications" });
+      res
+        .status(500)
+        .json({ error: "Failed to unsubscribe from push notifications" });
     }
   }
 );
@@ -341,7 +356,8 @@ router.get(
     try {
       const userId = getUserIdFromRequest(req);
 
-      const subscriptionCount = await PushNotificationService.getSubscriptionCount(userId);
+      const subscriptionCount =
+        await PushNotificationService.getSubscriptionCount(userId);
       const isConfigured = PushNotificationService.isConfigured();
 
       res.json({
@@ -357,31 +373,26 @@ router.get(
 );
 
 // Test endpoint: Send a test push notification to the current user
-router.post(
-  "/push/test",
-  requireAuth(),
-  ensureUserExists,
-  async (req, res) => {
-    try {
-      const userId = getUserIdFromRequest(req);
+router.post("/push/test", requireAuth(), ensureUserExists, async (req, res) => {
+  try {
+    const userId = getUserIdFromRequest(req);
 
-      const result = await PushNotificationService.sendNotification(userId, {
-        title: "Test Notification",
-        body: "This is a test push notification from Aperture Expo!",
-        link: "/",
-        tag: "test-notification",
-      });
+    const result = await PushNotificationService.sendNotification(userId, {
+      title: "Test Notification",
+      body: "This is a test push notification from Aperture Expo!",
+      link: "/",
+      tag: "test-notification",
+    });
 
-      res.json({
-        success: true,
-        message: "Test notification sent",
-        result,
-      });
-    } catch (error) {
-      console.error("Error sending test push notification:", error);
-      res.status(500).json({ error: "Failed to send test notification" });
-    }
+    res.json({
+      success: true,
+      message: "Test notification sent",
+      result,
+    });
+  } catch (error) {
+    console.error("Error sending test push notification:", error);
+    res.status(500).json({ error: "Failed to send test notification" });
   }
-);
+});
 
 export default router;
