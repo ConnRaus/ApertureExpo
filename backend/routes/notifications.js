@@ -3,9 +3,10 @@ import { requireAuth } from "@clerk/express";
 import models from "../database/models/index.js";
 import { ensureUserExists } from "../middleware/ensureUserExists.js";
 import NotificationService from "../services/notificationService.js";
+import PushNotificationService from "../services/pushNotificationService.js";
 import { getUserIdFromRequest } from "../utils/auth.js";
 
-const { Notification, Contest, ForumThread, ForumPost, User } = models;
+const { Notification, Contest, ForumThread, ForumPost, User, PushSubscription } = models;
 const router = express.Router();
 
 // Get all notifications for the authenticated user
@@ -242,6 +243,143 @@ router.post(
     } catch (error) {
       console.error("Error in test endpoint:", error);
       res.status(500).json({ error: "Failed to trigger notifications" });
+    }
+  }
+);
+
+// ============================================
+// PUSH NOTIFICATION SUBSCRIPTION ENDPOINTS
+// ============================================
+
+// Get VAPID public key (needed by frontend to subscribe)
+router.get("/push/vapid-public-key", (req, res) => {
+  const publicKey = PushNotificationService.getPublicKey();
+
+  if (!publicKey) {
+    return res.status(503).json({
+      error: "Push notifications are not configured on the server",
+      configured: false,
+    });
+  }
+
+  res.json({
+    publicKey,
+    configured: true,
+  });
+});
+
+// Subscribe to push notifications
+router.post(
+  "/push/subscribe",
+  requireAuth(),
+  ensureUserExists,
+  async (req, res) => {
+    try {
+      const userId = getUserIdFromRequest(req);
+      const { subscription, deviceId } = req.body;
+
+      if (!subscription) {
+        return res.status(400).json({ error: "Subscription object is required" });
+      }
+
+      const userAgent = req.headers["user-agent"] || null;
+
+      const savedSubscription = await PushNotificationService.saveSubscription(
+        userId,
+        subscription,
+        userAgent,
+        deviceId
+      );
+
+      res.json({
+        success: true,
+        message: "Successfully subscribed to push notifications",
+        subscriptionId: savedSubscription.id,
+      });
+    } catch (error) {
+      console.error("Error subscribing to push notifications:", error);
+      res.status(500).json({ error: "Failed to subscribe to push notifications" });
+    }
+  }
+);
+
+// Unsubscribe from push notifications
+router.post(
+  "/push/unsubscribe",
+  requireAuth(),
+  ensureUserExists,
+  async (req, res) => {
+    try {
+      const { endpoint } = req.body;
+
+      if (!endpoint) {
+        return res.status(400).json({ error: "Endpoint is required" });
+      }
+
+      const removed = await PushNotificationService.removeSubscription(endpoint);
+
+      res.json({
+        success: true,
+        removed,
+        message: removed
+          ? "Successfully unsubscribed from push notifications"
+          : "Subscription not found",
+      });
+    } catch (error) {
+      console.error("Error unsubscribing from push notifications:", error);
+      res.status(500).json({ error: "Failed to unsubscribe from push notifications" });
+    }
+  }
+);
+
+// Get push notification status for the current user
+router.get(
+  "/push/status",
+  requireAuth(),
+  ensureUserExists,
+  async (req, res) => {
+    try {
+      const userId = getUserIdFromRequest(req);
+
+      const subscriptionCount = await PushNotificationService.getSubscriptionCount(userId);
+      const isConfigured = PushNotificationService.isConfigured();
+
+      res.json({
+        configured: isConfigured,
+        subscribed: subscriptionCount > 0,
+        subscriptionCount,
+      });
+    } catch (error) {
+      console.error("Error getting push status:", error);
+      res.status(500).json({ error: "Failed to get push notification status" });
+    }
+  }
+);
+
+// Test endpoint: Send a test push notification to the current user
+router.post(
+  "/push/test",
+  requireAuth(),
+  ensureUserExists,
+  async (req, res) => {
+    try {
+      const userId = getUserIdFromRequest(req);
+
+      const result = await PushNotificationService.sendNotification(userId, {
+        title: "Test Notification",
+        body: "This is a test push notification from Aperture Expo!",
+        link: "/",
+        tag: "test-notification",
+      });
+
+      res.json({
+        success: true,
+        message: "Test notification sent",
+        result,
+      });
+    } catch (error) {
+      console.error("Error sending test push notification:", error);
+      res.status(500).json({ error: "Failed to send test notification" });
     }
   }
 );

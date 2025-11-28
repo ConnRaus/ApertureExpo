@@ -9,6 +9,7 @@ import XPTransaction from "./XPTransaction.js";
 import ForumThreadInit from "./ForumThread.js";
 import ForumPostInit from "./ForumPost.js";
 import Notification from "./Notification.js";
+import PushSubscription from "./PushSubscription.js";
 
 // Initialize forum models with sequelize
 const ForumThread = ForumThreadInit(sequelize);
@@ -204,6 +205,18 @@ Notification.belongsTo(Comment, {
   as: "Comment",
 });
 
+// PushSubscription associations
+PushSubscription.belongsTo(User, {
+  foreignKey: "userId",
+  as: "User",
+});
+
+User.hasMany(PushSubscription, {
+  foreignKey: "userId",
+  as: "PushSubscriptions",
+  onDelete: "CASCADE",
+});
+
 // Initialize models
 const models = {
   Photo,
@@ -216,6 +229,7 @@ const models = {
   ForumThread,
   ForumPost,
   Notification,
+  PushSubscription,
   sequelize,
 };
 

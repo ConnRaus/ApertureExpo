@@ -12,6 +12,51 @@ if (!PUBLISHABLE_KEY) {
   throw new Error("Add your Clerk Publishable Key to the .env.local file");
 }
 
+// Register Service Worker for PWA push notifications
+if ("serviceWorker" in navigator) {
+  // Register immediately, don't wait for load event (important for iOS)
+  const registerServiceWorker = async () => {
+    try {
+      console.log("[PWA] Attempting to register service worker...");
+      
+      const registration = await navigator.serviceWorker.register("/sw.js", {
+        scope: "/",
+      });
+      
+      console.log("[PWA] Service worker registered successfully:", registration.scope);
+      console.log("[PWA] Service worker state:", registration.active?.state || "not active yet");
+
+      // Check for updates periodically
+      registration.addEventListener("updatefound", () => {
+        const newWorker = registration.installing;
+        console.log("[PWA] Service worker update found");
+
+        newWorker?.addEventListener("statechange", () => {
+          console.log("[PWA] Service worker state changed:", newWorker.state);
+          if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+            console.log("[PWA] New service worker installed, refresh to update");
+          }
+        });
+      });
+
+      // Wait for the service worker to be ready
+      await navigator.serviceWorker.ready;
+      console.log("[PWA] Service worker is ready");
+      
+    } catch (error) {
+      console.error("[PWA] Service worker registration failed:", error);
+      console.error("[PWA] Error details:", error.message);
+    }
+  };
+
+  // Register on load for best compatibility
+  if (document.readyState === "complete") {
+    registerServiceWorker();
+  } else {
+    window.addEventListener("load", registerServiceWorker);
+  }
+}
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <ClerkProvider
     publishableKey={PUBLISHABLE_KEY}

@@ -19,4 +19,5 @@ export {
   useXPService,
 } from "./useServices";
 
-// Export other hooks here as they are created
+// Push notification hooks
+export { usePushNotifications } from "./usePushNotifications";

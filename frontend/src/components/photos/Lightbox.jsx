@@ -1131,7 +1131,9 @@ export function Lightbox({
 
         {/* Info Sidebar */}
         <div
-          className={`fixed inset-y-0 right-0 bg-black/95 backdrop-blur-md border-l border-gray-700 overflow-y-auto lightbox-scrollable z-25 transition-transform duration-300 ease-in-out ${
+          className={`fixed inset-y-0 ${
+            isLandscape ? "right-0 border-l border-gray-700" : "left-0 right-0"
+          } bg-black/95 backdrop-blur-md overflow-y-auto lightbox-scrollable z-25 transition-transform duration-300 ease-in-out ${
             showInfoSidebar
               ? "translate-y-0 translate-x-0"
               : `${
@@ -1147,6 +1149,8 @@ export function Lightbox({
               : "rgb(0 0 0 / 0.95)",
             scrollbarWidth: "thin",
             scrollbarColor: "rgba(255, 255, 255, 0.3) transparent",
+            left: isLandscape ? "auto" : 0,
+            right: isLandscape ? 0 : 0,
           }}
           onTouchStart={(e) => e.stopPropagation()}
           onTouchMove={(e) => e.stopPropagation()}
