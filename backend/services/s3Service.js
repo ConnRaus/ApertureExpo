@@ -238,13 +238,13 @@ const processAndUploadImage = async (buffer, options) => {
   // For thumbnails, resize them properly
   if (isThumbnail) {
     return await sharp(buffer)
-      .resize(600, 600, {
+      .resize(800, 800, {
         fit: "inside",
         withoutEnlargement: true,
       })
       .withMetadata({})
       .jpeg({
-        quality: 80,
+        quality: 90,
         mozjpeg: true,
         force: true,
       })
