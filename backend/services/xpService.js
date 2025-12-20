@@ -721,14 +721,20 @@ class XPService {
         };
       }
 
-      const result = await XPTransaction.findOne({
-        attributes: [
-          [sequelize.fn("SUM", sequelize.col("xpAmount")), "timeframeXP"],
-        ],
+      // Use a more reliable approach: fetch all transactions and sum manually
+      // This avoids potential issues with Sequelize aggregation queries
+      const transactions = await XPTransaction.findAll({
+        attributes: ["xpAmount"],
         where: whereClause,
+        raw: true,
       });
 
-      return parseInt(result?.dataValues?.timeframeXP) || 0;
+      // Sum all transaction amounts
+      const sumValue = transactions.reduce((sum, transaction) => {
+        return sum + (parseInt(transaction.xpAmount) || 0);
+      }, 0);
+      
+      return sumValue;
     } catch (error) {
       console.error(`Error getting user ${timeframe} XP:`, error);
       return 0;
