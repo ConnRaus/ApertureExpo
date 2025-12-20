@@ -364,8 +364,10 @@ class XPService {
 
   /**
    * Award placement XP to all participants in a completed contest
+   * @param {string} contestId - The contest ID
+   * @param {boolean} force - If true, bypass duplicate check (for recalculation scripts)
    */
-  static async awardContestPlacementXP(contestId) {
+  static async awardContestPlacementXP(contestId, force = false) {
     try {
       // Import dynamically to avoid circular dependencies
       const { default: Contest } = await import(
@@ -377,6 +379,39 @@ class XPService {
         "../database/models/PhotoContest.js"
       );
       const { Op } = await import("sequelize");
+
+      // Check if placement XP has already been awarded for this contest
+      // This prevents duplicate awards if the function is called multiple times
+      // Skip this check if force=true (for recalculation scripts that delete transactions first)
+      if (!force) {
+        const existingPlacementXP = await XPTransaction.findOne({
+          where: {
+            contestId,
+            actionType: {
+              [Op.in]: [
+                "PLACE_1ST",
+                "PLACE_2ND",
+                "PLACE_3RD",
+                "TOP_10_PERCENT",
+                "TOP_25_PERCENT",
+                "TOP_50_PERCENT",
+                "PARTICIPATION",
+              ],
+            },
+          },
+        });
+
+        if (existingPlacementXP) {
+          console.log(
+            `Placement XP has already been awarded for contest ${contestId}. Skipping duplicate award.`
+          );
+          return {
+            success: true,
+            message: "Placement XP already awarded for this contest",
+            skipped: true,
+          };
+        }
+      }
 
       // Get all photos in the contest with their vote totals
       const photosInContest = await Photo.findAll({
@@ -698,13 +733,9 @@ class XPService {
   static async getUserTimeframeXP(userId, timeframe = "all") {
     try {
       const { Op } = await import("sequelize");
-      const sequelize = User.sequelize;
 
-      if (timeframe === "all") {
-        const user = await User.findByPk(userId);
-        return user ? user.xp : 0;
-      }
-
+      // Always calculate from transactions for consistency and accuracy
+      // This ensures all-time, yearly, and monthly all use the same calculation method
       let whereClause = { userId };
 
       if (timeframe === "monthly") {
@@ -720,6 +751,7 @@ class XPService {
           [Op.gte]: startOfYear,
         };
       }
+      // For "all" timeframe, no date filter - sum all transactions
 
       // Use a more reliable approach: fetch all transactions and sum manually
       // This avoids potential issues with Sequelize aggregation queries
