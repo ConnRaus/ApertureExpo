@@ -143,7 +143,8 @@ async function recalculateContestXP(contestId) {
 
     // Step 4: Recalculate correct placements and award XP
     console.log("\nRecalculating placements using average rating...");
-    const awardResult = await XPService.awardContestPlacementXP(contestId);
+    // Use force=true since we've already deleted the old transactions
+    const awardResult = await XPService.awardContestPlacementXP(contestId, true);
 
     if (!awardResult.success) {
       throw new Error(`Failed to award placement XP: ${awardResult.error}`);
